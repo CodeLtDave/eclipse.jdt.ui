@@ -368,7 +368,7 @@ public interface IJavaEditorActionDefinitionIds extends ITextEditorActionDefinit
 
 	/**
 	 * Action definition ID of the refactor -> move element action
-	 * (value <code>"org.eclipse.jdt.ui.edit.text.java.move.element"</code>).
+	 * (value <code>"org.eclipse.jdt.ui.edit.text.java.make.static"</code>).
 	 */
 	String MOVE_ELEMENT= "org.eclipse.jdt.ui.edit.text.java.move.element"; //$NON-NLS-1$
 
@@ -437,6 +437,15 @@ public interface IJavaEditorActionDefinitionIds extends ITextEditorActionDefinit
 	 * (value <code>"org.eclipse.jdt.ui.edit.text.java.extract.method"</code>).
 	 */
 	String EXTRACT_METHOD= "org.eclipse.jdt.ui.edit.text.java.extract.method"; //$NON-NLS-1$
+
+	/**
+	 * Action definition ID of the refactor -> extract method action
+	 * (value <code>"org.eclipse.jdt.ui.edit.text.java.extract.method"</code>).
+	 *
+	 * @since 3.29
+	 *
+	 */
+	String MAKE_STATIC= "org.eclipse.jdt.ui.edit.text.java.make.static"; //$NON-NLS-1$
 
 	/**
 	 * Action definition ID of the refactor -> inline action

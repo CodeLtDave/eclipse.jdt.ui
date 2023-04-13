@@ -255,6 +255,8 @@ public final class RefactoringMessages extends NLS {
 
 	public static String ExtractMethodAction_label;
 
+	public static String MakeStaticAction_label;
+
 	public static String ExtractMethodInputPage_access_Modifiers;
 
 	public static String ExtractMethodInputPage_anonymous_type_label;
@@ -772,6 +774,8 @@ public final class RefactoringMessages extends NLS {
 	public static String RefactoringExecutionStarter_IntroduceParameterObject_problem_title;
 
 	public static String RefactoringGroup_modify_Parameters_label;
+
+	public static String MakeStatic_label;
 
 	public static String RefactoringGroup_move_label;
 

@@ -423,6 +423,14 @@ public class JdtActionConstants {
 	public static final String EXTRACT_METHOD= "org.eclipse.jdt.ui.actions.ExtractMethod"; //$NON-NLS-1$
 
 	/**
+	 * Refactor menu: name of standard Extract Method global action
+	 * (value <code>"org.eclipse.jdt.ui.actions.ExtractMethod"</code>).
+	 *
+	 * @since 3.29
+	 */
+	public static final String MAKE_STATIC= "org.eclipse.jdt.ui.actions.MakeStatic"; //$NON-NLS-1$
+
+	/**
 	 * Refactor menu: name of standard Replace Invocations global action
 	 * (value <code>"org.eclipse.jdt.ui.actions.ReplaceInvocations"</code>).
 	 *
