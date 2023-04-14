@@ -50,6 +50,8 @@ import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.operations.UndoRedoActionGroup;
 import org.eclipse.ui.part.Page;
 
+import org.eclipse.ltk.ui.refactoring.examples.*;
+
 import org.eclipse.jdt.core.ITypeRoot;
 
 import org.eclipse.jdt.ui.IContextMenuConstants;
@@ -152,6 +154,7 @@ public class RefactorActionGroup extends ActionGroup {
  	private SelectionDispatchAction fMoveAction;
 	private SelectionDispatchAction fRenameAction;
 	private SelectionDispatchAction fModifyParametersAction;
+	private SelectionDispatchAction fExampleRefactoringAction;
 	private SelectionDispatchAction fConvertAnonymousToNestedAction;
 	private SelectionDispatchAction fConvertNestedToTopAction;
 
@@ -258,6 +261,10 @@ public class RefactorActionGroup extends ActionGroup {
 			fModifyParametersAction= new ModifyParametersAction(editor);
 			initAction(fModifyParametersAction, selection, IJavaEditorActionDefinitionIds.MODIFY_METHOD_PARAMETERS);
 			editor.setAction("ModifyParameters", fModifyParametersAction); //$NON-NLS-1$
+
+			fExampleRefactoringAction= new ExampleRefactoringAction(editor);
+			initAction(fExampleRefactoringAction, selection, IJavaEditorActionDefinitionIds.MODIFY_METHOD_PARAMETERS);
+			editor.setAction("ExampleRefactoring", fExampleRefactoringAction); //$NON-NLS-1$
 
 			fConvertAnonymousToNestedAction= new ConvertAnonymousToNestedAction(editor);
 			initUpdatingAction(fConvertAnonymousToNestedAction, provider, null, selection, IJavaEditorActionDefinitionIds.CONVERT_ANONYMOUS_TO_NESTED);
@@ -374,6 +381,9 @@ public class RefactorActionGroup extends ActionGroup {
 
 			fModifyParametersAction= new ModifyParametersAction(fSite);
 			initUpdatingAction(fModifyParametersAction, fSelectionProvider, selectionProvider, selection, IJavaEditorActionDefinitionIds.MODIFY_METHOD_PARAMETERS);
+
+			fExampleRefactoringAction= new ExampleRefactoringAction(fSite);
+			initUpdatingAction(fExampleRefactoringAction, fSelectionProvider, selectionProvider, selection, IJavaEditorActionDefinitionIds.MODIFY_METHOD_PARAMETERS);
 
 			fPullUpAction= new PullUpAction(fSite);
 			initUpdatingAction(fPullUpAction, fSelectionProvider, selectionProvider, selection, IJavaEditorActionDefinitionIds.PULL_UP);
