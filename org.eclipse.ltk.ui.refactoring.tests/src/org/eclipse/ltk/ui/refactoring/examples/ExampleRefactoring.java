@@ -34,6 +34,18 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
 
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Modifier;
+
+import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.util.TightSourceRangeComputer;
+
 public class ExampleRefactoring extends Refactoring {
 
 	private IFile fFile;
@@ -41,13 +53,16 @@ public class ExampleRefactoring extends Refactoring {
 	private String fNewText;
 
 	private Change fChange;
+	private CompilationUnitRewrite fBaseCuRewrite;
+	private IMethod fMethod;
 
-	public ExampleRefactoring(IFile file) {
-		fFile= file;
+	public ExampleRefactoring(IMethod method) {
+		fMethod= method;
 		fChange= null;
 		fOldText= null;
 		fNewText= null;
 	}
+
 
 	@Override
 	public String getName() {
@@ -62,23 +77,39 @@ public class ExampleRefactoring extends Refactoring {
 		fOldText= text;
 	}
 
+	private ICompilationUnit getCu() {
+		return fMethod.getCompilationUnit();
+	}
+
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		if (fFile == null || !fFile.exists()) {
 			return RefactoringStatus.createFatalErrorStatus("File does not exist");
 		}
+
+		if (fBaseCuRewrite == null || !fBaseCuRewrite.getCu().equals(getCu())) {
+			fBaseCuRewrite= new CompilationUnitRewrite(getCu());
+			fBaseCuRewrite.getASTRewrite().setTargetSourceRangeComputer(new TightSourceRangeComputer());
+		}
 		return new RefactoringStatus();
 	}
 
 	@Override
-	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		if (fOldText == null || fOldText.length() == 0) {
-			return RefactoringStatus.createFatalErrorStatus("Old text must be set and not empty");
-		}
-		if (fNewText == null || fNewText.length() == 0) {
-			return RefactoringStatus.createFatalErrorStatus("New text must be set and not empty");
-		}
+	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException
+	{
+		ICompilationUnit compilationUnit = fMethod.getCompilationUnit();
+		ASTParser parser = ASTParser.newParser(AST.JLS17);
+		parser.setSource(compilationUnit);
+		CompilationUnit astRoot = (CompilationUnit) parser.createAST(null);
+		MethodDeclaration fMethDecl = (MethodDeclaration) astRoot.findDeclaringNode(fMethod.getKey());
 
+		ModifierRewrite modRewrite= ModifierRewrite.create(fBaseCuRewrite.getASTRewrite(), fMethDecl);
+		modRewrite.setModifiers(Modifier.STATIC, null);
+
+		/*if (fBodyUpdater != null)
+			fBodyUpdater.updateBody(fMethDecl, fCuRewrite, fResult);
+
+*/
 		TextFileChange change= new TextFileChange(getName(), fFile);
 		change.setEdit(new MultiTextEdit());
 
