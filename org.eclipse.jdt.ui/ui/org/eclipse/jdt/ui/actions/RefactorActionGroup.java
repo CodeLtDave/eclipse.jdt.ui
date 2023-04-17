@@ -16,6 +16,8 @@ package org.eclipse.jdt.ui.actions;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.refactoring.MakeStaticAction;
+
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.widgets.Menu;
@@ -169,6 +171,7 @@ public class RefactorActionGroup extends ActionGroup {
 	private SelectionDispatchAction fExtractMethodAction;
 	private SelectionDispatchAction fExtractTempAction;
 	private SelectionDispatchAction fExtractConstantAction;
+	private SelectionDispatchAction fMakeStaticAction;
 	private SelectionDispatchAction fExtractClassAction;
 	private SelectionDispatchAction fIntroduceParameterAction;
 	private SelectionDispatchAction fIntroduceParameterObjectAction;
@@ -306,6 +309,10 @@ public class RefactorActionGroup extends ActionGroup {
 			fExtractConstantAction= new ExtractConstantAction(editor);
 			initUpdatingAction(fExtractConstantAction, provider, null, selection, IJavaEditorActionDefinitionIds.EXTRACT_CONSTANT);
 			editor.setAction("ExtractConstant", fExtractConstantAction); //$NON-NLS-1$
+
+			fMakeStaticAction= new MakeStaticAction(editor);
+			initUpdatingAction(fMakeStaticAction, provider, null, selection, IJavaEditorActionDefinitionIds.EXTRACT_CONSTANT);
+			editor.setAction("MakeStatic", fMakeStaticAction); //$NON-NLS-1$
 
 			fIntroduceParameterAction= new IntroduceParameterAction(editor);
 			initUpdatingAction(fIntroduceParameterAction, provider, null, selection, IJavaEditorActionDefinitionIds.INTRODUCE_PARAMETER);
@@ -476,6 +483,7 @@ public class RefactorActionGroup extends ActionGroup {
 			actionBars.setGlobalActionHandler(JdtActionConstants.PUSH_DOWN, fPushDownAction);
 			actionBars.setGlobalActionHandler(JdtActionConstants.EXTRACT_TEMP, fExtractTempAction);
 			actionBars.setGlobalActionHandler(JdtActionConstants.EXTRACT_CONSTANT, fExtractConstantAction);
+			actionBars.setGlobalActionHandler(JdtActionConstants.MAKE_STATIC, fMakeStaticAction);
 			actionBars.setGlobalActionHandler(JdtActionConstants.INTRODUCE_PARAMETER, fIntroduceParameterAction);
 			actionBars.setGlobalActionHandler(JdtActionConstants.INTRODUCE_FACTORY, fIntroduceFactoryAction);
 			actionBars.setGlobalActionHandler(JdtActionConstants.EXTRACT_METHOD, fExtractMethodAction);
@@ -589,6 +597,7 @@ public class RefactorActionGroup extends ActionGroup {
 		added+= addAction(refactorSubmenu, fExtractMethodAction);
 		added+= addAction(refactorSubmenu, fExtractTempAction);
 		added+= addAction(refactorSubmenu, fExtractConstantAction);
+		added+= addAction(refactorSubmenu, fMakeStaticAction);
 		added+= addAction(refactorSubmenu, fInlineAction);
 		refactorSubmenu.add(new Separator(GROUP_REORG2));
 		added+= addAction(refactorSubmenu, fConvertAnonymousToNestedAction);
