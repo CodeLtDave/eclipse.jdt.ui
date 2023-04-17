@@ -470,8 +470,6 @@ public final class RefactoringCoreMessages extends NLS {
 
 	public static String ExtractConstantRefactoring_visibility_pattern;
 
-	public static String MakeStaticRefactoring_name;
-
 	public static String ExtractInterfaceProcessor_add_comment;
 
 	public static String ExtractInterfaceProcessor_add_super_interface;

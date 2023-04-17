@@ -125,7 +125,6 @@ public interface IJavaHelpContextIds {
 	String PROMOTE_TEMP_TO_FIELD_ACTION= 								PREFIX + "promote_temp_to_field_action"; //$NON-NLS-1$
 	String CONVERT_ANONYMOUS_TO_NESTED_ACTION= 							PREFIX + "convert_anonymous_to_nested_action"; //$NON-NLS-1$
 	String EXTRACT_CONSTANT_ACTION= 									PREFIX + "extract_constant_action"; //$NON-NLS-1$
-	String MAKE_STATIC_ACTION= 											PREFIX + "make_static_action"; //$NON-NLS-1$
 	String INTRODUCE_PARAMETER_ACTION=									PREFIX + "introduce_parameter_action"; //$NON-NLS-1$
 	String INTRODUCE_FACTORY_ACTION= 									PREFIX + "introduce_factory_action"; //$NON-NLS-1$
 	/**

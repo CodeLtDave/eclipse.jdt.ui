@@ -167,7 +167,6 @@ public class RefactorActionGroup extends ActionGroup {
 //	private SelectionDispatchAction fReplaceInvocationsAction;
 	private SelectionDispatchAction fIntroduceIndirectionAction;
 	private SelectionDispatchAction fExtractMethodAction;
-	private SelectionDispatchAction fMakeStaticAction;
 	private SelectionDispatchAction fExtractTempAction;
 	private SelectionDispatchAction fExtractConstantAction;
 	private SelectionDispatchAction fExtractClassAction;
@@ -299,10 +298,6 @@ public class RefactorActionGroup extends ActionGroup {
 			fExtractMethodAction= new ExtractMethodAction(editor);
 			initUpdatingAction(fExtractMethodAction, provider, null, selection, IJavaEditorActionDefinitionIds.EXTRACT_METHOD);
 			editor.setAction("ExtractMethod", fExtractMethodAction); //$NON-NLS-1$
-
-			fMakeStaticAction= new MakeStaticAction(editor);
-			initUpdatingAction(fMakeStaticAction, provider, null, selection, IJavaEditorActionDefinitionIds.MAKE_STATIC);
-			editor.setAction("MakeStatic", fMakeStaticAction); //$NON-NLS-1$
 
 			fExtractTempAction= new ExtractTempAction(editor);
 			initUpdatingAction(fExtractTempAction, provider, null, selection, IJavaEditorActionDefinitionIds.EXTRACT_LOCAL_VARIABLE);
@@ -484,7 +479,6 @@ public class RefactorActionGroup extends ActionGroup {
 			actionBars.setGlobalActionHandler(JdtActionConstants.INTRODUCE_PARAMETER, fIntroduceParameterAction);
 			actionBars.setGlobalActionHandler(JdtActionConstants.INTRODUCE_FACTORY, fIntroduceFactoryAction);
 			actionBars.setGlobalActionHandler(JdtActionConstants.EXTRACT_METHOD, fExtractMethodAction);
-			actionBars.setGlobalActionHandler(JdtActionConstants.MAKE_STATIC, fExtractMethodAction);
 			//	actionBars.setGlobalActionHandler(JdtActionConstants.REPLACE_INVOCATIONS, fReplaceInvocationsAction);
 			actionBars.setGlobalActionHandler(JdtActionConstants.EXTRACT_INTERFACE, fExtractInterfaceAction);
 			actionBars.setGlobalActionHandler(JdtActionConstants.EXTRACT_CLASS, fExtractClassAction);
@@ -538,7 +532,6 @@ public class RefactorActionGroup extends ActionGroup {
 			disposeAction(fIntroduceParameterObjectAction, fSelectionProvider);
 			disposeAction(fIntroduceFactoryAction, fSelectionProvider);
 			disposeAction(fExtractMethodAction, fSelectionProvider);
-			disposeAction(fMakeStaticAction, fSelectionProvider);
 			//	disposeAction(fReplaceInvocationsAction, provider);
 			disposeAction(fExtractInterfaceAction, fSelectionProvider);
 			disposeAction(fExtractClassAction, fSelectionProvider);
@@ -594,7 +587,6 @@ public class RefactorActionGroup extends ActionGroup {
 		refactorSubmenu.add(new Separator(GROUP_CODING));
 		added+= addAction(refactorSubmenu, fModifyParametersAction);
 		added+= addAction(refactorSubmenu, fExtractMethodAction);
-		added+= addAction(refactorSubmenu, fMakeStaticAction);
 		added+= addAction(refactorSubmenu, fExtractTempAction);
 		added+= addAction(refactorSubmenu, fExtractConstantAction);
 		added+= addAction(refactorSubmenu, fInlineAction);

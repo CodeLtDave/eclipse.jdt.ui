@@ -3,6 +3,7 @@
 <plugin>
    <extension
          point="org.eclipse.ui.popupMenus">
+<!--
       <objectContribution
             objectClass="org.eclipse.core.resources.IFile"
 			adaptable="true"      
@@ -16,5 +17,6 @@
                id="ExampleRefactoringAction">
          </action>
       </objectContribution>
+-->
    </extension>
 </plugin>
