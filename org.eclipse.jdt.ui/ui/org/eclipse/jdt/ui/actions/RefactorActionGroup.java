@@ -50,7 +50,7 @@ import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.operations.UndoRedoActionGroup;
 import org.eclipse.ui.part.Page;
 
-import org.eclipse.ltk.ui.refactoring.examples.*;
+import org.eclipse.ltk.ui.refactoring.examples.ExampleRefactoringAction;
 
 import org.eclipse.jdt.core.ITypeRoot;
 

@@ -55,6 +55,7 @@ public class ExampleRefactoring extends Refactoring {
 	private Change fChange;
 	private CompilationUnitRewrite fBaseCuRewrite;
 	private IMethod fMethod;
+	private Object fBodyUpdater;
 
 	public ExampleRefactoring(IMethod method) {
 		fMethod= method;
@@ -107,9 +108,8 @@ public class ExampleRefactoring extends Refactoring {
 		modRewrite.setModifiers(Modifier.STATIC, null);
 
 		/*if (fBodyUpdater != null)
-			fBodyUpdater.updateBody(fMethDecl, fCuRewrite, fResult);
+			fBodyUpdater.updateBody(fMethDecl, fCuRewrite, fResult);*/
 
-*/
 		TextFileChange change= new TextFileChange(getName(), fFile);
 		change.setEdit(new MultiTextEdit());
 
@@ -149,3 +149,5 @@ public class ExampleRefactoring extends Refactoring {
 		return fChange;
 	}
 }
+
+
