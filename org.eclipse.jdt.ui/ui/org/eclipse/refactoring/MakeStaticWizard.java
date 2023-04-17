@@ -21,7 +21,6 @@ import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.ui.refactoring.code.ExtractMethodInputPage;
 
 public class MakeStaticWizard extends RefactoringWizard {
 
@@ -45,6 +44,6 @@ public class MakeStaticWizard extends RefactoringWizard {
 
 	@Override
 	protected void addUserInputPages(){
-		addPage(new ExtractMethodInputPage());
+		addPage(new MakeStaticInputPage(null));
 	}
 }

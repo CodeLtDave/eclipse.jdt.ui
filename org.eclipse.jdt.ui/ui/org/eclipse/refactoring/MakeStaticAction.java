@@ -18,6 +18,10 @@ import org.eclipse.jface.text.ITextSelection;
 
 import org.eclipse.ui.PlatformUI;
 
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.JavaModelException;
+
 import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
 import org.eclipse.jdt.ui.refactoring.RefactoringSaveHelper;
 
@@ -42,6 +46,7 @@ import org.eclipse.jdt.internal.ui.refactoring.actions.RefactoringStarter;
 public class MakeStaticAction extends SelectionDispatchAction {
 
 	private final JavaEditor fEditor;
+	private IMethod fMethod;
 
 	/**
 	 * Note: This constructor is for internal use only. Clients should not call this constructor.
@@ -76,7 +81,29 @@ public class MakeStaticAction extends SelectionDispatchAction {
 	public void run(ITextSelection selection) {
 		if (!ActionUtil.isEditable(fEditor))
 			return;
-		MakeStaticRefactoring refactoring= new MakeStaticRefactoring(SelectionConverter.getInputAsCompilationUnit(fEditor), selection.getOffset(), selection.getLength());
-		new RefactoringStarter().activate(new MakeStaticWizard(refactoring), getShell(), "Make static", RefactoringSaveHelper.SAVE_NOTHING); //$NON-NLS-1$
+		try {
+			fMethod= getSingleSelectedMethod(selection);
+
+		MakeStaticRefactoring refactoring= new MakeStaticRefactoring(fMethod, SelectionConverter.getInputAsCompilationUnit(fEditor), selection.getOffset(), selection.getLength());
+		new RefactoringStarter().activate(new MakeStaticWizard(refactoring), getShell(), "Make static", RefactoringSaveHelper.SAVE_NOTHING);  //$NON-NLS-1$
+		} catch (JavaModelException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private IMethod getSingleSelectedMethod(ITextSelection selection) throws JavaModelException{
+		//- when caret/selection on method name (call or declaration) -> that method
+		//- otherwise: caret position's enclosing method declaration
+		//  - when caret inside argument list of method declaration -> enclosing method declaration
+		//  - when caret inside argument list of method call -> enclosing method declaration (and NOT method call)
+		IJavaElement[] elements= SelectionConverter.codeResolve(fEditor);
+		if (elements.length > 1)
+			return null;
+		if (elements.length == 1 && elements[0] instanceof IMethod)
+			return (IMethod)elements[0];
+		IJavaElement elementAt= SelectionConverter.getInputAsCompilationUnit(fEditor).getElementAt(selection.getOffset());
+		if (elementAt instanceof IMethod)
+			return (IMethod)elementAt;
+		return null;
 	}
 }
