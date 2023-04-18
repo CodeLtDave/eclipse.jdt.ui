@@ -12,7 +12,6 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -20,18 +19,18 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextChangeManager;
-import org.eclipse.jdt.internal.corext.refactoring.util.TightSourceRangeComputer;
 
 
 public class MakeStaticRefactoring extends Refactoring {
 
 	private IMethod fMethod;
 
-	private Change fChange;
+	private CompilationUnitChange fChange;
 
 	private CompilationUnitRewrite fBaseCuRewrite;
 
@@ -48,10 +47,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		fCUnit= inputAsCompilationUnit;
 	}
 
-	private ICompilationUnit getCu() {
-		return fMethod.getCompilationUnit();
-	}
-
 	@Override
 	public String getName() {
 		return "Make static"; //$NON-NLS-1$
@@ -59,12 +54,6 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-
-
-		if (fBaseCuRewrite == null || !fBaseCuRewrite.getCu().equals(getCu())) {
-			fBaseCuRewrite= new CompilationUnitRewrite(getCu());
-			fBaseCuRewrite.getASTRewrite().setTargetSourceRangeComputer(new TightSourceRangeComputer());
-		}
 		return new RefactoringStatus();
 	}
 
@@ -74,17 +63,20 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		MethodDeclaration methodDeclaration = findMethodDeclaration(fMethod);
 
+		fBaseCuRewrite= new CompilationUnitRewrite(compilationUnit);
+
 		AST ast = methodDeclaration.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
-
-		fChangeManager= new TextChangeManager();
 
 		ModifierRewrite modRewrite= ModifierRewrite.create(rewrite, methodDeclaration);
 		modRewrite.setModifiers(Modifier.STATIC, null);
 
 		TextEdit textEdit= rewrite.rewriteAST();
 
-		compilationUnit.applyTextEdit(textEdit, null);
+		fChange = new CompilationUnitChange("Test",compilationUnit); //$NON-NLS-1$
+	    fChange.setEdit(textEdit);
+
+		//compilationUnit.applyTextEdit(textEdit, null);
 
 		/*if (fBodyUpdater != null)
 		fBodyUpdater.updateBody(fMethDecl, fCuRewrite, fResult);*/
@@ -95,11 +87,10 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		// TODO Auto-generated method stub
-		return null;
+		return fChange;
 	}
 
-	public static MethodDeclaration findMethodDeclaration(IMethod method) throws JavaModelException {
+	private MethodDeclaration findMethodDeclaration(IMethod method) {
 		ICompilationUnit compilationUnit= method.getCompilationUnit();
 
 		// Create AST parser with Java 17 support
