@@ -76,12 +76,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		fChange = new CompilationUnitChange("Test",compilationUnit); //$NON-NLS-1$
 	    fChange.setEdit(textEdit);
 
-		//compilationUnit.applyTextEdit(textEdit, null);
-
-		/*if (fBodyUpdater != null)
-		fBodyUpdater.updateBody(fMethDecl, fCuRewrite, fResult);*/
-
-
 		return new RefactoringStatus();
 	}
 
