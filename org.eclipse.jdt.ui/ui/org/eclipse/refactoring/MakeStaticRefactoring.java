@@ -4,10 +4,11 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 
+import org.eclipse.text.edits.TextEdit;
+
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.ltk.core.refactoring.TextChange;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
@@ -70,8 +71,6 @@ public class MakeStaticRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		ICompilationUnit compilationUnit= fMethod.getCompilationUnit();
-		ASTParser parser= ASTParser.newParser(AST.JLS17);
-		parser.setSource(compilationUnit);
 
 		MethodDeclaration methodDeclaration = findMethodDeclaration(fMethod);
 
@@ -83,9 +82,9 @@ public class MakeStaticRefactoring extends Refactoring {
 		ModifierRewrite modRewrite= ModifierRewrite.create(rewrite, methodDeclaration);
 		modRewrite.setModifiers(Modifier.STATIC, null);
 
-		TextChange change= fBaseCuRewrite.createChange(true);
-		if (change != null)
-			fChangeManager.manage(compilationUnit, change);
+		TextEdit textEdit= rewrite.rewriteAST();
+
+		compilationUnit.applyTextEdit(textEdit, null);
 
 		/*if (fBodyUpdater != null)
 		fBodyUpdater.updateBody(fMethDecl, fCuRewrite, fResult);*/
