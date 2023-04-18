@@ -11,8 +11,10 @@ import org.eclipse.ltk.core.refactoring.TextChange;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -29,9 +31,10 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private Change fChange;
 
-	private CompilationUnitRewrite fBaseCuRewrite;;
+	private CompilationUnitRewrite fBaseCuRewrite;
 
 	private ICompilationUnit fCUnit;
+
 	private Object fBodyUpdater;
 
 	private CompilationUnitRewrite cuRewrite;
@@ -39,7 +42,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	private TextChangeManager fChangeManager;
 
 	public MakeStaticRefactoring(IMethod method, ICompilationUnit inputAsCompilationUnit, int offset, int length) {
-		fMethod = method;
+		fMethod= method;
 		fCUnit= inputAsCompilationUnit;
 	}
 
@@ -68,21 +71,18 @@ public class MakeStaticRefactoring extends Refactoring {
 		ICompilationUnit compilationUnit= fMethod.getCompilationUnit();
 		ASTParser parser= ASTParser.newParser(AST.JLS17);
 		parser.setSource(compilationUnit);
-		CompilationUnit astRoot= (CompilationUnit) parser.createAST(null);
-		MethodDeclaration fMethDecl= (MethodDeclaration) astRoot.findDeclaringNode(fMethod.getKey());
 
-		System.out.println(fMethod.getKey());
+		MethodDeclaration methodDeclaration = findMethodDeclaration(fMethod);
 
 		fChangeManager= new TextChangeManager();
-		cuRewrite= new CompilationUnitRewrite(compilationUnit);
-		cuRewrite.getASTRewrite().setTargetSourceRangeComputer(new TightSourceRangeComputer());
+		fBaseCuRewrite.getASTRewrite().setTargetSourceRangeComputer(new TightSourceRangeComputer());
 
-		TextChange change= cuRewrite.createChange(true);
+		ModifierRewrite modRewrite= ModifierRewrite.create(fBaseCuRewrite.getASTRewrite(), methodDeclaration);
+		modRewrite.setModifiers(Modifier.STATIC, null);
+
+		TextChange change= fBaseCuRewrite.createChange(true);
 		if (change != null)
 			fChangeManager.manage(compilationUnit, change);
-
-		ModifierRewrite modRewrite= ModifierRewrite.create(fBaseCuRewrite.getASTRewrite(), fMethDecl);
-		modRewrite.setModifiers(Modifier.STATIC, null);
 
 		/*if (fBodyUpdater != null)
 		fBodyUpdater.updateBody(fMethDecl, fCuRewrite, fResult);*/
@@ -95,6 +95,43 @@ public class MakeStaticRefactoring extends Refactoring {
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public static MethodDeclaration findMethodDeclaration(IMethod method) throws JavaModelException {
+		ICompilationUnit compilationUnit= method.getCompilationUnit();
+
+		// Create AST parser with Java 17 support
+		ASTParser parser= ASTParser.newParser(AST.JLS17);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(compilationUnit);
+		parser.setResolveBindings(true);
+		parser.setBindingsRecovery(true);
+
+		// Configure parser with classpath and project options
+		parser.setEnvironment(null, null, null, true);
+		parser.setUnitName(compilationUnit.getElementName());
+
+		// Create CompilationUnit AST root
+		CompilationUnit astRoot= (CompilationUnit) parser.createAST(null);
+
+		// Resolve bindings
+		astRoot.recordModifications();
+		astRoot.accept(new ASTVisitor() {
+			@Override
+			public boolean visit(MethodDeclaration node) {
+				IMethod resolvedMethod= (IMethod) node.resolveBinding().getJavaElement();
+				if (resolvedMethod.equals(method)) {
+					// Found the MethodDeclaration for the given IMethod
+					return true;
+				}
+				return super.visit(node);
+			}
+		});
+
+		// Get the resolved MethodDeclaration
+		MethodDeclaration methodDeclaration= (MethodDeclaration) astRoot.findDeclaringNode(method.getKey());
+
+		return methodDeclaration;
 	}
 
 }
