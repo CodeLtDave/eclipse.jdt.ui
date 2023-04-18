@@ -69,7 +69,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		ASTRewrite rewrite = ASTRewrite.create(ast);
 
 		ModifierRewrite modRewrite= ModifierRewrite.create(rewrite, methodDeclaration);
-		modRewrite.setModifiers(Modifier.STATIC, null);
+		modRewrite.setModifiers(methodDeclaration.getModifiers() | Modifier.STATIC, null);
 
 		TextEdit textEdit= rewrite.rewriteAST();
 
