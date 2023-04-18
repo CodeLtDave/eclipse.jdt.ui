@@ -18,6 +18,7 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
@@ -74,11 +75,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		MethodDeclaration methodDeclaration = findMethodDeclaration(fMethod);
 
-		fChangeManager= new TextChangeManager();
-		fBaseCuRewrite.getASTRewrite().setTargetSourceRangeComputer(new TightSourceRangeComputer());
-
-		ModifierRewrite modRewrite= ModifierRewrite.create(fBaseCuRewrite.getASTRewrite(), methodDeclaration);
-		modRewrite.setModifiers(Modifier.STATIC, null);
+		ModifierRewrite.create(rewrite, methodDeclaration).setModifiers(Modifier.STATIC, null);
 
 		TextChange change= fBaseCuRewrite.createChange(true);
 		if (change != null)
