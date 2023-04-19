@@ -3,7 +3,9 @@ package org.eclipse.refactoring;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.SubProgressMonitor;
 
+import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
 
 import org.eclipse.ltk.core.refactoring.Change;
@@ -13,15 +15,20 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
+import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 
 
 public class MakeStaticRefactoring extends Refactoring {
@@ -31,6 +38,10 @@ public class MakeStaticRefactoring extends Refactoring {
 	private ICompilationUnit fCUnit;
 
 	private CompilationUnitChange fChange;
+
+	private MultiTextEdit fMultiEdit;
+
+	private TargetProvider fTargetProvider;
 
 	public MakeStaticRefactoring(IMethod method, ICompilationUnit inputAsCompilationUnit, int offset, int length) {
 		fMethod= method;
@@ -50,6 +61,26 @@ public class MakeStaticRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		MethodDeclaration methodDeclaration = findMethodDeclaration(fMethod);
+
+		fTargetProvider= TargetProvider.create(methodDeclaration);
+		fTargetProvider.initialize();
+
+		//String binaryRefsDescription= Messages.format(RefactoringCoreMessages.ReferencesInBinaryContext_ref_in_binaries_description , BasicElementLabels.getJavaElementName(fSourceProvider.getMethodName()));
+		ReferencesInBinaryContext binaryRefs= new ReferencesInBinaryContext(""); //$NON-NLS-1$
+		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(null, binaryRefs, new SubProgressMonitor(pm, 1));
+
+		for(ICompilationUnit affectedCU : affectedCUs) {
+			BodyDeclaration[] bodies= fTargetProvider.getAffectedBodyDeclarations(affectedCU, null);
+			for(BodyDeclaration body : bodies) {
+				ASTNode[] invocations = fTargetProvider.getInvocations(body, null);
+				for  ( ASTNode invocation : invocations) {
+					invocation.setStructuralProperty(MethodInvocation.EXPRESSION_PROPERTY, ASTNode.THIS_EXPRESSION);
+				}
+			}
+
+
+		}
+
 
 		AST ast = methodDeclaration.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
@@ -107,5 +138,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		return methodDeclaration;
 	}
+
+
 
 }
