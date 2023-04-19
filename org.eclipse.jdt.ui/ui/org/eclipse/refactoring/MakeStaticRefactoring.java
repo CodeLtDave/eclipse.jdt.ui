@@ -22,25 +22,15 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
-import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
-import org.eclipse.jdt.internal.corext.refactoring.util.TextChangeManager;
 
 
 public class MakeStaticRefactoring extends Refactoring {
 
 	private IMethod fMethod;
 
-	private CompilationUnitChange fChange;
-
-	private CompilationUnitRewrite fBaseCuRewrite;
-
 	private ICompilationUnit fCUnit;
 
-	private Object fBodyUpdater;
-
-	private CompilationUnitRewrite cuRewrite;
-
-	private TextChangeManager fChangeManager;
+	private CompilationUnitChange fChange;
 
 	public MakeStaticRefactoring(IMethod method, ICompilationUnit inputAsCompilationUnit, int offset, int length) {
 		fMethod= method;
@@ -59,11 +49,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		ICompilationUnit compilationUnit= fMethod.getCompilationUnit();
-
 		MethodDeclaration methodDeclaration = findMethodDeclaration(fMethod);
-
-		fBaseCuRewrite= new CompilationUnitRewrite(compilationUnit);
 
 		AST ast = methodDeclaration.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
@@ -73,7 +59,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		TextEdit textEdit= rewrite.rewriteAST();
 
-		fChange = new CompilationUnitChange("Test",compilationUnit); //$NON-NLS-1$
+		fChange = new CompilationUnitChange("Test",fCUnit); //$NON-NLS-1$
 	    fChange.setEdit(textEdit);
 
 		return new RefactoringStatus();
@@ -88,7 +74,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		ICompilationUnit compilationUnit= method.getCompilationUnit();
 
 		// Create AST parser with Java 17 support
-		ASTParser parser= ASTParser.newParser(AST.JLS17);
+		ASTParser parser= ASTParser.newParser(AST.JLS20);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(compilationUnit);
 		parser.setResolveBindings(true);
@@ -117,6 +103,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		// Get the resolved MethodDeclaration
 		MethodDeclaration methodDeclaration= (MethodDeclaration) astRoot.findDeclaringNode(method.getKey());
+
 
 		return methodDeclaration;
 	}
