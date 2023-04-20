@@ -23,6 +23,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
@@ -61,9 +62,10 @@ public class MakeStaticRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		MethodDeclaration methodDeclaration = findMethodDeclaration(fMethod);
-
+		TextEdit textEdit2 = null;
 		fTargetProvider= TargetProvider.create(methodDeclaration);
 		fTargetProvider.initialize();
+
 
 		//String binaryRefsDescription= Messages.format(RefactoringCoreMessages.ReferencesInBinaryContext_ref_in_binaries_description , BasicElementLabels.getJavaElementName(fSourceProvider.getMethodName()));
 		ReferencesInBinaryContext binaryRefs= new ReferencesInBinaryContext(""); //$NON-NLS-1$
@@ -74,7 +76,13 @@ public class MakeStaticRefactoring extends Refactoring {
 			for(BodyDeclaration body : bodies) {
 				ASTNode[] invocations = fTargetProvider.getInvocations(body, null);
 				for  ( ASTNode invocation : invocations) {
-					invocation.setStructuralProperty(MethodInvocation.EXPRESSION_PROPERTY, ASTNode.THIS_EXPRESSION);
+					AST ast = invocation.getAST();
+					ASTRewrite rewrite = ASTRewrite.create(ast);
+					MethodInvocation staticMethodInvocation = ast.newMethodInvocation();
+					staticMethodInvocation.setName(ast.newSimpleName(methodDeclaration.getName().toString()));
+					staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration)methodDeclaration.getParent()).getName().toString()));
+					rewrite.replace(invocation, staticMethodInvocation, null);
+					textEdit2 = rewrite.rewriteAST();
 				}
 			}
 
@@ -89,9 +97,11 @@ public class MakeStaticRefactoring extends Refactoring {
 		modRewrite.setModifiers(methodDeclaration.getModifiers() | Modifier.STATIC, null);
 
 		TextEdit textEdit= rewrite.rewriteAST();
-
+		fMultiEdit = new MultiTextEdit();
+		fMultiEdit.addChild(textEdit);
+		fMultiEdit.addChild(textEdit2);
 		fChange = new CompilationUnitChange("Test",fCUnit); //$NON-NLS-1$
-	    fChange.setEdit(textEdit);
+	    fChange.setEdit(fMultiEdit);
 
 		return new RefactoringStatus();
 	}
