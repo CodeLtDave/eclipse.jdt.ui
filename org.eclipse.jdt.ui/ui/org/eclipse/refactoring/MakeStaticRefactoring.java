@@ -5,10 +5,10 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubProgressMonitor;
 
-import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
 
 import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
@@ -35,13 +35,8 @@ import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 public class MakeStaticRefactoring extends Refactoring {
 
 	private IMethod fMethod;
-
 	private ICompilationUnit fCUnit;
-
-	private CompilationUnitChange fChange;
-
-	private MultiTextEdit fMultiEdit;
-
+	private CompositeChange fChange;
 	private TargetProvider fTargetProvider;
 
 	public MakeStaticRefactoring(IMethod method, ICompilationUnit inputAsCompilationUnit, int offset, int length) {
@@ -62,12 +57,13 @@ public class MakeStaticRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		MethodDeclaration methodDeclaration = findMethodDeclaration(fMethod);
-		TextEdit textEdit2 = null;
+		TextEdit methodInvocationEdit = null;
 		fTargetProvider= TargetProvider.create(methodDeclaration);
 		fTargetProvider.initialize();
 
+		fChange = new CompositeChange("AllChanges"); //$NON-NLS-1$
 
-		//String binaryRefsDescription= Messages.format(RefactoringCoreMessages.ReferencesInBinaryContext_ref_in_binaries_description , BasicElementLabels.getJavaElementName(fSourceProvider.getMethodName()));
+		//Find and Modify MethodInvocations
 		ReferencesInBinaryContext binaryRefs= new ReferencesInBinaryContext(""); //$NON-NLS-1$
 		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(null, binaryRefs, new SubProgressMonitor(pm, 1));
 
@@ -82,26 +78,27 @@ public class MakeStaticRefactoring extends Refactoring {
 					staticMethodInvocation.setName(ast.newSimpleName(methodDeclaration.getName().toString()));
 					staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration)methodDeclaration.getParent()).getName().toString()));
 					rewrite.replace(invocation, staticMethodInvocation, null);
-					textEdit2 = rewrite.rewriteAST();
+					methodInvocationEdit = rewrite.rewriteAST();
+					CompilationUnitChange methodInvocationChange = new CompilationUnitChange("ChangeInMethodInvocation", affectedCU); //$NON-NLS-1$
+					methodInvocationChange.setEdit(methodInvocationEdit);
+					fChange.add(methodInvocationChange);
 				}
 			}
 
 
 		}
 
-
+		//Modify MethodDeclaration
 		AST ast = methodDeclaration.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
-
 		ModifierRewrite modRewrite= ModifierRewrite.create(rewrite, methodDeclaration);
 		modRewrite.setModifiers(methodDeclaration.getModifiers() | Modifier.STATIC, null);
 
-		TextEdit textEdit= rewrite.rewriteAST();
-		fMultiEdit = new MultiTextEdit();
-		fMultiEdit.addChild(textEdit);
-		fMultiEdit.addChild(textEdit2);
-		fChange = new CompilationUnitChange("Test",fCUnit); //$NON-NLS-1$
-	    fChange.setEdit(fMultiEdit);
+		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
+
+		CompilationUnitChange methodDeclarationChange = new CompilationUnitChange("ChangeInMethodDeclaration", fCUnit); //$NON-NLS-1$
+		methodDeclarationChange.setEdit(methodDeclarationEdit);
+	    fChange.add(methodDeclarationChange);
 
 		return new RefactoringStatus();
 	}
