@@ -5,6 +5,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubProgressMonitor;
 
+import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
 
 import org.eclipse.ltk.core.refactoring.Change;
@@ -35,9 +36,14 @@ import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 public class MakeStaticRefactoring extends Refactoring {
 
 	private IMethod fMethod;
+
 	private ICompilationUnit fCUnit;
+
 	private CompositeChange fChange;
+
 	private TargetProvider fTargetProvider;
+
+	boolean fMultiFlag= false;
 
 	public MakeStaticRefactoring(IMethod method, ICompilationUnit inputAsCompilationUnit, int offset, int length) {
 		fMethod= method;
@@ -56,49 +62,49 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		MethodDeclaration methodDeclaration = findMethodDeclaration(fMethod);
-		TextEdit methodInvocationEdit = null;
+		MethodDeclaration methodDeclaration= findMethodDeclaration(fMethod);
+		TextEdit methodInvocationEdit= null;
 		fTargetProvider= TargetProvider.create(methodDeclaration);
 		fTargetProvider.initialize();
 
-		fChange = new CompositeChange("AllChanges"); //$NON-NLS-1$
+		fChange= new CompositeChange("AllChanges"); //$NON-NLS-1$
 
 		//Find and Modify MethodInvocations
 		ReferencesInBinaryContext binaryRefs= new ReferencesInBinaryContext(""); //$NON-NLS-1$
 		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(null, binaryRefs, new SubProgressMonitor(pm, 1));
 
-		for(ICompilationUnit affectedCU : affectedCUs) {
+		for (ICompilationUnit affectedCU : affectedCUs) {
 			BodyDeclaration[] bodies= fTargetProvider.getAffectedBodyDeclarations(affectedCU, null);
-			for(BodyDeclaration body : bodies) {
-				ASTNode[] invocations = fTargetProvider.getInvocations(body, null);
-				for  ( ASTNode invocation : invocations) {
-					AST ast = invocation.getAST();
-					ASTRewrite rewrite = ASTRewrite.create(ast);
-					MethodInvocation staticMethodInvocation = ast.newMethodInvocation();
+			MultiTextEdit fMultiTextEdit= new MultiTextEdit();
+			for (BodyDeclaration body : bodies) {
+				ASTNode[] invocations= fTargetProvider.getInvocations(body, null);
+				for (ASTNode invocation : invocations) {
+					AST ast= invocation.getAST();
+					ASTRewrite rewrite= ASTRewrite.create(ast);
+					MethodInvocation staticMethodInvocation= ast.newMethodInvocation();
 					staticMethodInvocation.setName(ast.newSimpleName(methodDeclaration.getName().toString()));
-					staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration)methodDeclaration.getParent()).getName().toString()));
+					staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration) methodDeclaration.getParent()).getName().toString()));
 					rewrite.replace(invocation, staticMethodInvocation, null);
-					methodInvocationEdit = rewrite.rewriteAST();
-					CompilationUnitChange methodInvocationChange = new CompilationUnitChange("ChangeInMethodInvocation", affectedCU); //$NON-NLS-1$
-					methodInvocationChange.setEdit(methodInvocationEdit);
-					fChange.add(methodInvocationChange);
+					methodInvocationEdit= rewrite.rewriteAST();
+					fMultiTextEdit.addChild(methodInvocationEdit);
 				}
 			}
-
-
+			CompilationUnitChange methodInvocationChange= new CompilationUnitChange("ChangeInMethodInvocation", affectedCU); //$NON-NLS-1$
+			methodInvocationChange.setEdit(fMultiTextEdit);
+			fChange.add(methodInvocationChange);
 		}
 
 		//Modify MethodDeclaration
-		AST ast = methodDeclaration.getAST();
-		ASTRewrite rewrite = ASTRewrite.create(ast);
+		AST ast= methodDeclaration.getAST();
+		ASTRewrite rewrite= ASTRewrite.create(ast);
 		ModifierRewrite modRewrite= ModifierRewrite.create(rewrite, methodDeclaration);
 		modRewrite.setModifiers(methodDeclaration.getModifiers() | Modifier.STATIC, null);
 
 		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
 
-		CompilationUnitChange methodDeclarationChange = new CompilationUnitChange("ChangeInMethodDeclaration", fCUnit); //$NON-NLS-1$
+		CompilationUnitChange methodDeclarationChange= new CompilationUnitChange("ChangeInMethodDeclaration", fCUnit); //$NON-NLS-1$
 		methodDeclarationChange.setEdit(methodDeclarationEdit);
-	    fChange.add(methodDeclarationChange);
+		fChange.add(methodDeclarationChange);
 
 		return new RefactoringStatus();
 	}
