@@ -86,6 +86,11 @@ public class MakeStaticRefactoring extends Refactoring {
 					MethodInvocation staticMethodInvocation= ast.newMethodInvocation();
 					staticMethodInvocation.setName(ast.newSimpleName(methodDeclaration.getName().toString()));
 					staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration) methodDeclaration.getParent()).getName().toString()));
+
+					for (Object argument : ((MethodInvocation) invocation).arguments()) {
+					    staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
+					}
+
 					rewrite.replace(invocation, staticMethodInvocation, null);
 					methodInvocationEdit= rewrite.rewriteAST();
 					fMultiTextEdit.addChild(methodInvocationEdit);
