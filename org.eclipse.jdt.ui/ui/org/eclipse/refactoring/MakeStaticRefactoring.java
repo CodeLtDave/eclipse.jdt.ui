@@ -45,6 +45,8 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	boolean fMultiFlag= false;
 
+	protected MethodDeclaration methodDeclaration;
+
 	public MakeStaticRefactoring(IMethod method, ICompilationUnit inputAsCompilationUnit, int offset, int length) {
 		fMethod= method;
 		fCUnit= inputAsCompilationUnit;
@@ -62,7 +64,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		MethodDeclaration methodDeclaration= findMethodDeclaration(fMethod);
+		findMethodDeclaration(fMethod);
 		TextEdit methodInvocationEdit= null;
 		fTargetProvider= TargetProvider.create(methodDeclaration);
 		fTargetProvider.initialize();
@@ -114,7 +116,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		return fChange;
 	}
 
-	private MethodDeclaration findMethodDeclaration(IMethod method) {
+	private void findMethodDeclaration(IMethod method) {
 		ICompilationUnit compilationUnit= method.getCompilationUnit();
 
 		// Create AST parser with Java 17 support
@@ -138,20 +140,11 @@ public class MakeStaticRefactoring extends Refactoring {
 			public boolean visit(MethodDeclaration node) {
 				IMethod resolvedMethod= (IMethod) node.resolveBinding().getJavaElement();
 				if (resolvedMethod.equals(method)) {
-					// Found the MethodDeclaration for the given IMethod
-					return true;
+					methodDeclaration= node;
+					return false;
 				}
 				return super.visit(node);
 			}
 		});
-
-		// Get the resolved MethodDeclaration
-		MethodDeclaration methodDeclaration= (MethodDeclaration) astRoot.findDeclaringNode(method.getKey());
-
-
-		return methodDeclaration;
 	}
-
-
-
 }
