@@ -22,6 +22,11 @@ import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
+/**
+ *
+ * @since 3.29
+ *
+ */
 public class MakeStaticWizard extends RefactoringWizard {
 
 	/* package */ static final String DIALOG_SETTING_SECTION= "ExtractMethodWizard"; //$NON-NLS-1$

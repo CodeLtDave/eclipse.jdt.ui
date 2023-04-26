@@ -32,7 +32,11 @@ import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
 import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 
-
+/**
+ *
+ * @since 3.29
+ *
+ */
 public class MakeStaticRefactoring extends Refactoring {
 
 	private IMethod fMethod;

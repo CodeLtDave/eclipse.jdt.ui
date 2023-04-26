@@ -39,7 +39,7 @@ import org.eclipse.jdt.internal.ui.refactoring.actions.RefactoringStarter;
  * This class may be instantiated; it is not intended to be subclassed.
  * </p>
  *
- * @since 2.1
+ * @since 3.29
  *
  * @noextend This class is not intended to be subclassed by clients.
  */
