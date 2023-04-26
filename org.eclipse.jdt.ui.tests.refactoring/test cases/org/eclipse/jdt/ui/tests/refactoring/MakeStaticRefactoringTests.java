@@ -27,7 +27,7 @@ import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;
 
 public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
-	private static final String REFACTORING_PATH= "IntroduceIndirection/";
+	private static final String REFACTORING_PATH= "MakeStatic/";
 
 	public MakeStaticRefactoringTests() {
 		rts= new RefactoringTestSetup();
