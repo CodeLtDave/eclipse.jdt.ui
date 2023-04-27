@@ -4,7 +4,9 @@ import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.refactoring.MakeStaticRefactoring;
@@ -78,7 +80,8 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		assertFalse("Had warnings but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.WARNING), status.hasWarning());
 	}
 
-
+	 @Rule
+	    public ExpectedException exceptionRule = ExpectedException.none();
 
 	@Test
 	public void test01() throws Exception {
@@ -94,9 +97,10 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void test03() throws Exception {
-		RefactoringStatus status = helper(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
-
-
+		//Method cannot be found
+		exceptionRule.expect(NullPointerException.class);
+		helper(new String[] { "p.Foo" }, "notIncluded", new String[] {}, 7, 10, 7, 13);
+		//assertThrows(NullPointerException.class, () -> helper(new String[] { "p.Foo" }, "notIncluded", new String[] {}, 7, 10, 7, 13));
 	}
 
 	@Test
