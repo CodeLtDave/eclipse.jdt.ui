@@ -31,6 +31,7 @@ import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
 import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
+import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 
 /**
  *
@@ -45,6 +46,8 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private CompositeChange fChange;
 
+	private TextEditBasedChangeManager fChangeManager;
+
 	private TargetProvider fTargetProvider;
 
 	protected MethodDeclaration fMethodDeclaration;
@@ -53,6 +56,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		fMethod= method;
 		fCUnit= inputAsCompilationUnit;
 		fChange= new CompositeChange("AllChanges"); //$NON-NLS-1$
+		fChangeManager= new TextEditBasedChangeManager();
 	}
 
 	@Override
@@ -60,7 +64,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		return "Make static"; //$NON-NLS-1$
 	}
 
-	private void findMethodDeclaration( ) {
+	private void findMethodDeclaration() {
 		ICompilationUnit compilationUnit= fMethod.getCompilationUnit();
 
 		// Create AST parser with Java 17 support
@@ -101,8 +105,12 @@ public class MakeStaticRefactoring extends Refactoring {
 		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
 
 		CompilationUnitChange methodDeclarationChange= new CompilationUnitChange("ChangeInMethodDeclaration", fCUnit); //$NON-NLS-1$
-		methodDeclarationChange.setEdit(methodDeclarationEdit);
-		fChange.add(methodDeclarationChange);
+		//methodDeclarationChange.setEdit(methodDeclarationEdit);
+
+		//fChange.add(methodDeclarationChange);
+
+
+		addEditToChangeManager(methodDeclarationEdit, fCUnit);
 	}
 
 	private void modifyMethodInvocations(ICompilationUnit[] affectedCUs) throws JavaModelException {
@@ -119,18 +127,32 @@ public class MakeStaticRefactoring extends Refactoring {
 					staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString()));
 
 					for (Object argument : ((MethodInvocation) invocation).arguments()) {
-					    staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
+						staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
 					}
 
 					rewrite.replace(invocation, staticMethodInvocation, null);
-					TextEdit methodInvocationEdit = rewrite.rewriteAST();
+					TextEdit methodInvocationEdit= rewrite.rewriteAST();
 					multiTextEdit.addChild(methodInvocationEdit);
 				}
 			}
-			CompilationUnitChange methodInvocationChange= new CompilationUnitChange("ChangeInMethodInvocation", affectedCU); //$NON-NLS-1$
-			methodInvocationChange.setEdit(multiTextEdit);
-			fChange.add(methodInvocationChange);
+			addEditToChangeManager(multiTextEdit, affectedCU);
 		}
+	}
+
+	private void addEditToChangeManager(TextEdit editToAdd, ICompilationUnit iCompilationUnit) {
+		//get CompilationUnitChange from ChangeManager, otherwise create one
+		CompilationUnitChange compilationUnitChange= (CompilationUnitChange) fChangeManager.get(fCUnit);
+
+		//get all Edits from compilationUnitChange, otherwise create a MultiTextEdit
+		MultiTextEdit allTextEdits= (MultiTextEdit) compilationUnitChange.getEdit();
+		if (allTextEdits == null)
+			allTextEdits= new MultiTextEdit();
+
+		allTextEdits.addChild(editToAdd);
+		String changeName= "Change in " + iCompilationUnit.getElementName(); //$NON-NLS-1$
+		CompilationUnitChange newCompilationUnitChange= new CompilationUnitChange(changeName, iCompilationUnit);
+		newCompilationUnitChange.setEdit(allTextEdits);
+		fChangeManager.manage(iCompilationUnit, newCompilationUnitChange);
 	}
 
 	@Override
@@ -157,6 +179,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+		fChange.addAll(fChangeManager.getAllChanges());
 		return fChange;
 	}
 }
