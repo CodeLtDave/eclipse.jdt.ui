@@ -53,7 +53,6 @@ public class MakeStaticRefactoring extends Refactoring {
 	public MakeStaticRefactoring(IMethod method, ICompilationUnit inputAsCompilationUnit, int offset, int length) {
 		fMethod= method;
 		fCUnit= inputAsCompilationUnit;
-		fChange= new CompositeChange("AllChanges"); //$NON-NLS-1$
 		fChangeManager= new TextEditBasedChangeManager();
 	}
 
@@ -171,7 +170,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		CompositeChange multiChange = new CompositeChange(getName(),fChangeManager.getAllChanges());
+		CompositeChange multiChange = new CompositeChange("Make Static", fChangeManager.getAllChanges()); //$NON-NLS-1$
 		return multiChange;
 	}
 }
