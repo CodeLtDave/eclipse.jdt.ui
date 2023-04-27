@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
 import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 
 /**
@@ -141,14 +142,16 @@ public class MakeStaticRefactoring extends Refactoring {
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		//Find and Modify MethodDeclaration
 		findMethodDeclaration();
-		modifyMethodDeclaration();
+
 
 		//Find and Modify MethodInvocations
 		fTargetProvider= TargetProvider.create(fMethodDeclaration);
 		fTargetProvider.initialize();
-		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(null, null, pm);
+
+		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(null, new ReferencesInBinaryContext(""), pm); //$NON-NLS-1$
 		modifyMethodInvocations(affectedCUs);
 
+		modifyMethodDeclaration();
 		return new RefactoringStatus();
 	}
 

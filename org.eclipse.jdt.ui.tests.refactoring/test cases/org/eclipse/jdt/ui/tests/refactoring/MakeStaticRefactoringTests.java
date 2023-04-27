@@ -1,7 +1,6 @@
 package org.eclipse.jdt.ui.tests.refactoring;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
@@ -42,8 +41,8 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		return REFACTORING_PATH;
 	}
 
-	private void helper(String[] topLevelName, String methodName, String[] parameters, int startLine, int startColumn, int endLine, int endColumn, boolean shouldWarn,
-			boolean shouldError, boolean shouldFail) throws Exception, JavaModelException, CoreException, IOException {
+	private RefactoringStatus helper(String[] topLevelName, String methodName, String[] parameters, int startLine, int startColumn, int endLine, int endColumn)
+			throws Exception, JavaModelException, CoreException, IOException {
 		ICompilationUnit[] cu= new ICompilationUnit[topLevelName.length];
 		for (int i= 0; i < topLevelName.length; i++) {
 			String packName= topLevelName[i].substring(0, topLevelName[i].indexOf('.'));
@@ -55,69 +54,54 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		IType type= cu[0].getTypes()[0];
 		IMethod method= type.getMethod(methodName, parameters);
 
-
-
 		ISourceRange selection= TextRangeUtil.getSelection(cu[0], startLine, startColumn, endLine, endColumn);
 
 		try {
 			MakeStaticRefactoring ref= new MakeStaticRefactoring(method, cu[0], selection.getOffset(), selection.getLength());
-
-			boolean failed= false;
 			RefactoringStatus status= performRefactoringWithStatus(ref);
-			if (status.hasFatalError()) {
-				assertTrue("Failed but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.FATAL), shouldFail); //$NON-NLS-1$
-				failed= true;
-			} else
-				assertFalse("Didn't fail although expected", shouldFail); //$NON-NLS-1$
 
-			if (!failed) {
-
-				if (status.hasError())
-					assertTrue("Had errors but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.ERROR), shouldError); //$NON-NLS-1$
-				else
-					assertFalse("No error although expected", shouldError); //$NON-NLS-1$
-
-				if (status.hasWarning())
-					assertTrue("Had warnings but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.WARNING), shouldWarn); //$NON-NLS-1$
-				else
-					assertFalse("No warning although expected", shouldWarn); //$NON-NLS-1$
-
-				for (int i= 0; i < topLevelName.length; i++) {
-					String className= topLevelName[i].substring(topLevelName[i].indexOf('.') + 1);
-					assertEqualLines("invalid output.", getFileContents(getOutputTestFileName(className)), cu[i].getSource()); //$NON-NLS-1$
-				}
+			for (int i= 0; i < topLevelName.length; i++) {
+				String className= topLevelName[i].substring(topLevelName[i].indexOf('.') + 1);
+				assertEqualLines("invalid output.", getFileContents(getOutputTestFileName(className)), cu[i].getSource()); //$NON-NLS-1$
 			}
+
+			return status;
 		} finally {
 			for (int i= 0; i < topLevelName.length; i++)
 				JavaProjectHelper.delete(cu[i]);
 		}
 	}
 
-	protected void helperPass(String[] topLevelName, String methodName, String[] parameters, int startLine, int startColumn, int endLine, int endColumn) throws Exception {
-		helper(topLevelName, methodName, parameters, startLine, startColumn, endLine, endColumn, false, false, false);
+	public void assertHasNoCommonErrors(RefactoringStatus status) {
+		assertFalse("Failed but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.FATAL), status.hasFatalError());
+		assertFalse("Had errors but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.ERROR), status.hasError());
+		assertFalse("Had warnings but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.WARNING), status.hasWarning());
 	}
+
 
 
 	@Test
 	public void test01() throws Exception {
-		helperPass(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void test02() throws Exception {
-		helperPass(new String[] { "package1.Example" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void test03() throws Exception {
-		// very simple test
-		helperPass(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
+		RefactoringStatus status = helper(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
+
+
 	}
 
 	@Test
 	public void test04() throws Exception {
-		// very simple test
-		helperPass(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
 	}
 
 
