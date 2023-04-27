@@ -44,8 +44,6 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private ICompilationUnit fCUnit;
 
-	private CompositeChange fChange;
-
 	private TextEditBasedChangeManager fChangeManager;
 
 	private TargetProvider fTargetProvider;
@@ -104,12 +102,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		modRewrite.setModifiers(fMethodDeclaration.getModifiers() | Modifier.STATIC, null);
 		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
 
-		CompilationUnitChange methodDeclarationChange= new CompilationUnitChange("ChangeInMethodDeclaration", fCUnit); //$NON-NLS-1$
-		//methodDeclarationChange.setEdit(methodDeclarationEdit);
-
-		//fChange.add(methodDeclarationChange);
-
-
 		addEditToChangeManager(methodDeclarationEdit, fCUnit);
 	}
 
@@ -141,7 +133,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private void addEditToChangeManager(TextEdit editToAdd, ICompilationUnit iCompilationUnit) {
 		//get CompilationUnitChange from ChangeManager, otherwise create one
-		CompilationUnitChange compilationUnitChange= (CompilationUnitChange) fChangeManager.get(fCUnit);
+		CompilationUnitChange compilationUnitChange= (CompilationUnitChange) fChangeManager.get(iCompilationUnit);
 
 		//get all Edits from compilationUnitChange, otherwise create a MultiTextEdit
 		MultiTextEdit allTextEdits= (MultiTextEdit) compilationUnitChange.getEdit();
@@ -164,7 +156,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		//Find and Modify MethodDeclaration
 		findMethodDeclaration();
-
+		modifyMethodDeclaration();
 
 		//Find and Modify MethodInvocations
 		fTargetProvider= TargetProvider.create(fMethodDeclaration);
@@ -173,13 +165,13 @@ public class MakeStaticRefactoring extends Refactoring {
 		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(null, new ReferencesInBinaryContext(""), pm); //$NON-NLS-1$
 		modifyMethodInvocations(affectedCUs);
 
-		modifyMethodDeclaration();
+
 		return new RefactoringStatus();
 	}
 
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		fChange.addAll(fChangeManager.getAllChanges());
-		return fChange;
+		CompositeChange multiChange = new CompositeChange(getName(),fChangeManager.getAllChanges());
+		return multiChange;
 	}
 }
