@@ -42,7 +42,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		return REFACTORING_PATH;
 	}
 
-	private void helper(String[] topLevelName, int startLine, int startColumn, int endLine, int endColumn, boolean shouldWarn,
+	private void helper(String[] topLevelName, String methodName, String[] parameters, int startLine, int startColumn, int endLine, int endColumn, boolean shouldWarn,
 			boolean shouldError, boolean shouldFail) throws Exception, JavaModelException, CoreException, IOException {
 		ICompilationUnit[] cu= new ICompilationUnit[topLevelName.length];
 		for (int i= 0; i < topLevelName.length; i++) {
@@ -52,11 +52,13 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 			cu[i]= createCUfromTestFile(cPackage, className);
 		}
 
-		IType type = cu[0].getTypes()[0];
-	    IMethod method = type.getMethod("foo", new String[] {});
+		IType type= cu[0].getTypes()[0];
+		IMethod method= type.getMethod(methodName, parameters);
+
+
 
 		ISourceRange selection= TextRangeUtil.getSelection(cu[0], startLine, startColumn, endLine, endColumn);
-		cu[0].getSource();
+
 		try {
 			MakeStaticRefactoring ref= new MakeStaticRefactoring(method, cu[0], selection.getOffset(), selection.getLength());
 
@@ -91,15 +93,31 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		}
 	}
 
-	protected void helperPass(String[] topLevelName, String newName, String target, int startLine, int startColumn, int endLine, int endColumn) throws Exception {
-		helper(topLevelName, startLine, startColumn, endLine, endColumn, false, false, false);
+	protected void helperPass(String[] topLevelName, String methodName, String[] parameters, int startLine, int startColumn, int endLine, int endColumn) throws Exception {
+		helper(topLevelName, methodName, parameters, startLine, startColumn, endLine, endColumn, false, false, false);
 	}
 
 
 	@Test
 	public void test01() throws Exception {
+		helperPass(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
+	}
+
+	@Test
+	public void test02() throws Exception {
+		helperPass(new String[] { "package1.Example" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+	}
+
+	@Test
+	public void test03() throws Exception {
 		// very simple test
-		helperPass(new String[] { "p.Foo" }, "bar", "p.Foo", 7, 10, 7, 13);
+		helperPass(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
+	}
+
+	@Test
+	public void test04() throws Exception {
+		// very simple test
+		helperPass(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
 	}
 
 
