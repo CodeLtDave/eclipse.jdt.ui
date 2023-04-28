@@ -104,30 +104,34 @@ public class MakeStaticRefactoring extends Refactoring {
 		addEditToChangeManager(methodDeclarationEdit, fCUnit);
 	}
 
-	private void modifyMethodInvocations(ICompilationUnit[] affectedCUs) throws JavaModelException {
+	private void findMethodInvocations(ICompilationUnit[] affectedCUs) throws JavaModelException {
 		for (ICompilationUnit affectedCU : affectedCUs) {
 			BodyDeclaration[] bodies= fTargetProvider.getAffectedBodyDeclarations(affectedCU, null);
 			MultiTextEdit multiTextEdit= new MultiTextEdit();
 			for (BodyDeclaration body : bodies) {
 				ASTNode[] invocations= fTargetProvider.getInvocations(body, null);
 				for (ASTNode invocation : invocations) {
-					AST ast= invocation.getAST();
-					ASTRewrite rewrite= ASTRewrite.create(ast);
-					MethodInvocation staticMethodInvocation= ast.newMethodInvocation();
-					staticMethodInvocation.setName(ast.newSimpleName(fMethodDeclaration.getName().toString()));
-					staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString()));
-
-					for (Object argument : ((MethodInvocation) invocation).arguments()) {
-						staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
-					}
-
-					rewrite.replace(invocation, staticMethodInvocation, null);
-					TextEdit methodInvocationEdit= rewrite.rewriteAST();
-					multiTextEdit.addChild(methodInvocationEdit);
+					modifyMethodInvocation(multiTextEdit, invocation);
 				}
 			}
 			addEditToChangeManager(multiTextEdit, affectedCU);
 		}
+	}
+
+	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, ASTNode invocation) throws JavaModelException {
+		AST ast= invocation.getAST();
+		ASTRewrite rewrite= ASTRewrite.create(ast);
+		MethodInvocation staticMethodInvocation= ast.newMethodInvocation();
+		staticMethodInvocation.setName(ast.newSimpleName(fMethodDeclaration.getName().toString()));
+		staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString()));
+
+		for (Object argument : ((MethodInvocation) invocation).arguments()) {
+			staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
+		}
+
+		rewrite.replace(invocation, staticMethodInvocation, null);
+		TextEdit methodInvocationEdit= rewrite.rewriteAST();
+		multiTextEdit.addChild(methodInvocationEdit);
 	}
 
 	private void addEditToChangeManager(TextEdit editToAdd, ICompilationUnit iCompilationUnit) {
@@ -162,7 +166,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		fTargetProvider.initialize();
 
 		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(null, new ReferencesInBinaryContext(""), pm); //$NON-NLS-1$
-		modifyMethodInvocations(affectedCUs);
+		findMethodInvocations(affectedCUs);
 
 
 		return new RefactoringStatus();
