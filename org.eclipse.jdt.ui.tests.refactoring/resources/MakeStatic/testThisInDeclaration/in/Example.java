@@ -6,6 +6,7 @@ public class Example {
 	
 	public String greet(String ending) {
 		String i = this.j + ending;
+		i = j + ending;
 		return i;
 	}
 	
