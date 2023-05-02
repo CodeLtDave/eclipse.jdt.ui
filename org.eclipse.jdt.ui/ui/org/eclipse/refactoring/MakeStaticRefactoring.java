@@ -152,7 +152,10 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		return new RefactoringStatus();
+		RefactoringStatus status = new RefactoringStatus();
+		if(fMethod.isConstructor())
+			status.addFatalError("Constructor cannot be refactored to static."); //$NON-NLS-1$
+		return status;
 	}
 
 	@Override
