@@ -167,4 +167,11 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, "Example", new String[] {}, 5, 8, 5, 15);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage() == "Constructor cannot be refactored to static.");
 	}
+
+	@Test
+	public void testThisInDeclaration() throws Exception {
+		//MethodDeclaration uses "this"-Keyword for instance variables
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
 }
