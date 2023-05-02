@@ -174,4 +174,21 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
+
+	@Test
+	public void testThisInDeclarationMultipleFiles() throws Exception {
+		//MethodDeclaration uses "this"-Keyword for instance variables && MethodInvocations are in different packages within the same project
+		RefactoringStatus status= helper(new String[] { "package1.Example", "package1.Example2" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+
+	@Test
+	public void testMultipleFilesInSameProject() throws Exception {
+		//MethodInvocations are in different packages within the same project
+		RefactoringStatus status= helper(new String[] { "package1.Example", "package2.Example2" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+
 }
