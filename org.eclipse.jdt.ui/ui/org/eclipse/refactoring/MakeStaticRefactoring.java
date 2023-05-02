@@ -21,11 +21,16 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldAccess;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
@@ -97,10 +102,36 @@ public class MakeStaticRefactoring extends Refactoring {
 		AST ast= fMethodDeclaration.getAST();
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 
+		// Create a new parameter for the method declaration
+		SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
+		String className= ((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString();
+		newParam.setType(ast.newSimpleType(ast.newName(className)));
+		newParam.setName(ast.newSimpleName(className.toLowerCase()));
+
+		ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
+		lrw.insertLast(newParam, null);
+
 		ModifierRewrite modRewrite= ModifierRewrite.create(rewrite, fMethodDeclaration);
 		modRewrite.setModifiers(fMethodDeclaration.getModifiers() | Modifier.STATIC, null);
-		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
 
+		fMethodDeclaration.getBody().accept(new ASTVisitor() {
+			@Override
+			public boolean visit(SimpleName node) {
+				if (node.resolveBinding() instanceof IVariableBinding) {
+					IVariableBinding variableBinding= (IVariableBinding) node.resolveBinding();
+					if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
+						// Replace instance variable with object.parameter
+						FieldAccess fieldAccess= ast.newFieldAccess();
+						fieldAccess.setExpression(ast.newSimpleName(newParam.getName().toString()));
+						fieldAccess.setName(ast.newSimpleName(node.getIdentifier()));
+						rewrite.replace(node, fieldAccess, null);
+					}
+				}
+				return super.visit(node);
+			}
+		});
+
+		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
 		addEditToChangeManager(methodDeclarationEdit, fCUnit);
 	}
 
@@ -110,7 +141,8 @@ public class MakeStaticRefactoring extends Refactoring {
 			MultiTextEdit multiTextEdit= new MultiTextEdit();
 			for (BodyDeclaration body : bodies) {
 				ASTNode[] invocations= fTargetProvider.getInvocations(body, null);
-				for (ASTNode invocation : invocations) {
+				for (ASTNode invocationASTNode : invocations) {
+					MethodInvocation invocation= (MethodInvocation) invocationASTNode;
 					modifyMethodInvocation(multiTextEdit, invocation);
 				}
 			}
@@ -118,16 +150,21 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, ASTNode invocation) throws JavaModelException {
+	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, MethodInvocation invocation) throws JavaModelException {
 		AST ast= invocation.getAST();
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 		MethodInvocation staticMethodInvocation= ast.newMethodInvocation();
+
+		//copy contents in new staticMethodInvocation
 		staticMethodInvocation.setName(ast.newSimpleName(fMethodDeclaration.getName().toString()));
 		staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString()));
-
-		for (Object argument : ((MethodInvocation) invocation).arguments()) {
+		for (Object argument : invocation.arguments()) {
 			staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
 		}
+
+		//find the variable that needs to be passed as an argument
+		ASTNode expression= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
+		staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, expression));
 
 		rewrite.replace(invocation, staticMethodInvocation, null);
 		TextEdit methodInvocationEdit= rewrite.rewriteAST();
@@ -174,7 +211,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		CompositeChange multiChange = new CompositeChange("Make Static", fChangeManager.getAllChanges()); //$NON-NLS-1$
+		CompositeChange multiChange= new CompositeChange("Make Static", fChangeManager.getAllChanges()); //$NON-NLS-1$
 		return multiChange;
 	}
 }
