@@ -1,6 +1,7 @@
 package org.eclipse.jdt.ui.tests.refactoring;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
@@ -80,34 +81,114 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		assertFalse("Had warnings but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.WARNING), status.hasWarning());
 	}
 
-	 @Rule
-	    public ExpectedException exceptionRule = ExpectedException.none();
+	@Rule
+	public ExpectedException exceptionRule= ExpectedException.none();
 
 	@Test
-	public void test01() throws Exception {
+	public void testSimpleFile() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
-	public void test02() throws Exception {
+	public void testStringParameterAndReturnType() throws Exception {
+		//Refactor method with parameter and return type of String type
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
-	public void test03() throws Exception {
-		//Method cannot be found
+	public void testIntegerParameterAndReturnType() throws Exception {
+		//Refactor method with parameter and return type of Integer type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "I" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testArrayParameterAndReturnType() throws Exception {
+		//Refactor method with String-Array as Parameter and return type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "[QString;" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testBooleanParameterAndReturnType() throws Exception {
+		//Refactor method with parameter and return type of Boolean type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "Z" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testLongParameterAndReturnType() throws Exception {
+		//Refactor method with parameter and return type of Long type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "J" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testFloatParameterAndReturnType() throws Exception {
+		//Refactor method with parameter and return type of Float type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "F" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testDoubleParameterAndReturnType() throws Exception {
+		//Refactor method with parameter and return type of Double type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "D" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testCharParameterAndReturnType() throws Exception {
+		//Refactor method with parameter and return type of Char type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "C" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testShortParameterAndReturnType() throws Exception {
+		//Refactor method with parameter and return type of Char type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "S" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testMethodNotFound() throws Exception {
+		//Method cannot be found -> NullPointerException
 		exceptionRule.expect(NullPointerException.class);
-		helper(new String[] { "p.Foo" }, "notIncluded", new String[] {}, 7, 10, 7, 13);
+		helper(new String[] { "p.Foo" }, "not included", new String[] {}, 7, 10, 7, 13);
 		//assertThrows(NullPointerException.class, () -> helper(new String[] { "p.Foo" }, "notIncluded", new String[] {}, 7, 10, 7, 13));
 	}
 
 	@Test
-	public void test04() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, "foo", new String[] {}, 7, 10, 7, 13);
+	public void testIsConstructor() throws Exception {
+		//Check if Constructor
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "Example", new String[] {}, 5, 8, 5, 15);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage() == "Constructor cannot be refactored to static.");
 	}
 
+	@Test
+	public void testThisInDeclaration() throws Exception {
+		//MethodDeclaration uses "this"-Keyword for instance variables
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testThisInDeclarationMultipleFiles() throws Exception {
+		//MethodDeclaration uses "this"-Keyword for instance variables && MethodInvocations are in different packages within the same project
+		RefactoringStatus status= helper(new String[] { "package1.Example", "package1.Example2" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
+
+
+	@Test
+	public void testMultipleFilesInSameProject() throws Exception {
+		//MethodInvocations are in different packages within the same project
+		RefactoringStatus status= helper(new String[] { "package1.Example", "package2.Example2" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		assertHasNoCommonErrors(status);
+	}
 
 
 }

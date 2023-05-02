@@ -189,11 +189,15 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		return new RefactoringStatus();
+		RefactoringStatus status = new RefactoringStatus();
+		if(fMethod.isConstructor())
+			status.addFatalError("Constructor cannot be refactored to static."); //$NON-NLS-1$
+		return status;
 	}
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+		RefactoringStatus status = new RefactoringStatus();
 		//Find and Modify MethodDeclaration
 		findMethodDeclaration();
 		modifyMethodDeclaration();
@@ -202,11 +206,11 @@ public class MakeStaticRefactoring extends Refactoring {
 		fTargetProvider= TargetProvider.create(fMethodDeclaration);
 		fTargetProvider.initialize();
 
-		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(null, new ReferencesInBinaryContext(""), pm); //$NON-NLS-1$
+		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(status, new ReferencesInBinaryContext(""), pm); //$NON-NLS-1$
 		findMethodInvocations(affectedCUs);
 
 
-		return new RefactoringStatus();
+		return status;
 	}
 
 	@Override
