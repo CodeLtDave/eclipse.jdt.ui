@@ -2,16 +2,13 @@ package package1;
 
 public class Example {
 
-	int j;
-	
-	public short greet(short ending) {
+	public short toRefactor(short ending) {
 		short i = ending;
 		return i;
 	}
 	
-	public static void main(String[] args) {
+	public static void foo() {
 		Example instance = new Example();
-		short j = instance.greet(Short.MAX_VALUE);
-		System.out.println(j);
+		short j = instance.toRefactor(Short.MAX_VALUE);
 	}
 }

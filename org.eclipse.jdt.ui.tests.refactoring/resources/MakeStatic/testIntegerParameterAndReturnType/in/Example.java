@@ -2,16 +2,13 @@ package package1;
 
 public class Example {
 
-	int j;
-	
-	public int greet(int ending) {
+	public int toRefactor(int ending) {
 		int i = ending;
 		return i;
 	}
 	
-	public static void main(String[] args) {
+	public static void foo() {
 		Example instance = new Example();
-		int i = instance.greet(2);
-		System.out.println(j);
+		int i = instance.toRefactor(2);
 	}
 }

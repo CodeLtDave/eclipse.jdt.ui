@@ -4,17 +4,17 @@ public class Example {
 
 	String j = "";
 	
-	public static String greet(String ending, Example example) {
+	public static String toRefactor(String ending, Example example) {
 		String i = example.j + ending;
 		return i;
 	}
 	
 	public void method() {
-		String j = Example.greet("David", this);
+		String j = Example.toRefactor("bar", this);
 	}
 	
 	public static void staticMethod() {
 		Example instance = new Example();
-		String j = Example.greet("David", instance);
+		String j = Example.toRefactor("bar", instance);
 	}
 }

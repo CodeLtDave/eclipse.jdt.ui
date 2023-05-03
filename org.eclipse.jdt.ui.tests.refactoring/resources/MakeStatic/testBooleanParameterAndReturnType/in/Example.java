@@ -2,16 +2,13 @@ package package1;
 
 public class Example {
 
-	int j;
-	
-	public boolean greet(boolean boo) {
+	public boolean toRefactor(boolean boo) {
 		boolean i = boo;
 		return i;
 	}
 	
-	public static void main(String[] args) {
+	public static void foo() {
 		Example instance = new Example();
-		boolean j = instance.greet(true);
-		System.out.println(j);
+		boolean j = instance.toRefactor(true);
 	}
 }

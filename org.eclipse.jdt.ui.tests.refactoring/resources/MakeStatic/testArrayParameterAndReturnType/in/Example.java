@@ -2,14 +2,14 @@ package package1;
 
 public class Example {
 	
-	public String[] greet(String[] ending) {
+	public String[] toRefactor(String[] ending) {
 		String[] j = new String[] {ending[0], ending[1]};
 		return j;
 	}
 	
-	public static void main(String[] args) {
+	public static void foo() {
 		Example instance = new Example();
-		String[] test = new String[] {"hallo", "test"};
-		String[] j = instance.greet(test);
+		String[] stringArray = new String[] {"bar", "bar"};
+		String[] j = instance.toRefactor(stringArray);
 	}
 }

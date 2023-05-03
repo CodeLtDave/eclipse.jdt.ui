@@ -184,6 +184,10 @@ public final class RefactoringAvailabilityTesterCore  {
 		return (method != null) && Checks.isAvailable(method) && !Flags.isAnnotation(method.getDeclaringType().getFlags());
 	}
 
+	public static boolean isMakeStaticAvailable(final IMethod method) throws JavaModelException {
+		return (method != null) && Checks.isAvailable(method) && !Flags.isAnnotation(method.getDeclaringType().getFlags());
+	}
+
 	private RefactoringAvailabilityTesterCore() {
 	}
 }

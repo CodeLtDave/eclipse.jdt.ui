@@ -93,63 +93,63 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	@Test
 	public void testStringParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of String type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "QString;" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testIntegerParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of Integer type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "I" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "I" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testArrayParameterAndReturnType() throws Exception {
 		//Refactor method with String-Array as Parameter and return type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "[QString;" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "[QString;" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testBooleanParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of Boolean type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "Z" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "Z" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testLongParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of Long type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "J" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "J" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testFloatParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of Float type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "F" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "F" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testDoubleParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of Double type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "D" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "D" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testCharParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of Char type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "C" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "C" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testShortParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of Char type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "S" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "S" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
@@ -171,14 +171,14 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	@Test
 	public void testThisInDeclaration() throws Exception {
 		//MethodDeclaration uses "this"-Keyword for instance variables
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, "toRefactor", new String[] { "QString;" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testThisInDeclarationMultipleFiles() throws Exception {
 		//MethodDeclaration uses "this"-Keyword for instance variables && MethodInvocations are in different packages within the same project
-		RefactoringStatus status= helper(new String[] { "package1.Example", "package1.Example2" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example", "package1.Example2" }, "toRefactor", new String[] { "QString;" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 
@@ -193,7 +193,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	@Test
 	public void testMultipleFilesInSameProject() throws Exception {
 		//MethodInvocations are in different packages within the same project
-		RefactoringStatus status= helper(new String[] { "package1.Example", "package2.Example2" }, "greet", new String[] { "QString;" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example", "package2.Example2" }, "toRefactor", new String[] { "QString;" }, 7, 10, 7, 13);
 		assertHasNoCommonErrors(status);
 	}
 

@@ -1,5 +1,7 @@
 package org.eclipse.refactoring;
 
+import org.eclipse.jface.dialogs.MessageDialog;
+
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
  *
@@ -22,6 +24,8 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
 
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
+
 import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
 import org.eclipse.jdt.ui.refactoring.RefactoringSaveHelper;
 
@@ -29,11 +33,12 @@ import org.eclipse.jdt.internal.ui.actions.ActionUtil;
 import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaTextSelection;
+import org.eclipse.jdt.internal.ui.refactoring.RefactoringMessages;
 import org.eclipse.jdt.internal.ui.refactoring.actions.RefactoringStarter;
 
 /**
- * Extracts an expression into a constant field and replaces all occurrences of
- * the expression with the new constant.
+ * Extracts an expression into a constant field and replaces all occurrences of the expression with
+ * the new constant.
  *
  * <p>
  * This class may be instantiated; it is not intended to be subclassed.
@@ -46,10 +51,10 @@ import org.eclipse.jdt.internal.ui.refactoring.actions.RefactoringStarter;
 public class MakeStaticAction extends SelectionDispatchAction {
 
 	private final JavaEditor fEditor;
-	private IMethod fMethod;
 
 	/**
 	 * Note: This constructor is for internal use only. Clients should not call this constructor.
+	 *
 	 * @param editor the java editor
 	 *
 	 * @noreference This constructor is not intended to be referenced by clients.
@@ -69,29 +74,38 @@ public class MakeStaticAction extends SelectionDispatchAction {
 
 	/**
 	 * Note: This method is for internal use only. Clients should not call this method.
+	 *
 	 * @param selection the Java text selection (internal type)
 	 *
 	 * @noreference This method is not intended to be referenced by clients.
 	 */
 	@Override
 	public void selectionChanged(JavaTextSelection selection) {
+		try {
+			setEnabled(RefactoringAvailabilityTester.isMakeStaticAvailable(selection));
+		} catch (JavaModelException e) {
+			setEnabled(false);
+		}
 	}
 
 	@Override
 	public void run(ITextSelection selection) {
-		if (!ActionUtil.isEditable(fEditor))
-			return;
 		try {
-			fMethod= getSingleSelectedMethod(selection);
-
-		MakeStaticRefactoring refactoring= new MakeStaticRefactoring(fMethod, SelectionConverter.getInputAsCompilationUnit(fEditor), selection.getOffset(), selection.getLength());
-		new RefactoringStarter().activate(new MakeStaticWizard(refactoring), getShell(), "Make static", RefactoringSaveHelper.SAVE_NOTHING);  //$NON-NLS-1$
+			if (!ActionUtil.isEditable(fEditor))
+				return;
+			IMethod method= getSingleSelectedMethod(selection);
+			if (RefactoringAvailabilityTester.isChangeSignatureAvailable(method)) {
+				MakeStaticRefactoring refactoring= new MakeStaticRefactoring(method, SelectionConverter.getInputAsCompilationUnit(fEditor), selection.getOffset(), selection.getLength());
+				new RefactoringStarter().activate(new MakeStaticWizard(refactoring), getShell(), "Make static", RefactoringSaveHelper.SAVE_NOTHING); //$NON-NLS-1$
+			} else {
+				MessageDialog.openInformation(getShell(), RefactoringMessages.OpenRefactoringWizardAction_unavailable, RefactoringMessages.ModifyParametersAction_unavailable);
+			}
 		} catch (JavaModelException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private IMethod getSingleSelectedMethod(ITextSelection selection) throws JavaModelException{
+	private IMethod getSingleSelectedMethod(ITextSelection selection) throws JavaModelException {
 		//- when caret/selection on method name (call or declaration) -> that method
 		//- otherwise: caret position's enclosing method declaration
 		//  - when caret inside argument list of method declaration -> enclosing method declaration
@@ -100,10 +114,10 @@ public class MakeStaticAction extends SelectionDispatchAction {
 		if (elements.length > 1)
 			return null;
 		if (elements.length == 1 && elements[0] instanceof IMethod)
-			return (IMethod)elements[0];
+			return (IMethod) elements[0];
 		IJavaElement elementAt= SelectionConverter.getInputAsCompilationUnit(fEditor).getElementAt(selection.getOffset());
 		if (elementAt instanceof IMethod)
-			return (IMethod)elementAt;
+			return (IMethod) elementAt;
 		return null;
 	}
 }

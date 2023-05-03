@@ -4,8 +4,8 @@ import package1.Example;
 
 public class Example2 {
 
-	public static void main(String[] args) {
+	public static void foo() {
 		Example instance = new Example();
-		String j = instance.greet("David");
+		String j = instance.toRefactor("bar");
 	}
 }
