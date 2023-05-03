@@ -19,9 +19,13 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldAccess;
+import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -53,12 +57,15 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private TargetProvider fTargetProvider;
 
-	protected MethodDeclaration fMethodDeclaration;
+	private MethodDeclaration fMethodDeclaration;
+
+	private boolean fHasInstanceUsages;
 
 	public MakeStaticRefactoring(IMethod method, ICompilationUnit inputAsCompilationUnit, int offset, int length) {
 		fMethod= method;
 		fCUnit= inputAsCompilationUnit;
 		fChangeManager= new TextEditBasedChangeManager();
+		fHasInstanceUsages= false;
 	}
 
 	@Override
@@ -91,9 +98,42 @@ public class MakeStaticRefactoring extends Refactoring {
 				IMethod resolvedMethod= (IMethod) node.resolveBinding().getJavaElement();
 				if (resolvedMethod.equals(fMethod)) {
 					fMethodDeclaration= node;
+
+					// Set the hasInstanceUsages flag
+					checkForInstanceUsages(node);
 					return false;
 				}
 				return super.visit(node);
+			}
+
+			private void checkForInstanceUsages(MethodDeclaration node) {
+			    Block methodBody = node.getBody();
+			    methodBody.accept(new ASTVisitor() {
+			        @Override
+			        public boolean visit(SimpleName simpleName) {
+			            IBinding binding = simpleName.resolveBinding();
+			            if (binding instanceof IVariableBinding) {
+			                IVariableBinding variableBinding = (IVariableBinding) binding;
+			                if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
+			                    fHasInstanceUsages = true;
+			                    return false;
+			                }
+			            } else if (binding instanceof IMethodBinding) {
+			                IMethodBinding methodBinding = (IMethodBinding) binding;
+			                if (!Modifier.isStatic(methodBinding.getModifiers())) {
+			                    fHasInstanceUsages = true;
+			                    return false;
+			                }
+			            } else if (binding instanceof ITypeBinding) {
+			                ITypeBinding typeBinding = (ITypeBinding) binding;
+			                if (typeBinding.isNested() && !Modifier.isStatic(typeBinding.getModifiers())) {
+			                    fHasInstanceUsages = true;
+			                    return false;
+			                }
+			            }
+			            return super.visit(simpleName);
+			        }
+			    });
 			}
 		});
 	}
@@ -102,34 +142,47 @@ public class MakeStaticRefactoring extends Refactoring {
 		AST ast= fMethodDeclaration.getAST();
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 
-		// Create a new parameter for the method declaration
-		SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
-		String className= ((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString();
-		newParam.setType(ast.newSimpleType(ast.newName(className)));
-		newParam.setName(ast.newSimpleName(className.toLowerCase()));
+		if (fHasInstanceUsages) {
+			// Create a new parameter for the method declaration
+			SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
+			String className= ((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString();
+			newParam.setType(ast.newSimpleType(ast.newName(className)));
+			newParam.setName(ast.newSimpleName(className.toLowerCase()));
 
-		ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
-		lrw.insertLast(newParam, null);
+			ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
+			lrw.insertLast(newParam, null);
+
+			fMethodDeclaration.getBody().accept(new ASTVisitor() {
+				@Override
+	            public boolean visit(SimpleName node) {
+					IBinding binding = node.resolveBinding();
+				    if (binding instanceof IVariableBinding) {
+				        IVariableBinding variableBinding = (IVariableBinding) binding;
+				        if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
+				            // Replace instance variable with object.parameter
+				            FieldAccess fieldAccess = ast.newFieldAccess();
+				            fieldAccess.setExpression(ast.newSimpleName(newParam.getName().toString()));
+				            fieldAccess.setName(ast.newSimpleName(node.getIdentifier()));
+				            rewrite.replace(node.getParent(), fieldAccess, null);
+				        }
+				    }
+	                else if (binding instanceof IMethodBinding) {
+	                    IMethodBinding methodBinding = (IMethodBinding) binding;
+	                    if (!Modifier.isStatic(methodBinding.getModifiers())) {
+	                        // Replace instance method with object.method
+	                        MethodInvocation methodInvocation = ast.newMethodInvocation();
+	                        methodInvocation.setExpression(ast.newSimpleName(newParam.getName().toString()));
+	                        methodInvocation.setName(ast.newSimpleName(node.getIdentifier()));
+	                        rewrite.replace(node.getParent(), methodInvocation, null);
+	                    }
+	                }
+	                return super.visit(node);
+				}
+			});
+		}
 
 		ModifierRewrite modRewrite= ModifierRewrite.create(rewrite, fMethodDeclaration);
 		modRewrite.setModifiers(fMethodDeclaration.getModifiers() | Modifier.STATIC, null);
-
-		fMethodDeclaration.getBody().accept(new ASTVisitor() {
-			@Override
-			public boolean visit(SimpleName node) {
-				if (node.resolveBinding() instanceof IVariableBinding) {
-					IVariableBinding variableBinding= (IVariableBinding) node.resolveBinding();
-					if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
-						// Replace instance variable with object.parameter
-						FieldAccess fieldAccess= ast.newFieldAccess();
-						fieldAccess.setExpression(ast.newSimpleName(newParam.getName().toString()));
-						fieldAccess.setName(ast.newSimpleName(node.getIdentifier()));
-						rewrite.replace(node, fieldAccess, null);
-					}
-				}
-				return super.visit(node);
-			}
-		});
 
 		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
 		addEditToChangeManager(methodDeclarationEdit, fCUnit);
@@ -162,9 +215,11 @@ public class MakeStaticRefactoring extends Refactoring {
 			staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
 		}
 
-		//find the variable that needs to be passed as an argument
-		ASTNode expression= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
-		staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, expression));
+		if (fHasInstanceUsages) {
+			//find the variable that needs to be passed as an argument
+			ASTNode expression= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
+			staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, expression));
+		}
 
 		rewrite.replace(invocation, staticMethodInvocation, null);
 		TextEdit methodInvocationEdit= rewrite.rewriteAST();
@@ -189,15 +244,15 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		RefactoringStatus status = new RefactoringStatus();
-		if(fMethod.isConstructor())
+		RefactoringStatus status= new RefactoringStatus();
+		if (fMethod.isConstructor())
 			status.addFatalError("Constructor cannot be refactored to static."); //$NON-NLS-1$
 		return status;
 	}
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		RefactoringStatus status = new RefactoringStatus();
+		RefactoringStatus status= new RefactoringStatus();
 		//Find and Modify MethodDeclaration
 		findMethodDeclaration();
 		modifyMethodDeclaration();

@@ -1,28 +1,31 @@
 package p;
 
 public class Input {
-	private int counter;
+    private int counter;
+    private InnerClass inner;
+    private static int staticInt = 0;
 
-	private InnerClass inner;
+    public static void toRefactor(Input input) {
+    	staticMethod();
+    	staticInt=staticInt+1;
+    	int localInt = 0;
+        input.counter=input.counter+1;
+        input.instanceMethod();
+        input.inner.printHello();
+    }
 
-	public static void toRefactor(Input input) {
-		input.counter= input.counter + 1;
-		input.instanceMethod();
-		input.printHello();
-	}
+    public void instanceMethod() {
+    	Input.toRefactor(this);
+    }
 
-	public void instanceMethod() {
-		Input.toRefactor(this);
-	}
-
-	public static void staticMethod() {
-		Input foo= new Input();
-		Input.toRefactor(foo);
-	}
-
-	private class InnerClass {
-		public void printHello() {
-			System.out.println("Hello from InnerClass!");
-		}
-	}
+    public static void staticMethod() {
+        Input foo = new Input();
+        Input.toRefactor(foo);
+    }
+    
+    private class InnerClass {
+        public void printHello() {
+            System.out.println("Hello from InnerClass!");
+        }
+    }
 }
