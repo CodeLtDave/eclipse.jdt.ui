@@ -182,6 +182,13 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		assertHasNoCommonErrors(status);
 	}
 
+	@Test
+	public void testThisInDeclarationInnerClass() throws Exception {
+		//MethodDeclaration uses "this"-Keyword for instance variables && InnerClass is referenced with "this"
+		RefactoringStatus status= helper(new String[] { "p.Input" }, "toRefactor", new String[] {}, 8, 10, 8, 20);
+		assertHasNoCommonErrors(status);
+	}
+
 
 	@Test
 	public void testMultipleFilesInSameProject() throws Exception {
