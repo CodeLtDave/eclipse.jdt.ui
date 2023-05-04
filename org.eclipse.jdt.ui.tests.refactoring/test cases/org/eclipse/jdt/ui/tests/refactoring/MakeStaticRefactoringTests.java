@@ -5,9 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.refactoring.MakeStaticRefactoring;
@@ -20,6 +18,8 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.JavaModelException;
+
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 
 import org.eclipse.jdt.ui.tests.refactoring.infra.TextRangeUtil;
 import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;
@@ -75,9 +75,6 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		assertFalse("Had errors but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.ERROR), status.hasError());
 		assertFalse("Had warnings but shouldn't: " + status.getMessageMatchingSeverity(RefactoringStatus.WARNING), status.hasWarning());
 	}
-
-	@Rule
-	public ExpectedException exceptionRule= ExpectedException.none();
 
 	@Test
 	public void testSimpleFile() throws Exception {
@@ -151,30 +148,28 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	@Test
 	public void testMethodNotFound() throws Exception {
 		//Method cannot be found -> NullPointerException
-		exceptionRule.expect(NullPointerException.class);
-		helper(new String[] { "p.Foo" }, 7, 10, 7, 13);
-		//assertThrows(NullPointerException.class, () -> helper(new String[] { "p.Foo" }, "notIncluded", new String[] {}, 7, 10, 7, 13));
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 0, 5, 5);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 	}
 
 	@Test
 	public void testIsConstructor() throws Exception {
 		//Check if Constructor
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 8, 5, 15);
-		String test = status.getEntryWithHighestSeverity().getMessage();
-		assertTrue(status.getEntryWithHighestSeverity().getMessage()== "test");
+		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors));
 	}
 
 	@Test
 	public void testThisInDeclaration() throws Exception {
 		//MethodDeclaration uses "this"-Keyword for instance variables
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 10, 7, 15);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testThisInDeclarationMultipleFiles() throws Exception {
 		//MethodDeclaration uses "this"-Keyword for instance variables && MethodInvocations are in different packages within the same project
-		RefactoringStatus status= helper(new String[] { "package1.Example", "package1.Example2" }, 5, 10, 5, 13);
+		RefactoringStatus status= helper(new String[] { "package1.Example", "package1.Example2" }, 7, 10, 7, 15);
 		assertHasNoCommonErrors(status);
 	}
 
