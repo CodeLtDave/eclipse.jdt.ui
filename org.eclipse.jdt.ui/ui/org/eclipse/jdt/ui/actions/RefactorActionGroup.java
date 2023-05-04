@@ -311,7 +311,7 @@ public class RefactorActionGroup extends ActionGroup {
 			editor.setAction("ExtractConstant", fExtractConstantAction); //$NON-NLS-1$
 
 			fMakeStaticAction= new MakeStaticAction(editor);
-			initUpdatingAction(fMakeStaticAction, provider, null, selection, IJavaEditorActionDefinitionIds.EXTRACT_CONSTANT);
+			initUpdatingAction(fMakeStaticAction, provider, null, selection, IJavaEditorActionDefinitionIds.MAKE_STATIC);
 			editor.setAction("MakeStatic", fMakeStaticAction); //$NON-NLS-1$
 
 			fIntroduceParameterAction= new IntroduceParameterAction(editor);
@@ -381,6 +381,9 @@ public class RefactorActionGroup extends ActionGroup {
 
 			fModifyParametersAction= new ModifyParametersAction(fSite);
 			initUpdatingAction(fModifyParametersAction, fSelectionProvider, selectionProvider, selection, IJavaEditorActionDefinitionIds.MODIFY_METHOD_PARAMETERS);
+
+			fMakeStaticAction= new MakeStaticAction(fSite);
+			initUpdatingAction(fMakeStaticAction, fSelectionProvider, selectionProvider, selection, IJavaEditorActionDefinitionIds.MAKE_STATIC);
 
 			fPullUpAction= new PullUpAction(fSite);
 			initUpdatingAction(fPullUpAction, fSelectionProvider, selectionProvider, selection, IJavaEditorActionDefinitionIds.PULL_UP);
@@ -532,6 +535,7 @@ public class RefactorActionGroup extends ActionGroup {
 			disposeAction(fMoveAction, fSelectionProvider);
 			disposeAction(fRenameAction, fSelectionProvider);
 			disposeAction(fModifyParametersAction, fSelectionProvider);
+			disposeAction(fMakeStaticAction, fSelectionProvider);
 			disposeAction(fPullUpAction, fSelectionProvider);
 			disposeAction(fPushDownAction, fSelectionProvider);
 			disposeAction(fExtractTempAction, fSelectionProvider);

@@ -541,6 +541,14 @@ public final class RefactoringMessages extends NLS {
 
 	public static String JavaTypeCompletionProcessor_no_completion;
 
+	public static String MakeStaticAction_description;
+
+	public static String MakeStaticAction_dialog_title;
+
+	public static String MakeStaticAction_title;
+
+	public static String MakeStaticAction_tooltip;
+
 	public static String ModifyParametersAction_unavailable;
 
 	public static String MoveAction_Move;

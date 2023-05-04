@@ -18,6 +18,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.eclipse.refactoring.MakeStaticRefactoring;
+import org.eclipse.refactoring.MakeStaticWizard;
+
 import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.CoreException;
@@ -369,6 +372,18 @@ public final class RefactoringExecutionStarter {
 	public static void startIntroduceIndirectionRefactoring(final IMethod method, final Shell shell) {
 		final IntroduceIndirectionRefactoring refactoring= new IntroduceIndirectionRefactoring(method);
 		new RefactoringStarter().activate(new IntroduceIndirectionWizard(refactoring, RefactoringMessages.IntroduceIndirectionAction_dialog_title), shell,
+				RefactoringMessages.IntroduceIndirectionAction_dialog_title, RefactoringSaveHelper.SAVE_REFACTORING);
+	}
+
+	public static void startMakeStaticRefactoring(final ICompilationUnit unit, final int offset, final int length, final Shell shell) {
+		final MakeStaticRefactoring refactoring= new MakeStaticRefactoring(unit, offset, length);
+		new RefactoringStarter().activate(new MakeStaticWizard(refactoring), shell,
+				RefactoringMessages.IntroduceIndirectionAction_dialog_title, RefactoringSaveHelper.SAVE_REFACTORING);
+	}
+
+	public static void startMakeStaticRefactoring(final IMethod method, final Shell shell) {
+		final MakeStaticRefactoring refactoring= new MakeStaticRefactoring(method);
+		new RefactoringStarter().activate(new MakeStaticWizard(refactoring), shell,
 				RefactoringMessages.IntroduceIndirectionAction_dialog_title, RefactoringSaveHelper.SAVE_REFACTORING);
 	}
 

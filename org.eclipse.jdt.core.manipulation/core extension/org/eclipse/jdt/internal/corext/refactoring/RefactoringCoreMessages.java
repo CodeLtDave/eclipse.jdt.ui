@@ -1030,6 +1030,16 @@ public final class RefactoringCoreMessages extends NLS {
 
 	public static String IntroduceIndirectionRefactoring_unable_determine_declaring_type;
 
+	public static String MakeStaticRefactoring_checking_activation;
+
+	public static String MakeStaticRefactoring_not_available_on_this_selection;
+
+	public static String MakeStaticRefactoring_not_available_on_annotation;
+
+	public static String MakeStaticRefactoring_not_available_for_local_or_anonymous_types;
+
+	public static String MakeStaticRefactoring_not_available_for_constructors;
+
 	public static String IntroduceParameterObjectRefactoring_cannotalanyzemethod_mappingerror;
 
 	public static String IntroduceParameterObjectRefactoring_cannotanalysemethod_compilererror;

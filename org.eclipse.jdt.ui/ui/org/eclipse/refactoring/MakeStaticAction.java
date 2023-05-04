@@ -1,6 +1,9 @@
 package org.eclipse.refactoring;
 
-import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.core.runtime.Assert;
+import org.eclipse.core.runtime.CoreException;
+
+import org.eclipse.jface.viewers.IStructuredSelection;
 
 /*******************************************************************************
  * Copyright (c) 2000, 2011 IBM Corporation and others.
@@ -18,23 +21,28 @@ import org.eclipse.jface.dialogs.MessageDialog;
 
 import org.eclipse.jface.text.ITextSelection;
 
+import org.eclipse.ui.IWorkbenchSite;
 import org.eclipse.ui.PlatformUI;
 
-import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringExecutionStarter;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
-import org.eclipse.jdt.ui.refactoring.RefactoringSaveHelper;
 
+import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
+import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.actions.ActionUtil;
 import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaTextSelection;
 import org.eclipse.jdt.internal.ui.refactoring.RefactoringMessages;
-import org.eclipse.jdt.internal.ui.refactoring.actions.RefactoringStarter;
+import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
 
 /**
  * Extracts an expression into a constant field and replaces all occurrences of the expression with
@@ -50,7 +58,7 @@ import org.eclipse.jdt.internal.ui.refactoring.actions.RefactoringStarter;
  */
 public class MakeStaticAction extends SelectionDispatchAction {
 
-	private final JavaEditor fEditor;
+	private JavaEditor fEditor;
 
 	/**
 	 * Note: This constructor is for internal use only. Clients should not call this constructor.
@@ -64,12 +72,30 @@ public class MakeStaticAction extends SelectionDispatchAction {
 		setText("Make Static..."); //$NON-NLS-1$
 		fEditor= editor;
 		setEnabled(SelectionConverter.getInputAsCompilationUnit(fEditor) != null);
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, "org.eclipse.refactoring.make_static_action"); //$NON-NLS-1$
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IJavaHelpContextIds.MAKE_STATIC_ACTION);
+	}
+
+	public MakeStaticAction(IWorkbenchSite site) {
+		super(site);
+		setText(RefactoringMessages.MakeStaticAction_title);
+		setToolTipText(RefactoringMessages.MakeStaticAction_tooltip);
+		setDescription(RefactoringMessages.MakeStaticAction_description);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IJavaHelpContextIds.MAKE_STATIC_ACTION);
 	}
 
 	@Override
 	public void selectionChanged(ITextSelection selection) {
 		setEnabled((fEditor != null && SelectionConverter.getInputAsCompilationUnit(fEditor) != null));
+	}
+
+	@Override
+	public void selectionChanged(IStructuredSelection selection) {
+		try {
+			setEnabled(RefactoringAvailabilityTester.isMakeStaticAvailable(selection));
+		} catch (JavaModelException e) {
+			if (JavaModelUtil.isExceptionToBeLogged(e))
+				JavaPlugin.log(e);
+		}
 	}
 
 	/**
@@ -90,34 +116,33 @@ public class MakeStaticAction extends SelectionDispatchAction {
 
 	@Override
 	public void run(ITextSelection selection) {
+		if (!ActionUtil.isProcessable(fEditor))
+			return;
+		ITypeRoot editorInput= SelectionConverter.getInput(fEditor);
+		if (!ActionUtil.isEditable(getShell(), editorInput))
+			return;
+			run(selection.getOffset(), selection.getLength(), (ICompilationUnit) editorInput);
+	}
+
+	@Override
+	public void run(IStructuredSelection selection) {
 		try {
-			if (!ActionUtil.isEditable(fEditor))
+			Assert.isTrue(RefactoringAvailabilityTester.isMakeStaticAvailable(selection));
+			Object first= selection.getFirstElement();
+			Assert.isTrue(first instanceof IMethod);
+			if (!ActionUtil.isEditable(getShell(), (IMethod)first))
 				return;
-			IMethod method= getSingleSelectedMethod(selection);
-			if (RefactoringAvailabilityTester.isChangeSignatureAvailable(method)) {
-				MakeStaticRefactoring refactoring= new MakeStaticRefactoring(method, SelectionConverter.getInputAsCompilationUnit(fEditor), selection.getOffset(), selection.getLength());
-				new RefactoringStarter().activate(new MakeStaticWizard(refactoring), getShell(), "Make static", RefactoringSaveHelper.SAVE_NOTHING); //$NON-NLS-1$
-			} else {
-				MessageDialog.openInformation(getShell(), RefactoringMessages.OpenRefactoringWizardAction_unavailable, RefactoringMessages.ModifyParametersAction_unavailable);
-			}
-		} catch (JavaModelException e) {
-			e.printStackTrace();
+			run((IMethod) first);
+		} catch (CoreException e) {
+			ExceptionHandler.handle(e, RefactoringMessages.IntroduceIndirectionAction_dialog_title, RefactoringMessages.IntroduceIndirectionAction_unknown_exception);
 		}
 	}
 
-	private IMethod getSingleSelectedMethod(ITextSelection selection) throws JavaModelException {
-		//- when caret/selection on method name (call or declaration) -> that method
-		//- otherwise: caret position's enclosing method declaration
-		//  - when caret inside argument list of method declaration -> enclosing method declaration
-		//  - when caret inside argument list of method call -> enclosing method declaration (and NOT method call)
-		IJavaElement[] elements= SelectionConverter.codeResolve(fEditor);
-		if (elements.length > 1)
-			return null;
-		if (elements.length == 1 && elements[0] instanceof IMethod)
-			return (IMethod) elements[0];
-		IJavaElement elementAt= SelectionConverter.getInputAsCompilationUnit(fEditor).getElementAt(selection.getOffset());
-		if (elementAt instanceof IMethod)
-			return (IMethod) elementAt;
-		return null;
+	private void run(int offset, int length, ICompilationUnit unit) {
+		RefactoringExecutionStarter.startMakeStaticRefactoring(unit, offset, length, getShell());
+	}
+
+	private void run(IMethod method) {
+		RefactoringExecutionStarter.startMakeStaticRefactoring(method, getShell());
 	}
 }

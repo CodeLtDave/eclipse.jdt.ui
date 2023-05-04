@@ -1,5 +1,8 @@
 package org.eclipse.refactoring;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -13,6 +16,7 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
@@ -22,6 +26,7 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -30,16 +35,24 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
+import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
 import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
+import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
+import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 
 /**
@@ -49,9 +62,9 @@ import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManag
  */
 public class MakeStaticRefactoring extends Refactoring {
 
-	private IMethod fMethod;
+	private IMethod fTargetMethod;
 
-	private ICompilationUnit fCUnit;
+	private ICompilationUnit fSelectionCompilationUnit;
 
 	private TextEditBasedChangeManager fChangeManager;
 
@@ -61,10 +74,26 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private boolean fHasInstanceUsages;
 
-	public MakeStaticRefactoring(IMethod method, ICompilationUnit inputAsCompilationUnit, int offset, int length) {
-		fMethod= method;
-		fCUnit= inputAsCompilationUnit;
-		fChangeManager= new TextEditBasedChangeManager();
+	private int fSelectionStart;
+
+	private int fSelectionLength;
+
+	/**
+	 * CompilationUnitRewrites for all affected cus
+	 */
+	private Map<ICompilationUnit, CompilationUnitRewrite> fRewrites;
+
+	private IMethodBinding fTargetMethodBinding;
+
+	public MakeStaticRefactoring(ICompilationUnit inputAsCompilationUnit, int offset, int length) {
+		fSelectionStart= offset;
+		fSelectionLength= length;
+		fSelectionCompilationUnit= inputAsCompilationUnit;
+		fHasInstanceUsages= false;
+	}
+
+	public MakeStaticRefactoring(IMethod method) {
+		fTargetMethod= method;
 		fHasInstanceUsages= false;
 	}
 
@@ -74,7 +103,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	private void findMethodDeclaration() {
-		ICompilationUnit compilationUnit= fMethod.getCompilationUnit();
+		ICompilationUnit compilationUnit= fTargetMethod.getCompilationUnit();
 
 		// Create AST parser with Java 17 support
 		ASTParser parser= ASTParser.newParser(AST.JLS20);
@@ -96,7 +125,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			@Override
 			public boolean visit(MethodDeclaration node) {
 				IMethod resolvedMethod= (IMethod) node.resolveBinding().getJavaElement();
-				if (resolvedMethod.equals(fMethod)) {
+				if (resolvedMethod.equals(fTargetMethod)) {
 					fMethodDeclaration= node;
 
 					// Set the hasInstanceUsages flag
@@ -185,7 +214,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		modRewrite.setModifiers(fMethodDeclaration.getModifiers() | Modifier.STATIC, null);
 
 		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
-		addEditToChangeManager(methodDeclarationEdit, fCUnit);
+		addEditToChangeManager(methodDeclarationEdit, fSelectionCompilationUnit);
 	}
 
 	private void findMethodInvocations(ICompilationUnit[] affectedCUs) throws JavaModelException {
@@ -244,15 +273,139 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		RefactoringStatus status= new RefactoringStatus();
-		if (fMethod.isConstructor())
-			status.addFatalError("Constructor cannot be refactored to static."); //$NON-NLS-1$
-		return status;
+		try {
+			pm.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_activation, 1);
+
+			fRewrites= new HashMap<>();
+			// This refactoring has been invoked on
+			// (1) a TextSelection inside an ICompilationUnit or inside an IClassFile (definitely with source), or
+			// (2) an IMethod inside a ICompilationUnit or inside an IClassFile (with or without source)
+
+			if (fTargetMethod == null) {
+				// (1) invoked on a text selection
+
+				if (fSelectionStart == 0)
+					return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+
+				// if a text selection exists, source is available.
+				CompilationUnit selectionCURoot;
+				ASTNode selectionNode = null;
+				if (fSelectionCompilationUnit != null) {
+					// compilation unit - could use CuRewrite later on
+					selectionCURoot= getCachedCURewrite(fSelectionCompilationUnit).getRoot();
+					selectionNode= getSelectedNode(fSelectionCompilationUnit, selectionCURoot, fSelectionStart, fSelectionLength);
+				}
+
+				if (selectionNode == null)
+					return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+
+				IMethodBinding targetMethodBinding= null;
+
+				if (selectionNode.getNodeType() == ASTNode.METHOD_INVOCATION) {
+					targetMethodBinding= ((MethodInvocation) selectionNode).resolveMethodBinding();
+				} else if (selectionNode.getNodeType() == ASTNode.METHOD_DECLARATION) {
+					targetMethodBinding= ((MethodDeclaration) selectionNode).resolveBinding();
+				} else if (selectionNode.getNodeType() == ASTNode.SUPER_METHOD_INVOCATION) {
+					// Allow invocation on super methods calls. makes sense as other
+					// calls or even only the declaration can be updated.
+					targetMethodBinding= ((SuperMethodInvocation) selectionNode).resolveMethodBinding();
+				}
+				if (targetMethodBinding != null) {
+					fTargetMethodBinding= targetMethodBinding.getMethodDeclaration(); // resolve generics
+					if (fTargetMethodBinding != null) {
+						fTargetMethod= (IMethod) fTargetMethodBinding.getJavaElement();
+					}
+				}
+				if (targetMethodBinding == null || fTargetMethodBinding == null) {
+					return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+				}
+			} else {
+				// (2) invoked on an IMethod: Source may not be available
+				fSelectionCompilationUnit = fTargetMethod.getCompilationUnit();
+				if (fTargetMethod.getDeclaringType().isAnnotation())
+					return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
+
+				if (fTargetMethod.getCompilationUnit() != null) {
+					// source method
+					CompilationUnit selectionCURoot= getCachedCURewrite(fTargetMethod.getCompilationUnit()).getRoot();
+					MethodDeclaration declaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, selectionCURoot);
+					fTargetMethodBinding= declaration.resolveBinding().getMethodDeclaration();
+				} else {
+					// binary method - no CURewrite available (and none needed as we cannot update the method anyway)
+					ASTParser parser= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
+					parser.setProject(fTargetMethod.getJavaProject());
+					IBinding[] bindings= parser.createBindings(new IJavaElement[] { fTargetMethod }, null);
+					fTargetMethodBinding= ((IMethodBinding) bindings[0]).getMethodDeclaration();
+				}
+			}
+
+			if (fTargetMethod == null || fTargetMethodBinding == null || (!RefactoringAvailabilityTester.isMakeStaticAvailable(fTargetMethod)))
+				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+
+			if (fTargetMethod.getDeclaringType().isLocal() || fTargetMethod.getDeclaringType().isAnonymous())
+				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types);
+
+			if (fTargetMethod.isConstructor())
+				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors);
+
+			return new RefactoringStatus();
+		} finally {
+			pm.done();
+		}
+	}
+
+	private CompilationUnitRewrite getCachedCURewrite(ICompilationUnit unit) {
+		CompilationUnitRewrite rewrite= fRewrites.get(unit);
+		if (rewrite == null && fMethodDeclaration != null) {
+			CompilationUnit cuNode= ASTResolving.findParentCompilationUnit(fMethodDeclaration);
+			if (cuNode != null && cuNode.getJavaElement().equals(unit)) {
+				rewrite= new CompilationUnitRewrite(unit, cuNode);
+				fRewrites.put(unit, rewrite);
+			}
+		}
+		if (rewrite == null) {
+			rewrite= new CompilationUnitRewrite(unit);
+			fRewrites.put(unit, rewrite);
+		}
+		return rewrite;
+	}
+
+	private static ASTNode getSelectedNode(ICompilationUnit unit, CompilationUnit root, int offset, int length) {
+		ASTNode node= null;
+		try {
+			if (unit != null)
+				node= checkNode(NodeFinder.perform(root, offset, length, unit));
+			else
+				node= checkNode(NodeFinder.perform(root, offset, length));
+		} catch (JavaModelException e) {
+			// Do nothing
+		}
+		if (node != null)
+			return node;
+		return checkNode(NodeFinder.perform(root, offset, length));
+	}
+
+	private static ASTNode checkNode(ASTNode node) {
+		if (node == null)
+			return null;
+		if (node.getNodeType() == ASTNode.SIMPLE_NAME) {
+			node= node.getParent();
+		} else if (node.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
+			node= ((ExpressionStatement) node).getExpression();
+		}
+		switch (node.getNodeType()) {
+			case ASTNode.METHOD_INVOCATION:
+			case ASTNode.METHOD_DECLARATION:
+			case ASTNode.SUPER_METHOD_INVOCATION:
+				return node;
+		}
+		return null;
 	}
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		RefactoringStatus status= new RefactoringStatus();
+		fChangeManager= new TextEditBasedChangeManager();
 		//Find and Modify MethodDeclaration
 		findMethodDeclaration();
 		modifyMethodDeclaration();
