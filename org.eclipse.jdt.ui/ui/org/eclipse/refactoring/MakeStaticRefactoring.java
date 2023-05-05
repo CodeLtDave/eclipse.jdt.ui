@@ -16,7 +16,6 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
@@ -45,7 +44,6 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
@@ -89,12 +87,10 @@ public class MakeStaticRefactoring extends Refactoring {
 		fSelectionStart= offset;
 		fSelectionLength= length;
 		fSelectionCompilationUnit= inputAsCompilationUnit;
-		fHasInstanceUsages= false;
 	}
 
 	public MakeStaticRefactoring(IMethod method) {
 		fTargetMethod= method;
-		fHasInstanceUsages= false;
 	}
 
 	@Override
@@ -217,19 +213,24 @@ public class MakeStaticRefactoring extends Refactoring {
 		addEditToChangeManager(methodDeclarationEdit, fSelectionCompilationUnit);
 	}
 
-	private void findMethodInvocations(ICompilationUnit[] affectedCUs) throws JavaModelException {
+	private RefactoringStatus findMethodInvocations(RefactoringStatus status, ICompilationUnit[] affectedCUs) throws JavaModelException {
 		for (ICompilationUnit affectedCU : affectedCUs) {
 			BodyDeclaration[] bodies= fTargetProvider.getAffectedBodyDeclarations(affectedCU, null);
 			MultiTextEdit multiTextEdit= new MultiTextEdit();
 			for (BodyDeclaration body : bodies) {
 				ASTNode[] invocations= fTargetProvider.getInvocations(body, null);
 				for (ASTNode invocationASTNode : invocations) {
+					if(invocationASTNode.getClass() == SuperMethodInvocation.class) {
+						status.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations);
+						return status;
+					}
 					MethodInvocation invocation= (MethodInvocation) invocationASTNode;
 					modifyMethodInvocation(multiTextEdit, invocation);
 				}
 			}
 			addEditToChangeManager(multiTextEdit, affectedCU);
 		}
+		return status;
 	}
 
 	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, MethodInvocation invocation) throws JavaModelException {
@@ -276,7 +277,10 @@ public class MakeStaticRefactoring extends Refactoring {
 		try {
 			pm.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_activation, 1);
 
+			fChangeManager= new TextEditBasedChangeManager();
 			fRewrites= new HashMap<>();
+			fHasInstanceUsages= false;
+
 			// This refactoring has been invoked on
 			// (1) a TextSelection inside an ICompilationUnit or inside an IClassFile (definitely with source), or
 			// (2) an IMethod inside a ICompilationUnit or inside an IClassFile (with or without source)
@@ -330,12 +334,6 @@ public class MakeStaticRefactoring extends Refactoring {
 					CompilationUnit selectionCURoot= getCachedCURewrite(fTargetMethod.getCompilationUnit()).getRoot();
 					MethodDeclaration declaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, selectionCURoot);
 					fTargetMethodBinding= declaration.resolveBinding().getMethodDeclaration();
-				} else {
-					// binary method - no CURewrite available (and none needed as we cannot update the method anyway)
-					ASTParser parser= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
-					parser.setProject(fTargetMethod.getJavaProject());
-					IBinding[] bindings= parser.createBindings(new IJavaElement[] { fTargetMethod }, null);
-					fTargetMethodBinding= ((IMethodBinding) bindings[0]).getMethodDeclaration();
 				}
 			}
 
@@ -405,7 +403,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		RefactoringStatus status= new RefactoringStatus();
-		fChangeManager= new TextEditBasedChangeManager();
+
 		//Find and Modify MethodDeclaration
 		findMethodDeclaration();
 		modifyMethodDeclaration();
@@ -415,7 +413,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		fTargetProvider.initialize();
 
 		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(status, new ReferencesInBinaryContext(""), pm); //$NON-NLS-1$
-		findMethodInvocations(affectedCUs);
+		findMethodInvocations(status, affectedCUs);
 
 
 		return status;
