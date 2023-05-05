@@ -309,11 +309,8 @@ public class MakeStaticRefactoring extends Refactoring {
 					targetMethodBinding= ((MethodInvocation) selectionNode).resolveMethodBinding();
 				} else if (selectionNode.getNodeType() == ASTNode.METHOD_DECLARATION) {
 					targetMethodBinding= ((MethodDeclaration) selectionNode).resolveBinding();
-				} else if (selectionNode.getNodeType() == ASTNode.SUPER_METHOD_INVOCATION) {
-					// Allow invocation on super methods calls. makes sense as other
-					// calls or even only the declaration can be updated.
-					targetMethodBinding= ((SuperMethodInvocation) selectionNode).resolveMethodBinding();
 				}
+
 				if (targetMethodBinding != null) {
 					fTargetMethodBinding= targetMethodBinding.getMethodDeclaration(); // resolve generics
 					if (fTargetMethodBinding != null) {

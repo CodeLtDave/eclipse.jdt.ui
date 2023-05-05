@@ -18,6 +18,10 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTMatcher;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 
@@ -44,6 +48,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	private RefactoringStatus helper(String[] topLevelName, int startLine, int startColumn, int endLine, int endColumn)
 			throws Exception, JavaModelException, CoreException, IOException {
+
 		ICompilationUnit[] cu= new ICompilationUnit[topLevelName.length];
 		for (int i= 0; i < topLevelName.length; i++) {
 			String packName= topLevelName[i].substring(0, topLevelName[i].indexOf('.'));
@@ -54,20 +59,44 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 		ISourceRange selection= TextRangeUtil.getSelection(cu[0], startLine, startColumn, endLine, endColumn);
 
-		try {
-			MakeStaticRefactoring ref= new MakeStaticRefactoring(cu[0], selection.getOffset(), selection.getLength());
-			RefactoringStatus status= performRefactoringWithStatus(ref);
+		MakeStaticRefactoring ref= new MakeStaticRefactoring(cu[0], selection.getOffset(), selection.getLength());
+		RefactoringStatus status= performRefactoringWithStatus(ref);
 
-		if (!status.hasEntries()){
-			for (int i= 0; i < topLevelName.length; i++) {
-				String className= topLevelName[i].substring(topLevelName[i].indexOf('.') + 1);
-				assertEqualLines("invalid output.", getFileContents(getOutputTestFileName(className)), cu[i].getSource()); //$NON-NLS-1$
-			}
+		if (!status.hasEntries()) {
+			matchFiles(topLevelName, cu);
+			matchASTs(topLevelName, cu);
 		}
-			return status;
-		} finally {
-			for (int i= 0; i < topLevelName.length; i++)
-				JavaProjectHelper.delete(cu[i]);
+
+		for (int i= 0; i < topLevelName.length; i++)
+			JavaProjectHelper.delete(cu[i]);
+
+		return status;
+	}
+
+	private void matchFiles(String[] topLevelName, ICompilationUnit[] cu) throws IOException, JavaModelException {
+		for (int i= 0; i < topLevelName.length; i++) {
+			String className= topLevelName[i].substring(topLevelName[i].indexOf('.') + 1);
+			assertEqualLines("invalid output.", getFileContents(getOutputTestFileName(className)), cu[i].getSource()); //$NON-NLS-1$
+		}
+	}
+
+	private void matchASTs(String[] topLevelName, ICompilationUnit[] cu) throws IOException {
+		for (int i= 0; i < topLevelName.length; i++) {
+
+			String className= topLevelName[i].substring(topLevelName[i].indexOf('.') + 1);
+			String content= getFileContents(getOutputTestFileName(className));
+
+			ASTParser parser= ASTParser.newParser(AST.JLS20);
+			parser.setSource(content.toCharArray());
+			parser.setKind(ASTParser.K_COMPILATION_UNIT);
+			parser.setResolveBindings(true);
+			parser.setBindingsRecovery(true);
+
+			CompilationUnit outputCU= (CompilationUnit) parser.createAST(null);
+			parser.setSource(cu[i]);
+			CompilationUnit refactoredCU= (CompilationUnit) parser.createAST(null);
+
+			assertTrue(outputCU.subtreeMatch(new ASTMatcher(), refactoredCU));
 		}
 	}
 
