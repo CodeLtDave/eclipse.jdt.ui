@@ -58,11 +58,12 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 			MakeStaticRefactoring ref= new MakeStaticRefactoring(cu[0], selection.getOffset(), selection.getLength());
 			RefactoringStatus status= performRefactoringWithStatus(ref);
 
+		if (!status.hasEntries()){
 			for (int i= 0; i < topLevelName.length; i++) {
 				String className= topLevelName[i].substring(topLevelName[i].indexOf('.') + 1);
 				assertEqualLines("invalid output.", getFileContents(getOutputTestFileName(className)), cu[i].getSource()); //$NON-NLS-1$
 			}
-
+		}
 			return status;
 		} finally {
 			for (int i= 0; i < topLevelName.length; i++)
@@ -205,7 +206,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	@Test
 	public void testSuperMethodInvocation2() throws Exception {
 		//Refactor of method in super type that has child type with override of the method -> should fail
-		RefactoringStatus status= helper(new String[] { "package1.SuperClass", "package1.SubClass",  }, 5, 14, 5, 24);
+		RefactoringStatus status= helper(new String[] { "package1.SuperClass", "package1.SubClass", }, 5, 14, 5, 24);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
 	}
 }
