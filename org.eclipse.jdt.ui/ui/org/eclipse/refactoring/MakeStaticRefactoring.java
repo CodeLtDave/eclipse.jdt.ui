@@ -1,6 +1,7 @@
 package org.eclipse.refactoring;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.runtime.CoreException;
@@ -44,6 +45,7 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
@@ -52,6 +54,7 @@ import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
+import org.eclipse.jdt.internal.corext.util.Messages;
 
 /**
  *
@@ -132,38 +135,38 @@ public class MakeStaticRefactoring extends Refactoring {
 			}
 
 			private void checkForInstanceUsages(MethodDeclaration node) {
-			    Block methodBody = node.getBody();
-			    methodBody.accept(new ASTVisitor() {
-			        @Override
-			        public boolean visit(SimpleName simpleName) {
-			            IBinding binding = simpleName.resolveBinding();
-			            if (binding instanceof IVariableBinding) {
-			                IVariableBinding variableBinding = (IVariableBinding) binding;
-			                if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
-			                    fHasInstanceUsages = true;
-			                    return false;
-			                }
-			            } else if (binding instanceof IMethodBinding) {
-			                IMethodBinding methodBinding = (IMethodBinding) binding;
-			                if (!Modifier.isStatic(methodBinding.getModifiers())) {
-			                    fHasInstanceUsages = true;
-			                    return false;
-			                }
-			            } else if (binding instanceof ITypeBinding) {
-			                ITypeBinding typeBinding = (ITypeBinding) binding;
-			                if (typeBinding.isNested() && !Modifier.isStatic(typeBinding.getModifiers())) {
-			                    fHasInstanceUsages = true;
-			                    return false;
-			                }
-			            }
-			            return super.visit(simpleName);
-			        }
-			    });
+				Block methodBody= node.getBody();
+				methodBody.accept(new ASTVisitor() {
+					@Override
+					public boolean visit(SimpleName simpleName) {
+						IBinding binding= simpleName.resolveBinding();
+						if (binding instanceof IVariableBinding) {
+							IVariableBinding variableBinding= (IVariableBinding) binding;
+							if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
+								fHasInstanceUsages= true;
+								return false;
+							}
+						} else if (binding instanceof IMethodBinding) {
+							IMethodBinding methodBinding= (IMethodBinding) binding;
+							if (!Modifier.isStatic(methodBinding.getModifiers())) {
+								fHasInstanceUsages= true;
+								return false;
+							}
+						} else if (binding instanceof ITypeBinding) {
+							ITypeBinding typeBinding= (ITypeBinding) binding;
+							if (typeBinding.isNested() && !Modifier.isStatic(typeBinding.getModifiers())) {
+								fHasInstanceUsages= true;
+								return false;
+							}
+						}
+						return super.visit(simpleName);
+					}
+				});
 			}
 		});
 	}
 
-	private void modifyMethodDeclaration() throws JavaModelException {
+	private void modifyMethodDeclaration(RefactoringStatus status) throws JavaModelException {
 		AST ast= fMethodDeclaration.getAST();
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 
@@ -174,34 +177,45 @@ public class MakeStaticRefactoring extends Refactoring {
 			newParam.setType(ast.newSimpleType(ast.newName(className)));
 			newParam.setName(ast.newSimpleName(className.toLowerCase()));
 
+			List<SingleVariableDeclaration> parameters= fMethodDeclaration.parameters();
+
+			String newParamName= newParam.getName().toString();
+
+			for (SingleVariableDeclaration param : parameters) {
+				String oldParamName= param.getName().toString();
+				if (oldParamName.equals(newParamName)) {
+					status.merge(RefactoringStatus
+							.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.MakeStaticRefactoring_parameter_name_already_used, BasicElementLabels.getJavaElementName(oldParamName))));
+				}
+			}
+
 			ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
 			lrw.insertLast(newParam, null);
 
 			fMethodDeclaration.getBody().accept(new ASTVisitor() {
 				@Override
-	            public boolean visit(SimpleName node) {
-					IBinding binding = node.resolveBinding();
-				    if (binding instanceof IVariableBinding) {
-				        IVariableBinding variableBinding = (IVariableBinding) binding;
-				        if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
-				            // Replace instance variable with object.parameter
-				            FieldAccess fieldAccess = ast.newFieldAccess();
-				            fieldAccess.setExpression(ast.newSimpleName(newParam.getName().toString()));
-				            fieldAccess.setName(ast.newSimpleName(node.getIdentifier()));
-				            rewrite.replace(node.getParent(), fieldAccess, null);
-				        }
-				    }
-	                else if (binding instanceof IMethodBinding) {
-	                    IMethodBinding methodBinding = (IMethodBinding) binding;
-	                    if (!Modifier.isStatic(methodBinding.getModifiers())) {
-	                        // Replace instance method with object.method
-	                        MethodInvocation methodInvocation = ast.newMethodInvocation();
-	                        methodInvocation.setExpression(ast.newSimpleName(newParam.getName().toString()));
-	                        methodInvocation.setName(ast.newSimpleName(node.getIdentifier()));
-	                        rewrite.replace(node.getParent(), methodInvocation, null);
-	                    }
-	                }
-	                return super.visit(node);
+				public boolean visit(SimpleName node) {
+					IBinding binding= node.resolveBinding();
+					if (binding instanceof IVariableBinding) {
+						IVariableBinding variableBinding= (IVariableBinding) binding;
+						if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
+							// Replace instance variable with object.parameter
+							FieldAccess fieldAccess= ast.newFieldAccess();
+							fieldAccess.setExpression(ast.newSimpleName(newParam.getName().toString()));
+							fieldAccess.setName(ast.newSimpleName(node.getIdentifier()));
+							rewrite.replace(node.getParent(), fieldAccess, null);
+						}
+					} else if (binding instanceof IMethodBinding) {
+						IMethodBinding methodBinding= (IMethodBinding) binding;
+						if (!Modifier.isStatic(methodBinding.getModifiers())) {
+							// Replace instance method with object.method
+							MethodInvocation methodInvocation= ast.newMethodInvocation();
+							methodInvocation.setExpression(ast.newSimpleName(newParam.getName().toString()));
+							methodInvocation.setName(ast.newSimpleName(node.getIdentifier()));
+							rewrite.replace(node.getParent(), methodInvocation, null);
+						}
+					}
+					return super.visit(node);
 				}
 			});
 		}
@@ -220,7 +234,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			for (BodyDeclaration body : bodies) {
 				ASTNode[] invocations= fTargetProvider.getInvocations(body, null);
 				for (ASTNode invocationASTNode : invocations) {
-					if(invocationASTNode.getClass() == SuperMethodInvocation.class) {
+					if (invocationASTNode.getClass() == SuperMethodInvocation.class) {
 						status.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations);
 						return status;
 					}
@@ -293,7 +307,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 				// if a text selection exists, source is available.
 				CompilationUnit selectionCURoot;
-				ASTNode selectionNode = null;
+				ASTNode selectionNode= null;
 				if (fSelectionCompilationUnit != null) {
 					// compilation unit - could use CuRewrite later on
 					selectionCURoot= getCachedCURewrite(fSelectionCompilationUnit).getRoot();
@@ -322,7 +336,7 @@ public class MakeStaticRefactoring extends Refactoring {
 				}
 			} else {
 				// (2) invoked on an IMethod: Source may not be available
-				fSelectionCompilationUnit = fTargetMethod.getCompilationUnit();
+				fSelectionCompilationUnit= fTargetMethod.getCompilationUnit();
 				if (fTargetMethod.getDeclaringType().isAnnotation())
 					return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
 
@@ -403,7 +417,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		//Find and Modify MethodDeclaration
 		findMethodDeclaration();
-		modifyMethodDeclaration();
+		modifyMethodDeclaration(status);
 
 		//Find and Modify MethodInvocations
 		fTargetProvider= TargetProvider.create(fMethodDeclaration);

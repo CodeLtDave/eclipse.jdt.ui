@@ -23,7 +23,9 @@ import org.eclipse.jdt.core.dom.ASTMatcher;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
+import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.tests.refactoring.infra.TextRangeUtil;
 import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;
@@ -237,5 +239,13 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		//Refactor of method in super type that has child type with override of the method -> should fail
 		RefactoringStatus status= helper(new String[] { "package1.SuperClass", "package1.SubClass", }, 5, 14, 5, 24);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
+	}
+
+	@Test
+	public void testDuplicateParamName() throws Exception {
+		//Method has instance usage and already parameter with name "example"
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 10, 7, 15);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(Messages.format(RefactoringCoreMessages.MakeStaticRefactoring_parameter_name_already_used, BasicElementLabels.getJavaElementName("example"))));
 	}
 }
