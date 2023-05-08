@@ -64,7 +64,9 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		MakeStaticRefactoring ref= new MakeStaticRefactoring(cu[0], selection.getOffset(), selection.getLength());
 		RefactoringStatus status= performRefactoringWithStatus(ref);
 
-		if (!status.hasEntries()) {
+		if (status.hasEntries()) {
+			return status;
+		} else {
 			matchFiles(topLevelName, cu);
 			matchASTs(topLevelName, cu);
 		}
@@ -247,5 +249,13 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 10, 7, 15);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(Messages.format(RefactoringCoreMessages.MakeStaticRefactoring_parameter_name_already_used, BasicElementLabels.getJavaElementName("example"))));
+	}
+
+	@Test
+	public void testDuplicateMethod() throws Exception {
+		//Selected method has instance usage and there is an existing method that is equal to the selected method after being refactored
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 10, 7, 15);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
 	}
 }

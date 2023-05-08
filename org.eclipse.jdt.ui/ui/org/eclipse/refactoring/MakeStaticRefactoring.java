@@ -18,6 +18,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -177,17 +178,13 @@ public class MakeStaticRefactoring extends Refactoring {
 			newParam.setType(ast.newSimpleType(ast.newName(className)));
 			newParam.setName(ast.newSimpleName(className.toLowerCase()));
 
+			//Check if parameter name already used
 			List<SingleVariableDeclaration> parameters= fMethodDeclaration.parameters();
+			checkDuplicateParamName(status, newParam, parameters);
 
-			String newParamName= newParam.getName().toString();
-
-			for (SingleVariableDeclaration param : parameters) {
-				String oldParamName= param.getName().toString();
-				if (oldParamName.equals(newParamName)) {
-					status.merge(RefactoringStatus
-							.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.MakeStaticRefactoring_parameter_name_already_used, BasicElementLabels.getJavaElementName(oldParamName))));
-				}
-			}
+			//Check if duplicate method exists after refactoring
+			int parameterAmount = parameters.size() + 1;
+			checkDuplicateMethod(status, parameterAmount);
 
 			ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
 			lrw.insertLast(newParam, null);
@@ -227,7 +224,34 @@ public class MakeStaticRefactoring extends Refactoring {
 		addEditToChangeManager(methodDeclarationEdit, fSelectionCompilationUnit);
 	}
 
-	private RefactoringStatus findMethodInvocations(RefactoringStatus status, ICompilationUnit[] affectedCUs) throws JavaModelException {
+	private void checkDuplicateParamName(RefactoringStatus status, SingleVariableDeclaration newParam, List<SingleVariableDeclaration> parameters) {
+		String newParamName= newParam.getName().toString();
+		for (SingleVariableDeclaration param : parameters) {
+			String oldParamName= param.getName().toString();
+			if (oldParamName.equals(newParamName)) {
+				status.merge(RefactoringStatus
+						.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.MakeStaticRefactoring_parameter_name_already_used, BasicElementLabels.getJavaElementName(oldParamName))));
+				return;
+			}
+		}
+	}
+
+	private void checkDuplicateMethod(RefactoringStatus status, int parameterAmount) throws JavaModelException {
+		String methodName= fMethodDeclaration.getName().getIdentifier();
+		IMethodBinding methodBinding= fMethodDeclaration.resolveBinding();
+		ITypeBinding typeBinding= methodBinding.getDeclaringClass();
+		IType type= (IType) typeBinding.getJavaElement();
+
+		IMethod method= org.eclipse.jdt.internal.corext.refactoring.Checks.findMethod(methodName, parameterAmount, false, type);
+
+		if (method != null) {
+			status.merge(RefactoringStatus
+					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
+			return;
+		}
+	}
+
+	private void findMethodInvocations(RefactoringStatus status, ICompilationUnit[] affectedCUs) throws JavaModelException {
 		for (ICompilationUnit affectedCU : affectedCUs) {
 			BodyDeclaration[] bodies= fTargetProvider.getAffectedBodyDeclarations(affectedCU, null);
 			MultiTextEdit multiTextEdit= new MultiTextEdit();
@@ -235,8 +259,9 @@ public class MakeStaticRefactoring extends Refactoring {
 				ASTNode[] invocations= fTargetProvider.getInvocations(body, null);
 				for (ASTNode invocationASTNode : invocations) {
 					if (invocationASTNode.getClass() == SuperMethodInvocation.class) {
-						status.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations);
-						return status;
+						status.merge(RefactoringStatus
+								.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
+						return;
 					}
 					MethodInvocation invocation= (MethodInvocation) invocationASTNode;
 					modifyMethodInvocation(multiTextEdit, invocation);
@@ -244,7 +269,6 @@ public class MakeStaticRefactoring extends Refactoring {
 			}
 			addEditToChangeManager(multiTextEdit, affectedCU);
 		}
-		return status;
 	}
 
 	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, MethodInvocation invocation) throws JavaModelException {
