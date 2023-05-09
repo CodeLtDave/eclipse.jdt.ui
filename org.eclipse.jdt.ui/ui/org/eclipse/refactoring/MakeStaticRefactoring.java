@@ -182,9 +182,17 @@ public class MakeStaticRefactoring extends Refactoring {
 			List<SingleVariableDeclaration> parameters= fMethodDeclaration.parameters();
 			checkDuplicateParamName(status, newParam, parameters);
 
+			if(status.hasError()) {
+				return;
+			}
+
 			//Check if duplicate method exists after refactoring
 			int parameterAmount = parameters.size() + 1;
 			checkDuplicateMethod(status, parameterAmount);
+
+			if(status.hasError()) {
+				return;
+			}
 
 			ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
 			lrw.insertLast(newParam, null);
@@ -442,6 +450,10 @@ public class MakeStaticRefactoring extends Refactoring {
 		//Find and Modify MethodDeclaration
 		findMethodDeclaration();
 		modifyMethodDeclaration(status);
+
+		if(status.hasError()) {
+			return status;
+		}
 
 		//Find and Modify MethodInvocations
 		fTargetProvider= TargetProvider.create(fMethodDeclaration);
