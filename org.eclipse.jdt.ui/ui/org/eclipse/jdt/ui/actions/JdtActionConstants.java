@@ -394,11 +394,11 @@ public class JdtActionConstants {
 
 	/**
 	 * Refactor menu: name of standard make static global action
-	 * (value <code>"org.eclipse.refactoring.MakeStatic"</code>).
+	 * (value <code>"org.eclipse.jdt.ui.edit.text.java.make.static"</code>).
 	 *
 	 * @since 3.29
 	 */
-	public static final String MAKE_STATIC= "org.eclipse.refactoring.MakeStatic"; //$NON-NLS-1$
+	public static final String MAKE_STATIC= "org.eclipse.jdt.ui.edit.text.java.make.static"; //$NON-NLS-1$
 
 	/**
 	 * Refactor menu: name of standard Introduce Parameter global action
