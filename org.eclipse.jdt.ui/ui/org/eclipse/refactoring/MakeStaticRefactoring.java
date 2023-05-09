@@ -171,6 +171,16 @@ public class MakeStaticRefactoring extends Refactoring {
 		AST ast= fMethodDeclaration.getAST();
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 
+		ListRewrite listRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.MODIFIERS2_PROPERTY);
+		for (Object obj : fMethodDeclaration.modifiers()) {
+			if (obj instanceof org.eclipse.jdt.core.dom.MarkerAnnotation) {
+				org.eclipse.jdt.core.dom.MarkerAnnotation markerAnnotation= (org.eclipse.jdt.core.dom.MarkerAnnotation) obj;
+				if (markerAnnotation.getTypeName().getFullyQualifiedName().equals("Override")) { //$NON-NLS-1$
+					listRewrite.remove(markerAnnotation, null);
+				}
+			}
+		}
+
 		if (fHasInstanceUsages) {
 			// Create a new parameter for the method declaration
 			SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
@@ -182,15 +192,15 @@ public class MakeStaticRefactoring extends Refactoring {
 			List<SingleVariableDeclaration> parameters= fMethodDeclaration.parameters();
 			checkDuplicateParamName(status, newParam, parameters);
 
-			if(status.hasError()) {
+			if (status.hasError()) {
 				return;
 			}
 
 			//Check if duplicate method exists after refactoring
-			int parameterAmount = parameters.size() + 1;
+			int parameterAmount= parameters.size() + 1;
 			checkDuplicateMethod(status, parameterAmount);
 
-			if(status.hasError()) {
+			if (status.hasError()) {
 				return;
 			}
 
@@ -217,6 +227,19 @@ public class MakeStaticRefactoring extends Refactoring {
 							MethodInvocation methodInvocation= ast.newMethodInvocation();
 							methodInvocation.setExpression(ast.newSimpleName(newParam.getName().toString()));
 							methodInvocation.setName(ast.newSimpleName(node.getIdentifier()));
+
+							if (node.getParent().getClass() == SuperMethodInvocation.class) {
+								SuperMethodInvocation parentNode= (SuperMethodInvocation) node.getParent();
+								for (Object argument : parentNode.arguments()) {
+									methodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
+								}
+							} else {
+								MethodInvocation parentNode= (MethodInvocation) node.getParent();
+								for (Object argument : parentNode.arguments()) {
+									methodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
+								}
+							}
+
 							rewrite.replace(node.getParent(), methodInvocation, null);
 						}
 					}
@@ -451,7 +474,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		findMethodDeclaration();
 		modifyMethodDeclaration(status);
 
-		if(status.hasError()) {
+		if (status.hasError()) {
 			return status;
 		}
 

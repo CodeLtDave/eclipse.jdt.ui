@@ -6,7 +6,7 @@ public class SuperClass {
 		String i = bar;
 		return i;
 	}
-	
+
 	public static void staticMethod() {
 		SuperClass instance = new SuperClass();
 		String j = instance.toRefactor("bar");

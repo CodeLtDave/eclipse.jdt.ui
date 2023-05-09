@@ -7,7 +7,7 @@ public class SubClass extends SuperClass {
 		String i = super.toRefactor(bar);
 		return i;
 	}
-	
+
 	public static void staticMethod() {
 		SubClass instance = new SubClass();
 		String j = instance.toRefactor("bar");
