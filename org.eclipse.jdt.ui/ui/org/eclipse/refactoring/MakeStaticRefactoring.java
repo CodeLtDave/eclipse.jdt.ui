@@ -99,7 +99,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public String getName() {
-		return "Make static"; //$NON-NLS-1$
+		return RefactoringCoreMessages.MakeStaticRefactoring_name;
 	}
 
 	private void findMethodDeclaration() {

@@ -378,13 +378,13 @@ public final class RefactoringExecutionStarter {
 	public static void startMakeStaticRefactoring(final ICompilationUnit unit, final int offset, final int length, final Shell shell) {
 		final MakeStaticRefactoring refactoring= new MakeStaticRefactoring(unit, offset, length);
 		new RefactoringStarter().activate(new MakeStaticWizard(refactoring), shell,
-				RefactoringMessages.IntroduceIndirectionAction_dialog_title, RefactoringSaveHelper.SAVE_REFACTORING);
+				RefactoringMessages.MakeStaticAction_dialog_title, RefactoringSaveHelper.SAVE_REFACTORING);
 	}
 
 	public static void startMakeStaticRefactoring(final IMethod method, final Shell shell) {
 		final MakeStaticRefactoring refactoring= new MakeStaticRefactoring(method);
 		new RefactoringStarter().activate(new MakeStaticWizard(refactoring), shell,
-				RefactoringMessages.IntroduceIndirectionAction_dialog_title, RefactoringSaveHelper.SAVE_REFACTORING);
+				RefactoringMessages.MakeStaticAction_dialog_title, RefactoringSaveHelper.SAVE_REFACTORING);
 	}
 
 	public static void startIntroduceParameter(ICompilationUnit unit, int offset, int length, Shell shell) {

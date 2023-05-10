@@ -29,7 +29,7 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
  */
 public class MakeStaticWizard extends RefactoringWizard {
 
-	/* package */ static final String DIALOG_SETTING_SECTION= "ExtractMethodWizard"; //$NON-NLS-1$
+	/* package */ static final String DIALOG_SETTING_SECTION= "MakeStaticWizard"; //$NON-NLS-1$
 
 	public MakeStaticWizard(MakeStaticRefactoring ref){
 		super(ref, DIALOG_BASED_USER_INTERFACE | PREVIEW_EXPAND_FIRST_NODE);

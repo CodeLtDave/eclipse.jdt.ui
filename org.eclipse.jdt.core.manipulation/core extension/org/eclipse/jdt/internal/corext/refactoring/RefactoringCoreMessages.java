@@ -1030,6 +1030,8 @@ public final class RefactoringCoreMessages extends NLS {
 
 	public static String IntroduceIndirectionRefactoring_unable_determine_declaring_type;
 
+	public static String MakeStaticRefactoring_name;
+
 	public static String MakeStaticRefactoring_checking_activation;
 
 	public static String MakeStaticRefactoring_not_available_on_this_selection;
