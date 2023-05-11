@@ -1,5 +1,6 @@
 package org.eclipse.refactoring;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -228,16 +229,16 @@ public class MakeStaticRefactoring extends Refactoring {
 							methodInvocation.setExpression(ast.newSimpleName(newParam.getName().toString()));
 							methodInvocation.setName(ast.newSimpleName(node.getIdentifier()));
 
+							List<Object> temp= Collections.emptyList();
+
 							if (node.getParent().getClass() == SuperMethodInvocation.class) {
-								SuperMethodInvocation parentNode= (SuperMethodInvocation) node.getParent();
-								for (Object argument : parentNode.arguments()) {
-									methodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
-								}
+								temp= ((SuperMethodInvocation) node.getParent()).arguments();
 							} else {
-								MethodInvocation parentNode= (MethodInvocation) node.getParent();
-								for (Object argument : parentNode.arguments()) {
-									methodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
-								}
+								temp= ((MethodInvocation) node.getParent()).arguments();
+							}
+
+							for (Object argument : temp) {
+								methodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
 							}
 
 							rewrite.replace(node.getParent(), methodInvocation, null);

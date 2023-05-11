@@ -25,7 +25,6 @@ import org.eclipse.ui.IWorkbenchSite;
 import org.eclipse.ui.PlatformUI;
 
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
@@ -146,21 +145,5 @@ public class MakeStaticAction extends SelectionDispatchAction {
 
 	private void run(IMethod method) {
 		RefactoringExecutionStarter.startMakeStaticRefactoring(method, getShell());
-	}
-
-	private IMethod getSingleSelectedMethod(ITextSelection selection) throws JavaModelException {
-		//- when caret/selection on method name (call or declaration) -> that method
-		//- otherwise: caret position's enclosing method declaration
-		//  - when caret inside argument list of method declaration -> enclosing method declaration
-		//  - when caret inside argument list of method call -> enclosing method declaration (and NOT method call)
-		IJavaElement[] elements= SelectionConverter.codeResolve(fEditor);
-		if (elements.length > 1)
-			return null;
-		if (elements.length == 1 && elements[0] instanceof IMethod)
-			return (IMethod) elements[0];
-		IJavaElement elementAt= SelectionConverter.getInputAsCompilationUnit(fEditor).getElementAt(selection.getOffset());
-		if (elementAt instanceof IMethod)
-			return (IMethod) elementAt;
-		return null;
 	}
 }
