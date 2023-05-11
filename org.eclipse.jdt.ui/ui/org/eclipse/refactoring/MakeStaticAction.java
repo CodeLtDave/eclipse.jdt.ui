@@ -25,11 +25,13 @@ import org.eclipse.ui.IWorkbenchSite;
 import org.eclipse.ui.PlatformUI;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringExecutionStarter;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
@@ -69,7 +71,7 @@ public class MakeStaticAction extends SelectionDispatchAction {
 	 */
 	public MakeStaticAction(JavaEditor editor) {
 		super(editor.getEditorSite());
-		setText("Make Static..."); //$NON-NLS-1$
+		setText(RefactoringCoreMessages.MakeStaticRefactoring_name);
 		fEditor= editor;
 		setEnabled(SelectionConverter.getInputAsCompilationUnit(fEditor) != null);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IJavaHelpContextIds.MAKE_STATIC_ACTION);
@@ -85,7 +87,7 @@ public class MakeStaticAction extends SelectionDispatchAction {
 
 	@Override
 	public void selectionChanged(ITextSelection selection) {
-		setEnabled((fEditor != null && SelectionConverter.getInputAsCompilationUnit(fEditor) != null));
+		setEnabled(fEditor != null && SelectionConverter.getInputAsCompilationUnit(fEditor) != null);
 	}
 
 	@Override
@@ -121,7 +123,7 @@ public class MakeStaticAction extends SelectionDispatchAction {
 		ITypeRoot editorInput= SelectionConverter.getInput(fEditor);
 		if (!ActionUtil.isEditable(getShell(), editorInput))
 			return;
-			run(selection.getOffset(), selection.getLength(), (ICompilationUnit) editorInput);
+		run(selection.getOffset(), selection.getLength(), (ICompilationUnit) editorInput);
 	}
 
 	@Override
@@ -130,7 +132,7 @@ public class MakeStaticAction extends SelectionDispatchAction {
 			Assert.isTrue(RefactoringAvailabilityTester.isMakeStaticAvailable(selection));
 			Object first= selection.getFirstElement();
 			Assert.isTrue(first instanceof IMethod);
-			if (!ActionUtil.isEditable(getShell(), (IMethod)first))
+			if (!ActionUtil.isEditable(getShell(), (IMethod) first))
 				return;
 			run((IMethod) first);
 		} catch (CoreException e) {
@@ -144,5 +146,21 @@ public class MakeStaticAction extends SelectionDispatchAction {
 
 	private void run(IMethod method) {
 		RefactoringExecutionStarter.startMakeStaticRefactoring(method, getShell());
+	}
+
+	private IMethod getSingleSelectedMethod(ITextSelection selection) throws JavaModelException {
+		//- when caret/selection on method name (call or declaration) -> that method
+		//- otherwise: caret position's enclosing method declaration
+		//  - when caret inside argument list of method declaration -> enclosing method declaration
+		//  - when caret inside argument list of method call -> enclosing method declaration (and NOT method call)
+		IJavaElement[] elements= SelectionConverter.codeResolve(fEditor);
+		if (elements.length > 1)
+			return null;
+		if (elements.length == 1 && elements[0] instanceof IMethod)
+			return (IMethod) elements[0];
+		IJavaElement elementAt= SelectionConverter.getInputAsCompilationUnit(fEditor).getElementAt(selection.getOffset());
+		if (elementAt instanceof IMethod)
+			return (IMethod) elementAt;
+		return null;
 	}
 }
