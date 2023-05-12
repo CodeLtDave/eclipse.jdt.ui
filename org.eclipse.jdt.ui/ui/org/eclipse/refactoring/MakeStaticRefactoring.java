@@ -17,9 +17,11 @@ import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -290,11 +292,6 @@ public class MakeStaticRefactoring extends Refactoring {
 			for (BodyDeclaration body : bodies) {
 				ASTNode[] invocations= fTargetProvider.getInvocations(body, null);
 				for (ASTNode invocationASTNode : invocations) {
-					if (invocationASTNode.getClass() == SuperMethodInvocation.class) {
-						status.merge(RefactoringStatus
-								.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
-						return;
-					}
 					MethodInvocation invocation= (MethodInvocation) invocationASTNode;
 					modifyMethodInvocation(multiTextEdit, invocation);
 				}
@@ -380,10 +377,14 @@ public class MakeStaticRefactoring extends Refactoring {
 
 				IMethodBinding targetMethodBinding= null;
 
-				if (selectionNode.getNodeType() == ASTNode.METHOD_INVOCATION) {
+				int nodeType= selectionNode.getNodeType();
+
+				if (nodeType == ASTNode.METHOD_INVOCATION) {
 					targetMethodBinding= ((MethodInvocation) selectionNode).resolveMethodBinding();
-				} else if (selectionNode.getNodeType() == ASTNode.METHOD_DECLARATION) {
+				} else if (nodeType == ASTNode.METHOD_DECLARATION) {
 					targetMethodBinding= ((MethodDeclaration) selectionNode).resolveBinding();
+				} else if (nodeType == ASTNode.SUPER_METHOD_INVOCATION) {
+					return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations);
 				}
 
 				if (targetMethodBinding != null) {
@@ -422,10 +423,29 @@ public class MakeStaticRefactoring extends Refactoring {
 			if (Modifier.isStatic(flags))
 				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static);
 
+			if (isOverridden(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
+				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype);
+			}
+
 			return new RefactoringStatus();
 		} finally {
 			pm.done();
 		}
+	}
+
+	public boolean isOverridden(IType type, String methodName) throws JavaModelException {
+		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
+		IType[] subtypes= hierarchy.getAllSubtypes(type);
+		for (IType subtype : subtypes) {
+			IMethod method= subtype.getMethod(methodName, fTargetMethod.getParameterTypes());
+			if (method != null) {
+				int flags= method.getFlags();
+				if (!Flags.isPrivate(flags)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private CompilationUnitRewrite getCachedCURewrite(ICompilationUnit unit) {

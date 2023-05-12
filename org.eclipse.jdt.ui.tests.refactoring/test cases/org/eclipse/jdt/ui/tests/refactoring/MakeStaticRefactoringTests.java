@@ -238,8 +238,15 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void testSuperMethodInvocation2() throws Exception {
-		//Refactor of method in super type that has child type with override of the method -> should fail
-		RefactoringStatus status= helper(new String[] { "package1.SuperClass", "package1.SubClass", }, 5, 14, 5, 24);
+		//Refactor of method in super type that has child type overriding the method -> should fail
+		RefactoringStatus status= helper(new String[] { "package1.SuperClass", "package1.SubClass" }, 5, 14, 5, 24);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype));
+	}
+
+	@Test
+	public void testSuperMethodInvocation3() throws Exception {
+		//Selecting SuperMethodInvocation -> should fail
+		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 7, 20, 7, 30);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
 	}
 
