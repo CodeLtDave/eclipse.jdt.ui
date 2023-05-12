@@ -549,6 +549,8 @@ public final class RefactoringMessages extends NLS {
 
 	public static String MakeStaticAction_tooltip;
 
+	public static String MakeStaticAction_unknown_exception;
+
 	public static String ModifyParametersAction_unavailable;
 
 	public static String MoveAction_Move;

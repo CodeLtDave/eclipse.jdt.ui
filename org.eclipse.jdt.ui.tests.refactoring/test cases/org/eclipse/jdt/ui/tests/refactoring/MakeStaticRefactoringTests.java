@@ -258,4 +258,12 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
 	}
+
+	@Test
+	public void testMethodAlreadyStatic() throws Exception {
+		//Selected method is already static
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 22, 5, 32);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static));
+	}
 }

@@ -193,7 +193,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			List<SingleVariableDeclaration> parameters= fMethodDeclaration.parameters();
 			checkDuplicateParamName(status, newParam, parameters);
 
-			if (status.hasError()) {
+			if (status.hasFatalError()) {
 				return;
 			}
 
@@ -201,7 +201,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			int parameterAmount= parameters.size() + 1;
 			checkDuplicateMethod(status, parameterAmount);
 
-			if (status.hasError()) {
+			if (status.hasFatalError()) {
 				return;
 			}
 
@@ -299,6 +299,11 @@ public class MakeStaticRefactoring extends Refactoring {
 					modifyMethodInvocation(multiTextEdit, invocation);
 				}
 			}
+
+			if (status.hasFatalError()) {
+				return;
+			}
+
 			addEditToChangeManager(multiTextEdit, affectedCU);
 		}
 	}
@@ -413,6 +418,10 @@ public class MakeStaticRefactoring extends Refactoring {
 			if (fTargetMethod.isConstructor())
 				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors);
 
+			int flags= fTargetMethod.getFlags();
+			if (Modifier.isStatic(flags))
+				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static);
+
 			return new RefactoringStatus();
 		} finally {
 			pm.done();
@@ -475,7 +484,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		findMethodDeclaration();
 		modifyMethodDeclaration(status);
 
-		if (status.hasError()) {
+		if (status.hasFatalError()) {
 			return status;
 		}
 

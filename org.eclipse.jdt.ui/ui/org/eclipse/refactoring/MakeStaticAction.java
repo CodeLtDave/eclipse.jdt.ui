@@ -135,7 +135,7 @@ public class MakeStaticAction extends SelectionDispatchAction {
 				return;
 			run((IMethod) first);
 		} catch (CoreException e) {
-			ExceptionHandler.handle(e, RefactoringMessages.IntroduceIndirectionAction_dialog_title, RefactoringMessages.IntroduceIndirectionAction_unknown_exception);
+			ExceptionHandler.handle(e, RefactoringMessages.MakeStaticAction_dialog_title, RefactoringMessages.MakeStaticAction_unknown_exception);
 		}
 	}
 
