@@ -84,11 +84,13 @@ public class MakeStaticAction extends SelectionDispatchAction {
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IJavaHelpContextIds.MAKE_STATIC_ACTION);
 	}
 
+	// Selected in Editor window
 	@Override
 	public void selectionChanged(ITextSelection selection) {
 		setEnabled(fEditor != null && SelectionConverter.getInputAsCompilationUnit(fEditor) != null);
 	}
 
+	// Selected in outline window
 	@Override
 	public void selectionChanged(IStructuredSelection selection) {
 		try {
