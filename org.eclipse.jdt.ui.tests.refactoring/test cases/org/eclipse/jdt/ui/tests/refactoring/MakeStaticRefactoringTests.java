@@ -181,7 +181,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void testMethodNotFound() throws Exception {
-		//Method cannot be found -> NullPointerException
+		//Method cannot be found
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 0, 5, 5);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 	}
@@ -273,4 +273,20 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static));
 	}
+
+	@Test
+	public void testNonStaticInnerClass() throws Exception {
+		//instance of Inner Class is used in refactored method
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 8, 17, 8, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testGenericDeclaration() throws Exception {
+		//Selected method is already static
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 6, 17, 6, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+
 }
