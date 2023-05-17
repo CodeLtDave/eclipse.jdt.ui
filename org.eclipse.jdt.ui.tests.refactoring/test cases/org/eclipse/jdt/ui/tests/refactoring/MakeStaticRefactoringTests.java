@@ -326,4 +326,18 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 19, 7, 29);
 		assertHasNoCommonErrors(status);
 	}
+
+	@Test
+	public void testOuterFieldAccessInAnonymousClass() throws Exception {
+		//Anonymous class uses a field of outer class
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testOuterFieldAccessInLambda() throws Exception {
+		//Lambda uses a field of outer class
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		assertHasNoCommonErrors(status);
+	}
 }
