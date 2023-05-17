@@ -1,6 +1,5 @@
 package org.eclipse.refactoring;
 
-import java.util.HashMap;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -212,8 +211,7 @@ public class MakeStaticRefactoring extends Refactoring {
 					Expression toReplace= null;
 					if (optionalExpression instanceof SimpleName) {
 						toReplace= optionalExpression;
-					}
-					else if (optionalExpression instanceof ThisExpression) {
+					} else if (optionalExpression instanceof ThisExpression) {
 						toReplace= optionalExpression;
 					} else if (optionalExpression instanceof FieldAccess) {
 						return super.visit(node);
@@ -243,7 +241,7 @@ public class MakeStaticRefactoring extends Refactoring {
 				public boolean visit(SimpleName node) {
 					IBinding binding= node.resolveBinding();
 					if (binding instanceof IVariableBinding) {
-						IVariableBinding variableBinding = (IVariableBinding) binding;
+						IVariableBinding variableBinding= (IVariableBinding) binding;
 						if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
 							ASTNode parent= node.getParent();
 
@@ -253,15 +251,13 @@ public class MakeStaticRefactoring extends Refactoring {
 									SimpleName replacement= ast.newSimpleName(paramName);
 									rewrite.replace(toReplace, replacement, null);
 								}
-							}
-							else if (parent instanceof SuperFieldAccess) {
+							} else if (parent instanceof SuperFieldAccess) {
 								SuperFieldAccess toReplace= (SuperFieldAccess) parent;
 								FieldAccess replacement= ast.newFieldAccess();
 								replacement.setExpression(ast.newSimpleName(paramName));
 								replacement.setName(ast.newSimpleName(node.getIdentifier()));
 								rewrite.replace(toReplace, replacement, null);
-							}
-							else {
+							} else {
 								SimpleName toReplace= node;
 								FieldAccess replacement= ast.newFieldAccess();
 								replacement.setExpression(ast.newSimpleName(paramName));
@@ -269,9 +265,8 @@ public class MakeStaticRefactoring extends Refactoring {
 								rewrite.replace(toReplace, replacement, null);
 							}
 						}
-					}
-					else if(binding instanceof IMethodBinding) {
-						IMethodBinding methodBinding = (IMethodBinding) binding;
+					} else if (binding instanceof IMethodBinding) {
+						IMethodBinding methodBinding= (IMethodBinding) binding;
 						if (!Modifier.isStatic(methodBinding.getModifiers())) {
 							ASTNode parent= node.getParent();
 							SimpleName replacementExpression= ast.newSimpleName(paramName);
@@ -281,29 +276,26 @@ public class MakeStaticRefactoring extends Refactoring {
 
 								if (optionalExpression instanceof SimpleName) {
 									rewrite.replace(optionalExpression, replacementExpression, null);
-								}
-								else if (optionalExpression instanceof ThisExpression) {
+								} else if (optionalExpression instanceof ThisExpression) {
 									rewrite.replace(optionalExpression, replacementExpression, null);
-								}
-								else if (optionalExpression == null) {
+								} else if (optionalExpression == null) {
 									MethodInvocation replacementMethodInvocation= ast.newMethodInvocation();
 									replacementMethodInvocation.setExpression(replacementExpression);
 									replacementMethodInvocation.setName(ast.newSimpleName(methodInvocation.getName().toString()));
-									List<Expression> args = methodInvocation.arguments();
-									for(Expression arg : args) {
+									List<Expression> args= methodInvocation.arguments();
+									for (Expression arg : args) {
 										replacementMethodInvocation.arguments().add(ASTNode.copySubtree(ast, arg));
 									}
 									rewrite.replace(methodInvocation, replacementMethodInvocation, null);
 								}
-							}
-							else if (parent instanceof SuperMethodInvocation) {
-								SuperMethodInvocation superMethodInvocation = (SuperMethodInvocation) parent;
-								MethodInvocation replacementSuperInvocation = ast.newMethodInvocation();
+							} else if (parent instanceof SuperMethodInvocation) {
+								SuperMethodInvocation superMethodInvocation= (SuperMethodInvocation) parent;
+								MethodInvocation replacementSuperInvocation= ast.newMethodInvocation();
 								replacementSuperInvocation.setExpression(replacementExpression);
-								SimpleName copiedName = ast.newSimpleName(superMethodInvocation.getName().getIdentifier());
+								SimpleName copiedName= ast.newSimpleName(superMethodInvocation.getName().getIdentifier());
 								replacementSuperInvocation.setName(copiedName);
-								List<Expression> args = superMethodInvocation.arguments();
-								for(Expression arg : args) {
+								List<Expression> args= superMethodInvocation.arguments();
+								for (Expression arg : args) {
 									replacementSuperInvocation.arguments().add(ASTNode.copySubtree(ast, arg));
 								}
 								rewrite.replace(superMethodInvocation, replacementSuperInvocation, null);
@@ -417,7 +409,6 @@ public class MakeStaticRefactoring extends Refactoring {
 			pm.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_activation, 1);
 
 			fChangeManager= new TextEditBasedChangeManager();
-			new HashMap<>();
 			fHasInstanceUsages= false;
 
 			// This refactoring has been invoked on
@@ -491,9 +482,16 @@ public class MakeStaticRefactoring extends Refactoring {
 			int flags= fTargetMethod.getFlags();
 			if (Modifier.isStatic(flags))
 				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static);
+
 			// check if method is overridden in hierarchy
 			if (isOverridden(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
 				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype);
+			}
+
+			// check if method is overriding in hierarchy and has no parameters
+			//-> after refactoring method would be static and have same signature as parent method
+			if (fTargetMethod.getNumberOfParameters() == 0 && isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
+				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type);
 			}
 
 			return new RefactoringStatus();
@@ -516,6 +514,21 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 		return false;
 	}
+
+	public boolean isOverriding(IType type, String methodName) throws JavaModelException {
+		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
+		IType[] supertypes= hierarchy.getAllSupertypes(type);
+		for (IType supertype : supertypes) {
+			if(!(supertype.getElementName().equals("Object"))) { //$NON-NLS-1$
+			IMethod method= supertype.getMethod(methodName, fTargetMethod.getParameterTypes());
+			if (method != null) {
+				return true;
+			}
+		}
+		}
+		return false;
+	}
+
 
 	private static ASTNode getSelectedNode(ICompilationUnit unit, CompilationUnit root, int offset, int length) {
 		ASTNode node= null;

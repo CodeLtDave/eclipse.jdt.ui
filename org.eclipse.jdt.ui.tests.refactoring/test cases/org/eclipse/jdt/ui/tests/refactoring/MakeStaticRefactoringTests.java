@@ -251,6 +251,14 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	}
 
 	@Test
+	public void testSuperMethodInvocation4() throws Exception {
+		//Refactor method without parameters on the lowest hierarchy level ->
+		//After refactoring it is static but has the same signature as parent type method -> should fail
+		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 6, 19, 6, 29);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
+	}
+
+	@Test
 	public void testDuplicateParamName() throws Exception {
 		//Method has instance usage and already parameter with name "example"
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 10, 7, 15);
@@ -283,10 +291,39 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void testGenericDeclaration() throws Exception {
-		//Selected method is already static
+		//class has one generic type that is used for field and for parameter of selected method
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 6, 17, 6, 20);
 		assertHasNoCommonErrors(status);
 	}
 
+	@Test
+	public void testGenericDeclaration2() throws Exception {
+		//class has more than one generic type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 17, 7, 20);
+		assertHasNoCommonErrors(status);
+	}
 
+	@Test
+	public void testGenericDeclaration3() throws Exception {
+		//class has more than one generic type and an instance of the class is used in selected method
+		//selected method is hiding two generic types -> refactoring should fail
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 24, 7, 27);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testNoAdditionalParameter() throws Exception {
+		//An instance of the class is already in use as parameter with name example in the selected method for field access.
+		//Only static keyword needs to be set and not additional Parameter for field access.
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 19, 7, 29);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testNoAdditionalParameter2() throws Exception {
+		//An instance of the class is already in use as parameter with name foo in the selected method for field access.
+		//Only static keyword needs to be set and not additional Parameter for field access.
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 19, 7, 29);
+		assertHasNoCommonErrors(status);
+	}
 }
