@@ -33,7 +33,7 @@ public class MakeStaticWizard extends RefactoringWizard {
 
 	public MakeStaticWizard(MakeStaticRefactoring ref){
 		super(ref, DIALOG_BASED_USER_INTERFACE | PREVIEW_EXPAND_FIRST_NODE);
-		setDefaultPageTitle("Make static"); //$NON-NLS-1$
+		setDefaultPageTitle("Make method static"); //$NON-NLS-1$
 		setDialogSettings(JavaPlugin.getDefault().getDialogSettings());
 	}
 

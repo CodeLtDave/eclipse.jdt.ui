@@ -1,4 +1,4 @@
 public class Foo {
-    public static void method(Foo foo) {
-    }
+	public static void method() {
+	}
 }

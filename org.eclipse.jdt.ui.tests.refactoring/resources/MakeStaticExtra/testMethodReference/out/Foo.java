@@ -1,6 +1,6 @@
 class Foo {
 	void test() {
-		Foo2<Test4> f= Foo::yyy;
+		Foo2<Foo> f= Foo::yyy;
 	}
 
 	static void yyy(Foo foo) {

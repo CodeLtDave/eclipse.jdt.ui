@@ -6,6 +6,6 @@ class Foo {
       public void run() {
         Runnable r = this::print;
       }
-    }
+    };
   }
 }

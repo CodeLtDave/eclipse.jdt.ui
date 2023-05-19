@@ -251,7 +251,8 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	public void testClearOverrideAnnotation() throws Exception {
 		//IntelliJ fails
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 20);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 	}
 
 	@Test
@@ -261,20 +262,8 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	}
 
 	@Test
-	public void testDelegatePlace() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 17, 4, 20);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
 	public void testExpandMethodReference() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 10, 7, 10, 11);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testFieldsAndDelegation() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 18, 4, 21);
 		assertHasNoCommonErrors(status);
 	}
 

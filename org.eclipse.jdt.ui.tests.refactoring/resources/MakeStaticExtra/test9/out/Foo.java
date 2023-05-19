@@ -8,6 +8,6 @@ public class Foo {
 
 public class Bar extends Foo {
 	int a(int b) {
-		return method(this, b * 2);
+		return method(b * 2, this);
 	}
 }

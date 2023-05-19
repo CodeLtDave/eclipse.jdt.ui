@@ -111,6 +111,16 @@ public class MakeStaticRefactoring extends Refactoring {
 		//Change instance Usages ("this" and "super" to paramName and set fHasInstanceUsage flag
 		fMethodDeclaration.getBody().accept(new ChangeInstanceUsagesInMethodBody(paramName, rewrite, ast));
 
+		// check if method is overriding in hierarchy and has no parameters
+		//-> after refactoring method would be static and have same signature as parent method
+		if (!fHasInstanceUsages && isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
+			status.merge(RefactoringStatus
+					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
+			return;
+		}
+
+
+
 		if (fHasInstanceUsages) {
 			//Create new parameter
 			SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
@@ -354,9 +364,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		try {
 			pm.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_activation, 1);
 
-			fChangeManager= new TextEditBasedChangeManager();
-			fHasInstanceUsages= false;
-
 			// This refactoring has been invoked on
 			// (1) a TextSelection inside an ICompilationUnit, or
 			// (2) an IMethod inside a ICompilationUnit
@@ -434,12 +441,6 @@ public class MakeStaticRefactoring extends Refactoring {
 				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype);
 			}
 
-			// check if method is overriding in hierarchy and has no parameters
-			//-> after refactoring method would be static and have same signature as parent method
-			if (fTargetMethod.getNumberOfParameters() == 0 && isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
-				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type);
-			}
-
 			return new RefactoringStatus();
 		} finally {
 			pm.done();
@@ -514,6 +515,8 @@ public class MakeStaticRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		RefactoringStatus status= new RefactoringStatus();
+		fChangeManager= new TextEditBasedChangeManager();
+		fHasInstanceUsages= false;
 
 		//Modify MethodDeclaration
 		modifyMethodDeclaration(status);
