@@ -104,7 +104,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		modRewrite.setModifiers(fMethodDeclaration.getModifiers() | Modifier.STATIC, null);
 
 		// Find unused name for potential new parameter
-		List<SingleVariableDeclaration> alreadyUsedParameters = fMethodDeclaration.parameters();
+		List<SingleVariableDeclaration> alreadyUsedParameters= fMethodDeclaration.parameters();
 		String className= ((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString();
 		String paramName= generateUniqueParameterName(className, alreadyUsedParameters);
 
@@ -113,14 +113,15 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		if (fHasInstanceUsages) {
 			//Create new parameter
-			SingleVariableDeclaration newParam = ast.newSingleVariableDeclaration();
+			SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
 			newParam.setType(ast.newSimpleType(ast.newName(className)));
 			newParam.setName(ast.newSimpleName(paramName));
 
 			//Check if duplicate method exists after refactoring
 			int parameterAmount= alreadyUsedParameters.size() + 1;
 			checkDuplicateMethod(status, parameterAmount);
-			if (status.hasFatalError()) return;
+			if (status.hasFatalError())
+				return;
 
 			//Add new parameter to method declaration arguments
 			ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
@@ -161,7 +162,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			if (binding instanceof IVariableBinding) {
 				IVariableBinding variableBinding= (IVariableBinding) binding;
 				if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
-					fHasInstanceUsages = true;
+					fHasInstanceUsages= true;
 					ASTNode parent= node.getParent();
 
 					if (parent instanceof FieldAccess) {
@@ -187,7 +188,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			} else if (binding instanceof IMethodBinding) {
 				IMethodBinding methodBinding= (IMethodBinding) binding;
 				if (!Modifier.isStatic(methodBinding.getModifiers())) {
-					fHasInstanceUsages = true;
+					fHasInstanceUsages= true;
 					ASTNode parent= node.getParent();
 					SimpleName replacementExpression= fAst.newSimpleName(fParamName);
 					if (parent instanceof MethodInvocation) {
@@ -228,19 +229,20 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	private String generateUniqueParameterName(String className, List<SingleVariableDeclaration> parameters) {
-		String classNameFirstLowerCase = Character.toLowerCase(className.charAt(0)) + className.substring(1);	//makes first char lower to match name conventions
-		if (parameters==null || parameters.isEmpty()) return classNameFirstLowerCase;
+		String classNameFirstLowerCase= Character.toLowerCase(className.charAt(0)) + className.substring(1); //makes first char lower to match name conventions
+		if (parameters == null || parameters.isEmpty())
+			return classNameFirstLowerCase;
 
-		String combinedName = classNameFirstLowerCase;
-		int counter = 2;
+		String combinedName= classNameFirstLowerCase;
+		int counter= 2;
 		while (true) {
 			for (SingleVariableDeclaration param : parameters) {
-				String paramString = param.getName().getIdentifier();
+				String paramString= param.getName().getIdentifier();
 				if (!(combinedName.equalsIgnoreCase(paramString))) {
 					return combinedName;
 				}
 			}
-			combinedName = classNameFirstLowerCase + counter++;
+			combinedName= classNameFirstLowerCase + counter++;
 		}
 	}
 
@@ -253,6 +255,27 @@ public class MakeStaticRefactoring extends Refactoring {
 		IMethod method= org.eclipse.jdt.internal.corext.refactoring.Checks.findMethod(methodName, parameterAmount, false, type);
 
 		if (method != null) {
+
+			//check if parameter types match (also compare new parameter that is added by refactoring)
+			String className= ((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString();
+			String extendedClassName= "Q" + className + ";"; //$NON-NLS-1$ //$NON-NLS-2$
+			boolean contains;
+			String[] paramTypesOfFoundMethod= method.getParameterTypes();
+			String[] paramTypesOfSelectedMethodExtended= new String[parameterAmount];
+			paramTypesOfSelectedMethodExtended[parameterAmount - 1]= extendedClassName;
+			String[] paramTypesOfSelectedMethod= fTargetMethod.getParameterTypes();
+
+			for (int i= 0; i < paramTypesOfSelectedMethod.length; i++) {
+				paramTypesOfSelectedMethodExtended[i]= paramTypesOfSelectedMethod[i];
+			}
+
+			for (int i= 0; i < paramTypesOfFoundMethod.length; i++) {
+				contains= paramTypesOfSelectedMethodExtended[i].equals(paramTypesOfFoundMethod[i]);
+				if (!contains) {
+					return;
+				}
+			}
+
 			status.merge(RefactoringStatus
 					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
 			return;
@@ -434,7 +457,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] supertypes= hierarchy.getAllSupertypes(type);
 		for (IType supertype : supertypes) {
-			if(!(supertype.getElementName().equals("Object"))) { //$NON-NLS-1$
+			if (!(supertype.getElementName().equals("Object"))) { //$NON-NLS-1$
 				IMethod method= supertype.getMethod(methodName, fTargetMethod.getParameterTypes());
 				if (method != null) {
 					return true;
