@@ -340,4 +340,11 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
 		assertHasNoCommonErrors(status);
 	}
+
+	@Test
+	public void testVariousInstanceCases() throws Exception {
+		//Various cases of instance access in many different forms
+		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 14, 17, 14, 27);
+		assertHasNoCommonErrors(status);
+	}
 }

@@ -2,8 +2,8 @@ package package1;
 
 public class SubClass extends SuperClass {
 
-	public static String toRefactor(String bar, SubClass subclass) {
-		String i = subclass.toRefactor(bar);
+	public static String toRefactor(String bar, SubClass subClass) {
+		String i = subClass.toRefactor(bar);
 		return i;
 	}
 
