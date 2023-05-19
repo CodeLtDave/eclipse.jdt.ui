@@ -1054,6 +1054,8 @@ public final class RefactoringCoreMessages extends NLS {
 
 	public static String MakeStaticRefactoring_hiding_method_of_parent_type;
 
+	public static String MakeStaticRefactoring_selected_method_overrides_parent_type;
+
 	public static String IntroduceParameterObjectRefactoring_cannotalanyzemethod_mappingerror;
 
 	public static String IntroduceParameterObjectRefactoring_cannotanalysemethod_compilererror;

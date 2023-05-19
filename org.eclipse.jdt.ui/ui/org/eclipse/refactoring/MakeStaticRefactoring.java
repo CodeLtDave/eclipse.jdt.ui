@@ -119,6 +119,10 @@ public class MakeStaticRefactoring extends Refactoring {
 			return;
 		}
 
+		if(isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
+			status.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
+		}
+
 
 
 		if (fHasInstanceUsages) {
