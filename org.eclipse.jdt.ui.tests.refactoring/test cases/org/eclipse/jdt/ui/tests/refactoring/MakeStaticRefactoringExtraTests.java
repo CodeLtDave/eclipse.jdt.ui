@@ -158,7 +158,7 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 
 	@Test
 	public void test9() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo", "p.Bar" }, 4, 9, 4, 15);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 9, 4, 15);
 		assertHasNoCommonErrors(status);
 	}
 

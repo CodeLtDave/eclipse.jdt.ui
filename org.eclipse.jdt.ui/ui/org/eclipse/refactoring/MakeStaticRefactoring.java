@@ -450,11 +450,14 @@ public class MakeStaticRefactoring extends Refactoring {
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] subtypes= hierarchy.getAllSubtypes(type);
 		for (IType subtype : subtypes) {
-			IMethod method= subtype.getMethod(methodName, fTargetMethod.getParameterTypes());
-			if (method != null) {
-				int flags= method.getFlags();
-				if (!Flags.isPrivate(flags)) {
-					return true;
+			IMethod[] methods= subtype.getMethods();
+			//IMethod method= subtype.getMethod(methodName, fTargetMethod.getParameterTypes());
+			for (IMethod method : methods) {
+				if (method.isSimilar(fTargetMethod)) {
+					int flags= method.getFlags();
+					if (!Flags.isPrivate(flags) || (!Flags.isStatic(flags))) {
+						return true;
+					}
 				}
 			}
 		}
