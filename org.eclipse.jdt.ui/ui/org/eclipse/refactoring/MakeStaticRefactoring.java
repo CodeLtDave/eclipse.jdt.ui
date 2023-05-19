@@ -233,16 +233,24 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (parameters == null || parameters.isEmpty())
 			return classNameFirstLowerCase;
 
+		boolean duplicateExists= false;
 		String combinedName= classNameFirstLowerCase;
 		int counter= 2;
 		while (true) {
 			for (SingleVariableDeclaration param : parameters) {
 				String paramString= param.getName().getIdentifier();
-				if (!(combinedName.equalsIgnoreCase(paramString))) {
-					return combinedName;
+				if (!(combinedName.equals(paramString))) {
+					duplicateExists= false;
+				} else {
+					duplicateExists= true;
+					break;
 				}
 			}
-			combinedName= classNameFirstLowerCase + counter++;
+			if (duplicateExists) {
+				combinedName= classNameFirstLowerCase + counter++;
+			} else {
+				return combinedName;
+			}
 		}
 	}
 
