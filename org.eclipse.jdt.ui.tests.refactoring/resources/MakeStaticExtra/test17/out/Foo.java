@@ -1,10 +1,10 @@
 public class Foo {
-    String field;
+	String field;
 
-    /**
-     * @param field
-     */
-    static String method(String field) {
-        return field;
-    }
+	/**
+	 * @param foo
+	 */
+	static String method(Foo foo) {
+		return foo.field;
+	}
 }

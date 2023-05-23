@@ -203,7 +203,7 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 
 	@Test
 	public void test16() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 8, 10, 8, 16);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 9, 10, 9, 16);
 		assertHasNoCommonErrors(status);
 	}
 

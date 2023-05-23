@@ -1,13 +1,13 @@
 public class Foo {
-	void anotherMethod(String s);
+	void anotherMethod(String s) {
+	};
 
 	String field;
 
 	/**
-	 * @param anObject
-	 * @param field
+	 * @param foo
 	 */
-	static void method(String field, Foo foo) {
-		foo.anotherMethod(field);
+	static void method(Foo foo) {
+		foo.anotherMethod(foo.field);
 	}
 }

@@ -1,5 +1,6 @@
 public class Foo {
-	void anotherMethod(String s);
+	void anotherMethod(String s) {
+	};
 
 	String field;
 

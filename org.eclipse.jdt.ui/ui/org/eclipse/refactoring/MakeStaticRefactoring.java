@@ -32,6 +32,7 @@ import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -40,6 +41,7 @@ import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
+import org.eclipse.jdt.core.dom.TagElement;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -139,6 +141,17 @@ public class MakeStaticRefactoring extends Refactoring {
 			//Add new parameter to method declaration arguments
 			ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
 			lrw.insertLast(newParam, null);
+
+			//Update Javadoc
+			Javadoc javadoc= fMethodDeclaration.getJavadoc();
+			if (javadoc != null) {
+				TagElement newParameterTag= ast.newTagElement();
+				newParameterTag.setTagName(TagElement.TAG_PARAM);
+				newParameterTag.fragments().add(ast.newSimpleName(paramName));
+
+				ListRewrite tagsRewrite= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
+				tagsRewrite.insertLast(newParameterTag, null);
+			}
 		}
 
 		// Delete @Override annotation
@@ -210,6 +223,7 @@ public class MakeStaticRefactoring extends Refactoring {
 						fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
 						return super.visit(node);
 					}
+
 					ASTNode parent= node.getParent();
 					SimpleName replacementExpression= fAst.newSimpleName(fParamName);
 					if (parent instanceof MethodInvocation) {
