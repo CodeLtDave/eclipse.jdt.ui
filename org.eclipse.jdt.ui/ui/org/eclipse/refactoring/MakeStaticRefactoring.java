@@ -109,9 +109,9 @@ public class MakeStaticRefactoring extends Refactoring {
 		String paramName= generateUniqueParameterName(className, alreadyUsedParameters);
 
 		//Change instance Usages ("this" and "super" to paramName and set fHasInstanceUsage flag
-		fMethodDeclaration.getBody().accept(new ChangeInstanceUsagesInMethodBody(paramName, rewrite, ast));
+		fMethodDeclaration.getBody().accept(new ChangeInstanceUsagesInMethodBody(paramName, rewrite, ast, status));
 
-		// check if method is overriding in hierarchy and has no parameters
+		// check if method is overriding in hierarchy and has no instance usage
 		//-> after refactoring method would be static and have same signature as parent method
 		if (!fHasInstanceUsages && isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
 			status.merge(RefactoringStatus
@@ -119,11 +119,10 @@ public class MakeStaticRefactoring extends Refactoring {
 			return;
 		}
 
-		if(isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
+		//Throw warning
+		if (isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
 			status.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
 		}
-
-
 
 		if (fHasInstanceUsages) {
 			//Create new parameter
@@ -162,12 +161,15 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		private final ASTRewrite fRewrite;
 
+		private final RefactoringStatus fstatus;
+
 		private final AST fAst;
 
-		private ChangeInstanceUsagesInMethodBody(String paramName, ASTRewrite rewrite, AST ast) {
+		private ChangeInstanceUsagesInMethodBody(String paramName, ASTRewrite rewrite, AST ast, RefactoringStatus status) {
 			fParamName= paramName;
 			fRewrite= rewrite;
 			fAst= ast;
+			fstatus= status;
 		}
 
 		@Override
@@ -203,6 +205,11 @@ public class MakeStaticRefactoring extends Refactoring {
 				IMethodBinding methodBinding= (IMethodBinding) binding;
 				if (!Modifier.isStatic(methodBinding.getModifiers())) {
 					fHasInstanceUsages= true;
+
+					if (isRecursion(node)) {
+						fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
+						return super.visit(node);
+					}
 					ASTNode parent= node.getParent();
 					SimpleName replacementExpression= fAst.newSimpleName(fParamName);
 					if (parent instanceof MethodInvocation) {
@@ -239,6 +246,33 @@ public class MakeStaticRefactoring extends Refactoring {
 				}
 			}
 			return super.visit(node);
+		}
+
+		private boolean isRecursion(SimpleName node) {
+			IMethodBinding nodeMethodBinding= (IMethodBinding) node.resolveBinding();
+			IMethodBinding outerMethodBinding= fMethodDeclaration.resolveBinding();
+
+			// Compare the names of the methods
+			if (nodeMethodBinding != null && outerMethodBinding != null) {
+				String nodeMethodName= nodeMethodBinding.getName();
+				String outerMethodName= outerMethodBinding.getName();
+
+				if (nodeMethodName.equals(outerMethodName)) {
+					ASTNode parent= node.getParent();
+					if (parent instanceof SuperMethodInvocation) {
+						return false;
+					}
+
+					while (parent != null) {
+						if (parent.equals(fMethodDeclaration)) {
+							return true;
+						}
+						parent= parent.getParent();
+					}
+					return false;
+				}
+			}
+			return false;
 		}
 	}
 
@@ -441,7 +475,7 @@ public class MakeStaticRefactoring extends Refactoring {
 				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static);
 
 			// check if method is overridden in hierarchy
-			if (isOverridden(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
+			if (isOverridden(fTargetMethod.getDeclaringType())) {
 				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype);
 			}
 
@@ -451,12 +485,11 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	public boolean isOverridden(IType type, String methodName) throws JavaModelException {
+	public boolean isOverridden(IType type) throws JavaModelException {
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] subtypes= hierarchy.getAllSubtypes(type);
 		for (IType subtype : subtypes) {
 			IMethod[] methods= subtype.getMethods();
-			//IMethod method= subtype.getMethod(methodName, fTargetMethod.getParameterTypes());
 			for (IMethod method : methods) {
 				if (method.isSimilar(fTargetMethod)) {
 					int flags= method.getFlags();

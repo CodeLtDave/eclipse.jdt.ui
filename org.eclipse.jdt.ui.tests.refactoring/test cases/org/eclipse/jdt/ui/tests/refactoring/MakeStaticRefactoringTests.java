@@ -224,14 +224,16 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testRecursive() throws Exception {
 		//MethodInvocation in MethodDeclaration with object of the same Class in parameter
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
 	}
 
 	@Test
 	public void testSuperMethodInvocation() throws Exception {
 		//Refactor of method that overrides method of supertype (Selection is set to MethodDeclaration)
 		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 6, 14, 6, 24);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
 	}
 
 	@Test

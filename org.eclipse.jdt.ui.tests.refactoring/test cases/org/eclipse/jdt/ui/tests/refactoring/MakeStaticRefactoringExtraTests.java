@@ -178,7 +178,8 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	@Test
 	public void test12() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 9, 2, 15);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
 	}
 
 	@Test
@@ -196,7 +197,8 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	@Test
 	public void test15() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 10, 5, 25);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
 	}
 
 	@Test
@@ -226,13 +228,15 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	@Test
 	public void test20() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 20);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
 	}
 
 	@Test
 	public void test21() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
 	}
 
 	@Test
@@ -258,7 +262,8 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	@Test
 	public void testDeep() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 18, 7, 22);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
 	}
 
 	@Test
@@ -276,19 +281,22 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	@Test
 	public void testMethodReferenceInAnonymousClass() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 20, 4, 25);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types));
 	}
 
 	@Test
 	public void testMethodReferenceInTheSameMethod() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 17, 5, 21);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
 	}
 
 	@Test
 	public void testOverrides() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 12, 18, 12, 22);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
 	}
 
 	@Test
