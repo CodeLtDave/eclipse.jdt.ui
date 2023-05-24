@@ -19,6 +19,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
+import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -37,13 +38,16 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.NodeFinder;
+import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.TagElement;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.TypeParameter;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
@@ -126,10 +130,27 @@ public class MakeStaticRefactoring extends Refactoring {
 			status.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
 		}
 
+		IType parentType= fTargetMethod.getDeclaringType();
+		ITypeParameter[] typeParameters= parentType.getTypeParameters();
+
 		if (fHasInstanceUsages) {
-			//Create new parameter
 			SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
-			newParam.setType(ast.newSimpleType(ast.newName(className)));
+
+			//if generic TypeParameters exist in class the newParam type needs to be parametrized
+			if (typeParameters.length != 0) {
+				SimpleType simpleType= ast.newSimpleType(ast.newName(className));
+				ParameterizedType parameterizedType= ast.newParameterizedType(simpleType);
+
+				for (int i= 0; i < typeParameters.length; i++) {
+					SimpleType typeParameter= ast.newSimpleType(ast.newSimpleName(typeParameters[i].getElementName()));
+					parameterizedType.typeArguments().add(typeParameter);
+				}
+				newParam.setType(parameterizedType);
+
+			} else {
+				newParam.setType(ast.newSimpleType(ast.newName(className)));
+			}
+
 			newParam.setName(ast.newSimpleName(paramName));
 
 			//Check if duplicate method exists after refactoring
@@ -151,6 +172,20 @@ public class MakeStaticRefactoring extends Refactoring {
 
 				ListRewrite tagsRewrite= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
 				tagsRewrite.insertLast(newParameterTag, null);
+			}
+		}
+
+		//Add Generic TypeParameters to methodDeclaration if it has no TypeParameters already
+		if (!fMethodDeclaration.typeParameters().isEmpty()) {
+			status.merge(RefactoringStatus
+					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_parametrized_methods));
+		}
+		ListRewrite typeParamsRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
+		if (typeParameters.length != 0) {
+			for (int i= 0; i < typeParameters.length; i++) {
+				TypeParameter typeParameter= ast.newTypeParameter();
+				typeParameter.setName(ast.newSimpleName(typeParameters[i].getElementName()));
+				typeParamsRewrite.insertLast(typeParameter, null);
 			}
 		}
 

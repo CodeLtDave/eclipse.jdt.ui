@@ -1058,6 +1058,8 @@ public final class RefactoringCoreMessages extends NLS {
 
 	public static String MakeStaticRefactoring_not_available_for_recursive_methods;
 
+	public static String MakeStaticRefactoring_not_available_for_parametrized_methods;
+
 	public static String IntroduceParameterObjectRefactoring_cannotalanyzemethod_mappingerror;
 
 	public static String IntroduceParameterObjectRefactoring_cannotanalysemethod_compilererror;

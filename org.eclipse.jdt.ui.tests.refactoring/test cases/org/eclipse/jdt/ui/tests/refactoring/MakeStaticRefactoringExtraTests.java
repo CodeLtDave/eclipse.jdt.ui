@@ -310,7 +310,8 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	@Test
 	public void testPreserveTypeParams() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 25, 4, 41);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_parametrized_methods));
 	}
 
 	@Test
