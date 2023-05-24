@@ -135,13 +135,15 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	@Test
 	public void test5() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 16, 4, 22);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
 	}
 
 	@Test
 	public void test6() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 16, 4, 22);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
 	}
 
 	@Test

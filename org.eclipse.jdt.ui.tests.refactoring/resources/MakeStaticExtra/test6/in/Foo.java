@@ -5,3 +5,7 @@ public class Foo extends Bar {
 		return super.i;
 	}
 }
+
+public class Bar {
+	int i;
+}

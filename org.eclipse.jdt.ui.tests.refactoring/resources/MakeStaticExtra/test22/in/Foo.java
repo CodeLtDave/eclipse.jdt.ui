@@ -1,15 +1,15 @@
 class Foo {
 
-    public void foo() {
-        bar();
-    }
+	public void foo() {
+		bar();
+	}
 
-    void bar() {
-    }
+	void bar() {
+	}
 
-    class A {
-        void blah() {
-            foo();
-        }
-    }
+	class A {
+		void blah() {
+			foo();
+		}
+	}
 }
