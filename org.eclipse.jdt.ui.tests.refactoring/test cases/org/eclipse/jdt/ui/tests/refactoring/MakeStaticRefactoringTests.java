@@ -312,6 +312,20 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	}
 
 	@Test
+	public void testGenericDeclaration4() throws Exception {
+		//class has more than one generic type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testGenericDeclaration5() throws Exception {
+		//class has more than one generic type
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
 	public void testNoAdditionalParameter() throws Exception {
 		//An instance of the class is already in use as parameter with name example in the selected method for field access.
 		//Only static keyword needs to be set and not additional Parameter for field access.

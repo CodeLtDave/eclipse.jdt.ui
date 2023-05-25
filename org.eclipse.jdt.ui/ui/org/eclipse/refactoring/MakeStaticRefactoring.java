@@ -1,5 +1,6 @@
 package org.eclipse.refactoring;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -181,11 +182,17 @@ public class MakeStaticRefactoring extends Refactoring {
 					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_parametrized_methods));
 		}
 		ListRewrite typeParamsRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
+		String[] methodParamTypes= fTargetMethod.getParameterTypes();
+		List<String> methodParamTypesAsList= Arrays.asList(methodParamTypes);
+
 		if (typeParameters.length != 0) {
 			for (int i= 0; i < typeParameters.length; i++) {
 				TypeParameter typeParameter= ast.newTypeParameter();
 				typeParameter.setName(ast.newSimpleName(typeParameters[i].getElementName()));
-				typeParamsRewrite.insertLast(typeParameter, null);
+				//Check if method needs this TypeParameter (only if one or more methodParams have the type OR method has instance usage)
+				if (methodParamTypesAsList.contains("Q" + typeParameter.getName().getIdentifier() + ";") || fHasInstanceUsages) { //$NON-NLS-1$ //$NON-NLS-2$
+					typeParamsRewrite.insertLast(typeParameter, null);
+				}
 			}
 		}
 
