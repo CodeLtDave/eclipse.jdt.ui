@@ -313,14 +313,14 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void testGenericDeclaration4() throws Exception {
-		//class has more than one generic type
+		//duplicate generic paramType in methodDeclaration
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testGenericDeclaration5() throws Exception {
-		//class has more than one generic type
+		//three generic types in methodDeclaration
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
 		assertHasNoCommonErrors(status);
 	}
@@ -328,8 +328,15 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void testGenericDeclaration6() throws Exception {
-		//class has more than one generic type
+		//generic array as param
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testGenericDeclaration7() throws Exception {
+		//class type param number is higher than method param number
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 17, 5, 20);
 		assertHasNoCommonErrors(status);
 	}
 

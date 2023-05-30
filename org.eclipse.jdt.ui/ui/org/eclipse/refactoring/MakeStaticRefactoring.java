@@ -180,23 +180,23 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (!fMethodDeclaration.typeParameters().isEmpty()) {
 			status.merge(RefactoringStatus
 					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_parametrized_methods));
+			return;
 		}
+
 		ListRewrite typeParamsRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
 		String[] methodParamTypes= fTargetMethod.getParameterTypes();
 		List<String> methodParamTypesAsList= Arrays.asList(methodParamTypes);
 		String extendedTypeParameter;
+		String extendedArrayTypeParameter;
 
 		if (typeParameters.length != 0) {
 			for (int i= 0; i < typeParameters.length; i++) {
 				TypeParameter typeParameter= ast.newTypeParameter();
 				typeParameter.setName(ast.newSimpleName(typeParameters[i].getElementName()));
 				//Check if method needs this TypeParameter (only if one or more methodParams have the type OR method has instance usage)
-				if (!methodParamTypesAsList.isEmpty() && methodParamTypesAsList.get(i).charAt(0) == '[') {
-					extendedTypeParameter= "[Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
-				} else {
-					extendedTypeParameter= "Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
-				}
-				if (methodParamTypesAsList.contains(extendedTypeParameter) || fHasInstanceUsages) {
+				extendedArrayTypeParameter= "[Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
+				extendedTypeParameter= "Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
+				if (methodParamTypesAsList.contains(extendedTypeParameter) || methodParamTypesAsList.contains(extendedArrayTypeParameter) || fHasInstanceUsages) {
 					typeParamsRewrite.insertLast(typeParameter, null);
 				}
 			}
