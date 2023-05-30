@@ -192,27 +192,33 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		//getTypeParameterNames
 		List<TypeParameter> methodTypeParameters= fMethodDeclaration.typeParameters();
-		List<String> methodTypeParametersNames = new ArrayList<>(methodTypeParameters.size());
-		for(TypeParameter methodTypeParam : methodTypeParameters) {
+		List<String> methodTypeParametersNames= new ArrayList<>(methodTypeParameters.size());
+		for (TypeParameter methodTypeParam : methodTypeParameters) {
 			methodTypeParametersNames.add(methodTypeParam.getName().getIdentifier());
 		}
 
 		if (classTypeParameters.length != 0) {
 			for (int i= 0; i < classTypeParameters.length; i++) {
-				String[] bounds = classTypeParameters[i].getBounds();
+				String[] bounds= classTypeParameters[i].getBounds();
 				TypeParameter typeParameter= ast.newTypeParameter();
 				typeParameter.setName(ast.newSimpleName(classTypeParameters[i].getElementName()));
-				for(String bound : bounds) {
-					SimpleType boundType = ast.newSimpleType(ast.newSimpleName(bound));
-					typeParameter.typeBounds().add(boundType);
+				for (String bound : bounds) {
+					if (bound.contains("?")) { //$NON-NLS-1$
+						//WildCardTypes are not allowed as bounds
+						status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound));
+						return;
+					} else {
+						SimpleType boundType= ast.newSimpleType(ast.newSimpleName(bound));
+						typeParameter.typeBounds().add(boundType);
+					}
 				}
 				//Check if method needs this TypeParameter (only if one or more methodParams are this type OR method has instance usage)
 				extendedArrayTypeParameter= "[Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
 				extendedTypeParameter= "Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
 				if (methodParamTypesAsList.contains(extendedTypeParameter) || methodParamTypesAsList.contains(extendedArrayTypeParameter) || fHasInstanceUsages) {
 					//only insert if typeParam not already existing
-					if(!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier()))
-					typeParamsRewrite.insertLast(typeParameter, null);
+					if (!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier()))
+						typeParamsRewrite.insertLast(typeParameter, null);
 				}
 			}
 		}
