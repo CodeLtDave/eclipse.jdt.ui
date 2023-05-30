@@ -395,7 +395,13 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testVariousInstanceCases() throws Exception {
 		//Various cases of instance access in many different forms
 		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 14, 17, 14, 27);
-		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testInheritanceWithoutOverride() throws Exception {
+		//subtype implements a method that is not overriding parent type method -> Refactoring should work
+		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 4, 17, 4, 20);
+		assertHasNoCommonErrors(status);
 	}
 }

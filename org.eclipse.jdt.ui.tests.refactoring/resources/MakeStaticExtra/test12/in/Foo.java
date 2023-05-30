@@ -1,5 +1,5 @@
 class Foo extends java.util.Vector {
-	int method() {
+	String method() {
 		return super.toString();
 	}
 }

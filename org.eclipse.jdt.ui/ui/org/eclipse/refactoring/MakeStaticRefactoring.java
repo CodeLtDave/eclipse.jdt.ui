@@ -590,7 +590,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		IType[] supertypes= hierarchy.getAllSupertypes(type);
 		for (IType supertype : supertypes) {
 			if (!(supertype.getElementName().equals("Object"))) { //$NON-NLS-1$
-				IMethod method= supertype.getMethod(methodName, fTargetMethod.getParameterTypes());
+				IMethod[] method= supertype.findMethods(fTargetMethod);
 				if (method != null) {
 					return true;
 				}

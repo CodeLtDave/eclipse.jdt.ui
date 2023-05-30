@@ -1,4 +1,4 @@
-public class Foo extends Bar{
+public class Foo extends Bar {
 	public int i;
 
 	public static int method(Foo foo) {
@@ -9,4 +9,3 @@ public class Foo extends Bar{
 public class Bar {
 	int i;
 }
-

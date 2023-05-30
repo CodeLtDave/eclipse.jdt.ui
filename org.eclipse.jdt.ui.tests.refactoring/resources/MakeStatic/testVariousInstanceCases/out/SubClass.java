@@ -11,7 +11,7 @@ public class SubClass extends SuperClass {
 
 	private static int staticInt= 0;
 
-	public static void toRefactor(SubClass foo, SubClass subClass) {
+	public static void toRefactor(SubClass subClass) {
 		subClass.intParent++;
 		subClass.instanceParent(1);
 		subClass.instanceObject.counter++;
@@ -28,12 +28,12 @@ public class SubClass extends SuperClass {
 	}
 
 	public void instanceMethod(int i) {
-		SubClass.toRefactor(this, this);
+		SubClass.toRefactor(this);
 	}
 
 	public static void staticMethod() {
 		SubClass foo= new SubClass();
-		SubClass.toRefactor(foo, foo);
+		SubClass.toRefactor(foo);
 	}
 
 	public SubClass getInstance() {

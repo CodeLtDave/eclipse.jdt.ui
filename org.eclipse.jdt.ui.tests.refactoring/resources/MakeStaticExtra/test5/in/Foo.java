@@ -1,9 +1,9 @@
-public class Foo extends Bar{
+public class Foo extends Bar {
 	public int i;
 
 	public int method() {
-        return super.i;
-    }
+		return super.i;
+	}
 }
 
 public class Bar {
