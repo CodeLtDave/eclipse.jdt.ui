@@ -1,5 +1,6 @@
 package org.eclipse.refactoring;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -132,18 +133,18 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 
 		IType parentType= fTargetMethod.getDeclaringType();
-		ITypeParameter[] typeParameters= parentType.getTypeParameters();
+		ITypeParameter[] classTypeParameters= parentType.getTypeParameters();
 
 		if (fHasInstanceUsages) {
 			SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
 
 			//if generic TypeParameters exist in class the newParam type needs to be parametrized
-			if (typeParameters.length != 0) {
+			if (classTypeParameters.length != 0) {
 				SimpleType simpleType= ast.newSimpleType(ast.newName(className));
 				ParameterizedType parameterizedType= ast.newParameterizedType(simpleType);
 
-				for (int i= 0; i < typeParameters.length; i++) {
-					SimpleType typeParameter= ast.newSimpleType(ast.newSimpleName(typeParameters[i].getElementName()));
+				for (int i= 0; i < classTypeParameters.length; i++) {
+					SimpleType typeParameter= ast.newSimpleType(ast.newSimpleName(classTypeParameters[i].getElementName()));
 					parameterizedType.typeArguments().add(typeParameter);
 				}
 				newParam.setType(parameterizedType);
@@ -177,11 +178,11 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 
 		//Add Generic TypeParameters to methodDeclaration if it has no TypeParameters already
-		if (!fMethodDeclaration.typeParameters().isEmpty()) {
-			status.merge(RefactoringStatus
-					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_parametrized_methods));
-			return;
-		}
+//		if (!fMethodDeclaration.typeParameters().isEmpty()) {
+//			status.merge(RefactoringStatus
+//					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_parametrized_methods));
+//			return;
+//		}
 
 		ListRewrite typeParamsRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
 		String[] methodParamTypes= fTargetMethod.getParameterTypes();
@@ -189,14 +190,28 @@ public class MakeStaticRefactoring extends Refactoring {
 		String extendedTypeParameter;
 		String extendedArrayTypeParameter;
 
-		if (typeParameters.length != 0) {
-			for (int i= 0; i < typeParameters.length; i++) {
+		//getTypeParameterNames
+		List<TypeParameter> methodTypeParameters= fMethodDeclaration.typeParameters();
+		List<String> methodTypeParametersNames = new ArrayList<>(methodTypeParameters.size());
+		for(TypeParameter methodTypeParam : methodTypeParameters) {
+			methodTypeParametersNames.add(methodTypeParam.getName().getIdentifier());
+		}
+
+		if (classTypeParameters.length != 0) {
+			for (int i= 0; i < classTypeParameters.length; i++) {
+				String[] bounds = classTypeParameters[i].getBounds();
 				TypeParameter typeParameter= ast.newTypeParameter();
-				typeParameter.setName(ast.newSimpleName(typeParameters[i].getElementName()));
-				//Check if method needs this TypeParameter (only if one or more methodParams have the type OR method has instance usage)
+				typeParameter.setName(ast.newSimpleName(classTypeParameters[i].getElementName()));
+				for(String bound : bounds) {
+					SimpleType boundType = ast.newSimpleType(ast.newSimpleName(bound));
+					typeParameter.typeBounds().add(boundType);
+				}
+				//Check if method needs this TypeParameter (only if one or more methodParams are this type OR method has instance usage)
 				extendedArrayTypeParameter= "[Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
 				extendedTypeParameter= "Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
 				if (methodParamTypesAsList.contains(extendedTypeParameter) || methodParamTypesAsList.contains(extendedArrayTypeParameter) || fHasInstanceUsages) {
+					//only insert if typeParam not already existing
+					if(!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier()))
 					typeParamsRewrite.insertLast(typeParameter, null);
 				}
 			}

@@ -306,7 +306,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testGenericDeclaration3() throws Exception {
 		//class has more than one generic type and an instance of the class is used in selected method
 		//selected method is hiding two generic types -> refactoring should fail
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 24, 7, 27);
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 8, 24, 8, 27);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_parametrized_methods));
 	}
@@ -337,6 +337,13 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testGenericDeclaration7() throws Exception {
 		//class type param number is higher than method param number
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 17, 5, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testGenericDeclaration8() throws Exception {
+		//different bounds on typeParameters
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 9, 17, 9, 20);
 		assertHasNoCommonErrors(status);
 	}
 
