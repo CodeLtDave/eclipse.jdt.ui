@@ -5,7 +5,7 @@ public class Example<T, U> {
 
 	private U value2;
 
-	public static <T, U> void bar(T value1, U value2, Example<T, U> example) {
+	public static <T, U> void bar(Example<T, U> example, T value1, U value2) {
 		example.value1= value1; // First generic type parameter
 		example.value2= value2; // Second generic type parameter
 	}

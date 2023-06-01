@@ -6,11 +6,11 @@ public class Example2 {
 	
 	public void method() {
 		Example instance = new Example();
-		String j = Example.toRefactor("bar", instance);
+		String j = Example.toRefactor(instance, "bar");
 	}
 	
 	public static void staticMethod() {
 		Example instance = new Example();
-		String j = Example.toRefactor("bar", instance);
+		String j = Example.toRefactor(instance, "bar");
 	}
 }

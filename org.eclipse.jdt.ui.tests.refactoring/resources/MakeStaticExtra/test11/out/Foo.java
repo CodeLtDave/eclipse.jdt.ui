@@ -1,7 +1,7 @@
 public class Foo {
 	public int myData;
 
-	static int method(int i, Foo foo) {
+	static int method(Foo foo, int i) {
 		return foo.myData + i;
 	}
 }

@@ -167,7 +167,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 			//Add new parameter to method declaration arguments
 			ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
-			lrw.insertLast(newParam, null);
+			lrw.insertFirst(newParam, null);
 
 			//Update Javadoc
 			Javadoc javadoc= fMethodDeclaration.getJavadoc();
@@ -176,7 +176,7 @@ public class MakeStaticRefactoring extends Refactoring {
 				newParameterTag.setTagName(TagElement.TAG_PARAM);
 				newParameterTag.fragments().add(ast.newSimpleName(paramName));
 				ListRewrite tagsRewrite= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
-				tagsRewrite.insertLast(newParameterTag, null);
+				tagsRewrite.insertFirst(newParameterTag, null);
 			}
 		}
 
@@ -505,17 +505,17 @@ public class MakeStaticRefactoring extends Refactoring {
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 		MethodInvocation staticMethodInvocation= ast.newMethodInvocation();
 
+		if (fHasInstanceUsages) {
+			//find the variable that needs to be passed as an argument
+			ASTNode expression= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
+			staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, expression));
+		}
+
 		//copy contents in new staticMethodInvocation
 		staticMethodInvocation.setName(ast.newSimpleName(fMethodDeclaration.getName().toString()));
 		staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString()));
 		for (Object argument : invocation.arguments()) {
 			staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
-		}
-
-		if (fHasInstanceUsages) {
-			//find the variable that needs to be passed as an argument
-			ASTNode expression= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
-			staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, expression));
 		}
 
 		rewrite.replace(invocation, staticMethodInvocation, null);
