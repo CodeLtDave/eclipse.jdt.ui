@@ -162,6 +162,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			//Check if duplicate method exists after refactoring
 			int parameterAmount= alreadyUsedParameters.size() + 1;
 			checkDuplicateMethod(status, parameterAmount);
+
 			if (status.hasFatalError())
 				return;
 
@@ -180,6 +181,21 @@ public class MakeStaticRefactoring extends Refactoring {
 			}
 		}
 
+		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
+		updateTypeParamList(status, ast, rewrite, classTypeParameters);
+
+		if (status.hasFatalError()) {
+			return;
+		}
+
+		// Delete @Override annotation
+		deleteOverrideAnnotation(rewrite);
+
+		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
+		addEditToChangeManager(methodDeclarationEdit, fTargetMethod.getCompilationUnit());
+	}
+
+	private void updateTypeParamList(RefactoringStatus status, AST ast, ASTRewrite rewrite, ITypeParameter[] classTypeParameters) throws JavaModelException {
 		ListRewrite typeParamsRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
 		String[] methodParamTypes= fTargetMethod.getParameterTypes();
 		List<String> methodParamTypesAsList= Arrays.asList(methodParamTypes);
@@ -230,8 +246,9 @@ public class MakeStaticRefactoring extends Refactoring {
 				}
 			}
 		}
+	}
 
-		// Delete @Override annotation
+	private void deleteOverrideAnnotation(ASTRewrite rewrite) {
 		ListRewrite listRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.MODIFIERS2_PROPERTY);
 		for (Object obj : fMethodDeclaration.modifiers()) {
 			if (obj instanceof org.eclipse.jdt.core.dom.MarkerAnnotation) {
@@ -241,9 +258,6 @@ public class MakeStaticRefactoring extends Refactoring {
 				}
 			}
 		}
-
-		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
-		addEditToChangeManager(methodDeclarationEdit, fTargetMethod.getCompilationUnit());
 	}
 
 	private final class ChangeInstanceUsagesInMethodBody extends ASTVisitor {
