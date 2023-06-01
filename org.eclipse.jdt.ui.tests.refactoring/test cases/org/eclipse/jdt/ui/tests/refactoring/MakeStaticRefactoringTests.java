@@ -404,4 +404,11 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 4, 17, 4, 20);
 		assertHasNoCommonErrors(status);
 	}
+
+	@Test
+	public void testSelectionOfInvocationInDifferentClass() throws Exception {
+		//Selection of MethodInvocation that is in different class than MethodDeclaration
+		RefactoringStatus status= helper(new String[] { "package1.Foo2", "package1.Foo" }, 6, 13, 6, 19);
+		assertHasNoCommonErrors(status);
+	}
 }

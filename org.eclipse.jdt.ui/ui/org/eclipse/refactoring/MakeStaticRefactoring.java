@@ -25,10 +25,12 @@ import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.ExpressionMethodReference;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IBinding;
@@ -36,6 +38,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Javadoc;
+import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -122,14 +125,14 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		// check if method is overriding in hierarchy and has no instance usage
 		//-> after refactoring method would be static and have same signature as parent method
-		if (!fHasInstanceUsages && isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
+		if (!fHasInstanceUsages && isOverriding(fTargetMethod.getDeclaringType())) {
 			status.merge(RefactoringStatus
 					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 			return;
 		}
 
 		//Throw warning
-		if (isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod.getElementName())) {
+		if (isOverriding(fTargetMethod.getDeclaringType())) {
 			status.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
 		}
 
@@ -177,13 +180,6 @@ public class MakeStaticRefactoring extends Refactoring {
 			}
 		}
 
-		//Add Generic TypeParameters to methodDeclaration if it has no TypeParameters already
-//		if (!fMethodDeclaration.typeParameters().isEmpty()) {
-//			status.merge(RefactoringStatus
-//					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_parametrized_methods));
-//			return;
-//		}
-
 		ListRewrite typeParamsRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
 		String[] methodParamTypes= fTargetMethod.getParameterTypes();
 		List<String> methodParamTypesAsList= Arrays.asList(methodParamTypes);
@@ -222,7 +218,7 @@ public class MakeStaticRefactoring extends Refactoring {
 						typeParamsRewrite.insertLast(typeParameter, null);
 						if (javadoc != null) {
 							//add new type params to javaDoc
-							TextElement textElement = ast.newTextElement();
+							TextElement textElement= ast.newTextElement();
 							textElement.setText("<" + typeParameter.getName().getIdentifier() + ">"); //$NON-NLS-1$ //$NON-NLS-2$
 							TagElement newParameterTag= ast.newTagElement();
 							newParameterTag.setTagName(TagElement.TAG_PARAM);
@@ -247,7 +243,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 
 		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
-		addEditToChangeManager(methodDeclarationEdit, fSelectionCompilationUnit);
+		addEditToChangeManager(methodDeclarationEdit, fTargetMethod.getCompilationUnit());
 	}
 
 	private final class ChangeInstanceUsagesInMethodBody extends ASTVisitor {
@@ -371,6 +367,38 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
+	private final class MethodReferenceAndLambdaFinder extends ASTVisitor {
+		private final RefactoringStatus fstatus;
+
+		private MethodReferenceAndLambdaFinder(RefactoringStatus status) {
+			fstatus= status;
+		}
+
+		@Override
+		public boolean visit(ExpressionMethodReference node) {
+			// Check if the method reference refers to the selected method
+			ITypeBinding typeBinding= node.getExpression().resolveTypeBinding();
+			IMethodBinding methodBinding= node.resolveMethodBinding();
+			if (methodBinding != null && fTargetMethod.getElementName().equals(methodBinding.getName())
+					&& fTargetMethod.getDeclaringType().getElementName().equals(typeBinding.getName())) {
+				fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
+			}
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(LambdaExpression node) {
+			// Check if the lambda expression refers to the selected method
+			ITypeBinding typeBinding= node.resolveTypeBinding();
+			IMethodBinding methodBinding= node.resolveMethodBinding();
+			if (methodBinding != null && fTargetMethod.getElementName().equals(methodBinding.getName())
+					&& fTargetMethod.getDeclaringType().getFullyQualifiedName().equals(typeBinding.getQualifiedName())) {
+				fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
+			}
+			return super.visit(node);
+		}
+	}
+
 	private String generateUniqueParameterName(String className, List<SingleVariableDeclaration> parameters) {
 		String classNameFirstLowerCase= Character.toLowerCase(className.charAt(0)) + className.substring(1); //makes first char lower to match name conventions
 		if (parameters == null || parameters.isEmpty())
@@ -435,6 +463,15 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private void findMethodInvocations(RefactoringStatus status, ICompilationUnit[] affectedCUs) throws JavaModelException {
 		for (ICompilationUnit affectedCU : affectedCUs) {
+
+			//Check for Lambda or MethodReference that use selected method -> cancel refactoring
+			CompilationUnit cu= convertICUtoCU(affectedCU);
+			cu.accept(new MethodReferenceAndLambdaFinder(status));
+
+			if (status.hasFatalError()) {
+				return;
+			}
+
 			BodyDeclaration[] bodies= fTargetProvider.getAffectedBodyDeclarations(affectedCU, null);
 			MultiTextEdit multiTextEdit= new MultiTextEdit();
 			for (BodyDeclaration body : bodies) {
@@ -451,6 +488,16 @@ public class MakeStaticRefactoring extends Refactoring {
 
 			addEditToChangeManager(multiTextEdit, affectedCU);
 		}
+	}
+
+	//Convert ICompialtionUnit to CompilationUnit
+	public CompilationUnit convertICUtoCU(ICompilationUnit compilationUnit) {
+		ASTParser parser= ASTParser.newParser(AST.JLS20);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(compilationUnit);
+		parser.setResolveBindings(true);
+
+		return (CompilationUnit) parser.createAST(null);
 	}
 
 	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, MethodInvocation invocation) throws JavaModelException {
@@ -535,7 +582,8 @@ public class MakeStaticRefactoring extends Refactoring {
 					fTargetMethodBinding= targetMethodBinding.getMethodDeclaration(); // resolve generics
 					if (fTargetMethodBinding != null) {
 						fTargetMethod= (IMethod) fTargetMethodBinding.getJavaElement();
-						fMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, selectionCURoot);
+						CompilationUnit targetCU= convertICUtoCU(fTargetMethod.getCompilationUnit());
+						fMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, targetCU);
 					}
 				}
 				if (targetMethodBinding == null || fTargetMethodBinding == null) {
@@ -597,7 +645,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		return false;
 	}
 
-	public boolean isOverriding(IType type, String methodName) throws JavaModelException {
+	public boolean isOverriding(IType type) throws JavaModelException {
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] supertypes= hierarchy.getAllSupertypes(type);
 		for (IType supertype : supertypes) {

@@ -268,13 +268,15 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	@Test
 	public void testExpandMethodReference() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 10, 7, 10, 11);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
 	}
 
 	@Test
 	public void testMethodReference() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 6, 10, 6, 13);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
 	}
 
 	@Test
@@ -318,7 +320,8 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 
 	@Test
 	public void testThisMethodReference() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 10, 7, 13);
-		assertHasNoCommonErrors(status);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 8, 10, 8, 13);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
 	}
 }

@@ -1062,6 +1062,8 @@ public final class RefactoringCoreMessages extends NLS {
 
 	public static String MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound;
 
+	public static String MakeStaticRefactoring_not_available_for_method_references_or_lambdas;
+
 	public static String IntroduceParameterObjectRefactoring_cannotalanyzemethod_mappingerror;
 
 	public static String IntroduceParameterObjectRefactoring_cannotanalysemethod_compilererror;
