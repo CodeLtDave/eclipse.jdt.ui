@@ -47,6 +47,7 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.TagElement;
+import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeParameter;
@@ -171,7 +172,6 @@ public class MakeStaticRefactoring extends Refactoring {
 				TagElement newParameterTag= ast.newTagElement();
 				newParameterTag.setTagName(TagElement.TAG_PARAM);
 				newParameterTag.fragments().add(ast.newSimpleName(paramName));
-
 				ListRewrite tagsRewrite= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
 				tagsRewrite.insertLast(newParameterTag, null);
 			}
@@ -189,6 +189,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		List<String> methodParamTypesAsList= Arrays.asList(methodParamTypes);
 		String extendedTypeParameter;
 		String extendedArrayTypeParameter;
+		Javadoc javadoc= fMethodDeclaration.getJavadoc();
 
 		//getTypeParameterNames
 		List<TypeParameter> methodTypeParameters= fMethodDeclaration.typeParameters();
@@ -217,8 +218,19 @@ public class MakeStaticRefactoring extends Refactoring {
 				extendedTypeParameter= "Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
 				if (methodParamTypesAsList.contains(extendedTypeParameter) || methodParamTypesAsList.contains(extendedArrayTypeParameter) || fHasInstanceUsages) {
 					//only insert if typeParam not already existing
-					if (!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier()))
+					if (!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier())) {
 						typeParamsRewrite.insertLast(typeParameter, null);
+						if (javadoc != null) {
+							//add new type params to javaDoc
+							TextElement textElement = ast.newTextElement();
+							textElement.setText("<" + typeParameter.getName().getIdentifier() + ">"); //$NON-NLS-1$ //$NON-NLS-2$
+							TagElement newParameterTag= ast.newTagElement();
+							newParameterTag.setTagName(TagElement.TAG_PARAM);
+							newParameterTag.fragments().add(textElement);
+							ListRewrite tagsRewrite= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
+							tagsRewrite.insertLast(newParameterTag, null);
+						}
+					}
 				}
 			}
 		}
