@@ -156,7 +156,6 @@ public class MakeStaticRefactoring extends Refactoring {
 			} else {
 				newParam.setType(ast.newSimpleType(ast.newName(className)));
 			}
-
 			newParam.setName(ast.newSimpleName(paramName));
 
 			//Check if duplicate method exists after refactoring
@@ -609,9 +608,9 @@ public class MakeStaticRefactoring extends Refactoring {
 				if (fTargetMethod.getDeclaringType().isAnnotation())
 					return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
 
-				if (fTargetMethod.getCompilationUnit() != null) {
+				if (fSelectionCompilationUnit != null) {
 					// source method
-					CompilationUnit selectionCURoot= new CompilationUnitRewrite(fTargetMethod.getCompilationUnit()).getRoot();
+					CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionCompilationUnit).getRoot();
 					fMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, selectionCURoot);
 					fTargetMethodBinding= fMethodDeclaration.resolveBinding().getMethodDeclaration();
 				}
