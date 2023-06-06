@@ -212,7 +212,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			if (type.isParameterizedType()) {
 				ParameterizedType parameterizedType= (ParameterizedType) type;
 				List<Type> typeParamsOfMethodParam= parameterizedType.typeArguments();
-				for(Type typeParamOfMethodParam : typeParamsOfMethodParam) {
+				for (Type typeParamOfMethodParam : typeParamsOfMethodParam) {
 					methodParameterTypes.add(typeParamOfMethodParam.resolveBinding().getName());
 				}
 			}
@@ -301,24 +301,33 @@ public class MakeStaticRefactoring extends Refactoring {
 				IVariableBinding variableBinding= (IVariableBinding) binding;
 				if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
 					ASTNode parent= node.getParent();
-					if(parent instanceof FieldAccess || parent instanceof QualifiedName) {
-						return super.visit(node);
+					//this ensures only the leftmost SimpleName gets changed see "testVariousInstanceCases"
+					if (parent instanceof FieldAccess) {
+						FieldAccess fieldAccess= (FieldAccess) parent;
+						if (fieldAccess.getExpression() != node) {
+							return super.visit(node);
+						}
+					} else if (parent instanceof QualifiedName) {
+						QualifiedName qualifiedName= (QualifiedName) parent;
+						if (qualifiedName.getQualifier() != node) {
+							return super.visit(node);
+						}
 					}
-					fHasInstanceUsages= true;
 
+					ASTNode toReplace;
 					if (parent instanceof SuperFieldAccess) {
-						SuperFieldAccess toReplace= (SuperFieldAccess) parent;
-						FieldAccess replacement= fAst.newFieldAccess();
-						replacement.setExpression(fAst.newSimpleName(fParamName));
-						replacement.setName(fAst.newSimpleName(node.getIdentifier()));
-						fRewrite.replace(toReplace, replacement, null);
+						toReplace = parent;
+
 					} else {
-						SimpleName toReplace= node;
-						FieldAccess replacement= fAst.newFieldAccess();
-						replacement.setExpression(fAst.newSimpleName(fParamName));
-						replacement.setName(fAst.newSimpleName(node.getIdentifier()));
-						fRewrite.replace(toReplace, replacement, null);
+						toReplace= node;
+
 					}
+
+					FieldAccess replacement= fAst.newFieldAccess();
+					replacement.setExpression(fAst.newSimpleName(fParamName));
+					replacement.setName(fAst.newSimpleName(node.getIdentifier()));
+					fRewrite.replace(toReplace, replacement, null);
+					fHasInstanceUsages= true;
 				}
 			} else if (binding instanceof IMethodBinding) {
 				IMethodBinding methodBinding= (IMethodBinding) binding;
@@ -341,14 +350,7 @@ public class MakeStaticRefactoring extends Refactoring {
 						} else if (optionalExpression instanceof ThisExpression) {
 							fRewrite.replace(optionalExpression, replacementExpression, null);
 						} else if (optionalExpression == null) {
-							MethodInvocation replacementMethodInvocation= fAst.newMethodInvocation();
-							replacementMethodInvocation.setExpression(replacementExpression);
-							replacementMethodInvocation.setName(fAst.newSimpleName(methodInvocation.getName().toString()));
-							List<Expression> args= methodInvocation.arguments();
-							for (Expression arg : args) {
-								replacementMethodInvocation.arguments().add(ASTNode.copySubtree(fAst, arg));
-							}
-							fRewrite.replace(methodInvocation, replacementMethodInvocation, null);
+							fRewrite.set(methodInvocation, MethodInvocation.EXPRESSION_PROPERTY, replacementExpression, null);
 						}
 					} else if (parent instanceof SuperMethodInvocation) {
 						SuperMethodInvocation superMethodInvocation= (SuperMethodInvocation) parent;
@@ -370,7 +372,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		@Override
 		public boolean visit(ThisExpression node) {
-			fHasInstanceUsages = true;
+			fHasInstanceUsages= true;
 			SimpleName replacement= fAst.newSimpleName(fParamName);
 			fRewrite.replace(node, replacement, null);
 			return super.visit(node);
@@ -378,18 +380,18 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		@Override
 		public boolean visit(ClassInstanceCreation node) {
-		    ITypeBinding typeBinding = node.getType().resolveBinding();
-		    if (typeBinding != null && typeBinding.isMember() && !Modifier.isStatic(typeBinding.getModifiers())) {
-		        fHasInstanceUsages = true;
-		        ClassInstanceCreation replacement = fAst.newClassInstanceCreation();
-		        replacement.setType((Type) ASTNode.copySubtree(fAst, node.getType()));
-		        replacement.setExpression(fAst.newSimpleName(fParamName));
-		        for (Object arg : node.arguments()) {
-		            replacement.arguments().add(ASTNode.copySubtree(fAst, (Expression) arg));
-		        }
-		        fRewrite.replace(node, replacement, null);
-		    }
-		    return super.visit(node);
+			ITypeBinding typeBinding= node.getType().resolveBinding();
+			if (typeBinding != null && typeBinding.isMember() && !Modifier.isStatic(typeBinding.getModifiers())) {
+				fHasInstanceUsages= true;
+				ClassInstanceCreation replacement= fAst.newClassInstanceCreation();
+				replacement.setType((Type) ASTNode.copySubtree(fAst, node.getType()));
+				replacement.setExpression(fAst.newSimpleName(fParamName));
+				for (Object arg : node.arguments()) {
+					replacement.arguments().add(ASTNode.copySubtree(fAst, (Expression) arg));
+				}
+				fRewrite.replace(node, replacement, null);
+			}
+			return super.visit(node);
 		}
 
 
