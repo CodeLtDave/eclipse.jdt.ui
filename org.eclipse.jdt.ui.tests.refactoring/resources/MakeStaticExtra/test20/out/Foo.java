@@ -1,8 +1,8 @@
 final class Foo
 		extends JFrame {
-	public Bug() {
-        foo(this);
-    }
+	public Foo() {
+		Foo.foo(this);
+	}
 
 	public static void foo(Foo foo) {
 		foo.addWindowListener(foo.new MyWindowListener());
