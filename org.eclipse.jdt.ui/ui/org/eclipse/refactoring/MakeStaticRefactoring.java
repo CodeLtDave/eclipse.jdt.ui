@@ -1,7 +1,6 @@
 package org.eclipse.refactoring;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -199,13 +198,29 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private void updateTypeParamList(RefactoringStatus status, AST ast, ASTRewrite rewrite, ITypeParameter[] classTypeParameters) throws JavaModelException {
 		ListRewrite typeParamsRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
-		String[] methodParamTypes= fTargetMethod.getParameterTypes();
-		List<String> methodParamTypesAsList= Arrays.asList(methodParamTypes);
-		String extendedTypeParameter;
-		String extendedArrayTypeParameter;
 		Javadoc javadoc= fMethodDeclaration.getJavadoc();
 
-		//getTypeParameterNames
+
+
+		List<SingleVariableDeclaration> methodParams= fMethodDeclaration.parameters();
+		List<String> methodParameterTypes= new ArrayList<>(methodParams.size());
+
+		//getMethodParameterTypes to check which TypeParam is needed in TypeParamList after Refactoring
+		for (SingleVariableDeclaration methodParam : methodParams) {
+			Type type= methodParam.getType();
+			//if type is parametrized, then those typeParams need to be included in TypeParamList of method
+			if (type.isParameterizedType()) {
+				ParameterizedType parameterizedType= (ParameterizedType) type;
+				List<Type> typeParamsOfMethodParam= parameterizedType.typeArguments();
+				for(Type typeParamOfMethodParam : typeParamsOfMethodParam) {
+					methodParameterTypes.add(typeParamOfMethodParam.resolveBinding().getName());
+				}
+			}
+			String typeName= type.toString();
+			methodParameterTypes.add(typeName);
+		}
+
+		//getTypeParameterNames to check if TypeParamList already contains this typeParam
 		List<TypeParameter> methodTypeParameters= fMethodDeclaration.typeParameters();
 		List<String> methodTypeParametersNames= new ArrayList<>(methodTypeParameters.size());
 		for (TypeParameter methodTypeParam : methodTypeParameters) {
@@ -227,10 +242,11 @@ public class MakeStaticRefactoring extends Refactoring {
 						typeParameter.typeBounds().add(boundType);
 					}
 				}
-				//Check if method needs this TypeParameter (only if one or more methodParams are this type OR method has instance usage)
-				extendedArrayTypeParameter= "[Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
-				extendedTypeParameter= "Q" + typeParameter.getName().getIdentifier() + ";"; //$NON-NLS-1$ //$NON-NLS-2$
-				if (methodParamTypesAsList.contains(extendedTypeParameter) || methodParamTypesAsList.contains(extendedArrayTypeParameter) || fHasInstanceUsages) {
+				//Check if method needs this TypeParameter (only if one or more methodParams are of this type OR method has instance usage OR an instance of parent class is used as methodParam)
+				String typeParamName= typeParameter.getName().getIdentifier();
+				String typeParamNameAsArray= typeParamName + "[]"; //$NON-NLS-1$
+				boolean paramIsNeeded= methodParameterTypes.contains(typeParamName) || methodParameterTypes.contains(typeParamNameAsArray);
+				if (fHasInstanceUsages || paramIsNeeded) {
 					//only insert if typeParam not already existing
 					if (!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier())) {
 						typeParamsRewrite.insertLast(typeParameter, null);
