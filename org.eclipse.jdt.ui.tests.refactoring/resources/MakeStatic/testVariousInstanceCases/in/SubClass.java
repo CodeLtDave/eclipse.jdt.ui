@@ -14,6 +14,7 @@ public class SubClass extends SuperClass {
 	public void toRefactor() {
 		super.intParent++;
 		super.instanceParent(1);
+		instanceObject.counter++;
 		this.instanceObject.counter++;
 		intParent= staticInt + 1;
 		int localInt= 0;

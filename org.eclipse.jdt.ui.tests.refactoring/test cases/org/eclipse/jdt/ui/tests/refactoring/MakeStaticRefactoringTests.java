@@ -418,4 +418,11 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 17, 7, 20);
 		assertHasNoCommonErrors(status);
 	}
+
+	@Test
+	public void testPassingInstanceReference() throws Exception {
+		//Passing instance reference to another method
+		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 17, 7, 20);
+		assertHasNoCommonErrors(status);
+	}
 }

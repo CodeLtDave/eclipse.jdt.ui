@@ -15,6 +15,7 @@ public class SubClass extends SuperClass {
 		subClass.intParent++;
 		subClass.instanceParent(1);
 		subClass.instanceObject.counter++;
+		subClass.instanceObject.counter++;
 		subClass.intParent= staticInt + 1;
 		int localInt= 0;
 		subClass.counter++;
