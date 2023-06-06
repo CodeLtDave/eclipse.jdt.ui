@@ -28,6 +28,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
+import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionMethodReference;
@@ -44,6 +45,7 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -52,6 +54,7 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.TagElement;
 import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.dom.ThisExpression;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeParameter;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -281,16 +284,13 @@ public class MakeStaticRefactoring extends Refactoring {
 			if (binding instanceof IVariableBinding) {
 				IVariableBinding variableBinding= (IVariableBinding) binding;
 				if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
-					fHasInstanceUsages= true;
 					ASTNode parent= node.getParent();
+					if(parent instanceof FieldAccess || parent instanceof QualifiedName) {
+						return super.visit(node);
+					}
+					fHasInstanceUsages= true;
 
-					if (parent instanceof FieldAccess) {
-						Expression toReplace= ((FieldAccess) parent).getExpression();
-						if (!(toReplace instanceof FieldAccess)) {
-							SimpleName replacement= fAst.newSimpleName(fParamName);
-							fRewrite.replace(toReplace, replacement, null);
-						}
-					} else if (parent instanceof SuperFieldAccess) {
+					if (parent instanceof SuperFieldAccess) {
 						SuperFieldAccess toReplace= (SuperFieldAccess) parent;
 						FieldAccess replacement= fAst.newFieldAccess();
 						replacement.setExpression(fAst.newSimpleName(fParamName));
@@ -351,6 +351,32 @@ public class MakeStaticRefactoring extends Refactoring {
 			}
 			return super.visit(node);
 		}
+
+		@Override
+		public boolean visit(ThisExpression node) {
+			fHasInstanceUsages = true;
+			SimpleName replacement= fAst.newSimpleName(fParamName);
+			fRewrite.replace(node, replacement, null);
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(ClassInstanceCreation node) {
+		    ITypeBinding typeBinding = node.getType().resolveBinding();
+		    if (typeBinding != null && typeBinding.isMember() && !Modifier.isStatic(typeBinding.getModifiers())) {
+		        fHasInstanceUsages = true;
+		        ClassInstanceCreation replacement = fAst.newClassInstanceCreation();
+		        replacement.setType((Type) ASTNode.copySubtree(fAst, node.getType()));
+		        replacement.setExpression(fAst.newSimpleName(fParamName));
+		        for (Object arg : node.arguments()) {
+		            replacement.arguments().add(ASTNode.copySubtree(fAst, (Expression) arg));
+		        }
+		        fRewrite.replace(node, replacement, null);
+		    }
+		    return super.visit(node);
+		}
+
+
 
 		private boolean isRecursion(SimpleName node) {
 			IMethodBinding nodeMethodBinding= (IMethodBinding) node.resolveBinding();
