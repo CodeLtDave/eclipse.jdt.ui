@@ -461,4 +461,10 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_uses_super_field_access));
 	}
+
+	@Test
+	public void testConcatenatedFieldAccessAndQualifiedNames() throws Exception {
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 17, 4, 20);
+		assertHasNoCommonErrors(status);
+	}
 }

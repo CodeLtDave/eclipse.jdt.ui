@@ -407,10 +407,12 @@ public class MakeStaticRefactoring extends Refactoring {
 		@Override
 		public boolean visit(ExpressionMethodReference node) {
 			// Check if the method reference refers to the selected method
-			ITypeBinding typeBinding= node.getExpression().resolveTypeBinding();
-			IMethodBinding methodBinding= node.resolveMethodBinding();
-			if (isTargetMethodReference(methodBinding, typeBinding)) {
-				fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+			if (!fstatus.hasFatalError()) {
+				ITypeBinding typeBinding= node.getExpression().resolveTypeBinding();
+				IMethodBinding methodBinding= node.resolveMethodBinding();
+				if (isTargetMethodReference(methodBinding, typeBinding)) {
+					fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+				}
 			}
 			return super.visit(node);
 		}
@@ -418,11 +420,13 @@ public class MakeStaticRefactoring extends Refactoring {
 		@Override
 		public boolean visit(SuperMethodReference node) {
 			// Check if the method reference refers to the selected method
-			IMethodBinding methodBinding= node.resolveMethodBinding();
-			if (isTargetMethodReference(methodBinding)) {
-				ITypeBinding declaringTypeBinding= methodBinding.getDeclaringClass();
-				if (fTargetMethodBinding.getDeclaringClass().isEqualTo(declaringTypeBinding)) {
-					fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+			if (!fstatus.hasFatalError()) {
+				IMethodBinding methodBinding= node.resolveMethodBinding();
+				if (isTargetMethodReference(methodBinding)) {
+					ITypeBinding declaringTypeBinding= methodBinding.getDeclaringClass();
+					if (fTargetMethodBinding.getDeclaringClass().isEqualTo(declaringTypeBinding)) {
+						fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+					}
 				}
 			}
 			return super.visit(node);
