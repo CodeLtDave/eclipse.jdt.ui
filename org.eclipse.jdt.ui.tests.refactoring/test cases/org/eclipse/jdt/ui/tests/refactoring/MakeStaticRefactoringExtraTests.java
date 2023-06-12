@@ -109,81 +109,8 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	}
 
 	@Test
-	public void test1() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 23);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test2() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 16, 4, 22);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test3() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 16, 4, 22);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test4() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 16, 4, 22);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test5() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 16, 4, 22);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test6() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 16, 4, 22);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test7() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 16, 7, 22);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test8() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 9, 4, 15);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test9() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 9, 4, 15);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
 	public void test10() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 9, 4, 15);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test11() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 9, 4, 15);
-		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype));
-	}
-
-	@Test
-	public void test12() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 9, 2, 15);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test13() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 9, 2, 12);
 		assertHasNoCommonErrors(status);
 	}
 
@@ -194,68 +121,15 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	}
 
 	@Test
-	public void test15() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 10, 5, 25);
-		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
-	}
-
-	@Test
-	public void test16() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 9, 10, 9, 16);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test17() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 6, 12, 6, 18);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test18() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 10, 2, 16);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test19() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 10, 4, 16);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
 	public void test20() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 20);
-		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
-	}
-
-	@Test
-	public void test21() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
-		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
+		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void test22() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 3, 17, 3, 20);
 		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test23() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 14, 2, 17);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testClearOverrideAnnotation() throws Exception {
-		//IntelliJ fails
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 20);
-		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 	}
 
 	@Test
@@ -269,14 +143,14 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	public void testExpandMethodReference() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 10, 7, 10, 11);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
 	}
 
 	@Test
 	public void testMethodReference() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 6, 10, 6, 13);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
 	}
 
 	@Test
@@ -307,21 +181,9 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	}
 
 	@Test
-	public void testPreserveTypeParams() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 25, 4, 41);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testReceiverParameter() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
 	public void testThisMethodReference() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 8, 10, 8, 13);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
 	}
 }

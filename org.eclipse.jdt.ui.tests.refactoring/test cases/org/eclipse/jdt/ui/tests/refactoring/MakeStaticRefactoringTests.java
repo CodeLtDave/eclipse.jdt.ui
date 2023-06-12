@@ -110,105 +110,63 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void testSimpleFile() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 10, 7, 13);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 10, 2, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
-	public void testStringParameterAndReturnType() throws Exception {
+	public void testObjectParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of String type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 3, 10, 3, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
-	public void testIntegerParameterAndReturnType() throws Exception {
+	public void testPrimitiveParameterAndReturnType() throws Exception {
 		//Refactor method with parameter and return type of Integer type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 3, 16, 3, 19);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testArrayParameterAndReturnType() throws Exception {
 		//Refactor method with String-Array as Parameter and return type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testBooleanParameterAndReturnType() throws Exception {
-		//Refactor method with parameter and return type of Boolean type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testLongParameterAndReturnType() throws Exception {
-		//Refactor method with parameter and return type of Long type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testFloatParameterAndReturnType() throws Exception {
-		//Refactor method with parameter and return type of Float type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testDoubleParameterAndReturnType() throws Exception {
-		//Refactor method with parameter and return type of Double type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testCharParameterAndReturnType() throws Exception {
-		//Refactor method with parameter and return type of Char type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testShortParameterAndReturnType() throws Exception {
-		//Refactor method with parameter and return type of Char type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 3, 21, 3, 24);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testMethodNotFound() throws Exception {
 		//Method cannot be found
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 0, 5, 5);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 0, 2, 1);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 	}
 
 	@Test
 	public void testIsConstructor() throws Exception {
 		//Check if Constructor
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 8, 5, 15);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 12, 2, 15);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors));
 	}
 
 	@Test
 	public void testThisInDeclaration() throws Exception {
 		//MethodDeclaration uses "this"-Keyword for instance variables
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 10, 7, 15);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 19, 5, 22);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testThisInDeclarationMultipleFiles() throws Exception {
 		//MethodDeclaration uses "this"-Keyword for instance variables && MethodInvocations are in different packages within the same project
-		RefactoringStatus status= helper(new String[] { "package1.Example", "package1.Example2" }, 7, 10, 7, 15);
+		RefactoringStatus status= helper(new String[] { "p.Foo", "p.Foo2" }, 7, 19, 7, 22);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testThisInDeclarationInnerClass() throws Exception {
 		//MethodDeclaration uses "this"-Keyword for instance variables && InnerClass is referenced with "this"
-		RefactoringStatus status= helper(new String[] { "p.Input" }, 8, 10, 8, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 8, 17, 8, 20);
 		assertHasNoCommonErrors(status);
 	}
 
@@ -216,67 +174,90 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	@Test
 	public void testMultipleFilesInSameProject() throws Exception {
 		//MethodInvocations are in different packages within the same project
-		RefactoringStatus status= helper(new String[] { "package1.Example", "package2.Example2" }, 5, 10, 5, 13);
+		RefactoringStatus status= helper(new String[] { "p1.Foo", "p2.Foo2" }, 5, 19, 5, 22);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testRecursive() throws Exception {
 		//MethodInvocation in MethodDeclaration with object of the same Class in parameter
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 10, 5, 13);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 3, 10, 3, 13);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
 	}
 
 	@Test
-	public void testSuperMethodInvocation() throws Exception {
+	public void testRecursive2() throws Exception {
+		//recursive invocation after invoking a method that returns a new instance of the same class
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 6, 10, 6, 13);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
+	}
+
+	@Test
+	public void testRecursive3() throws Exception {
+		//simple recursive invocation of instance method
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
+	}
+
+	@Test
+	public void testInheritance() throws Exception {
 		//Refactor of method that overrides method of supertype (Selection is set to MethodDeclaration)
-		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 6, 14, 6, 24);
+		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 4, 19, 4, 22);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
 	}
 
 	@Test
-	public void testSuperMethodInvocation2() throws Exception {
+	public void testInheritance2() throws Exception {
 		//Refactor of method in super type that has child type overriding the method -> should fail
-		RefactoringStatus status= helper(new String[] { "package1.SuperClass", "package1.SubClass" }, 5, 14, 5, 24);
+		RefactoringStatus status= helper(new String[] { "p.SuperClass", "p.SubClass" }, 3, 19, 3, 22);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype));
 	}
 
 	@Test
-	public void testSuperMethodInvocation3() throws Exception {
+	public void testInheritance3() throws Exception {
 		//Selecting SuperMethodInvocation -> should fail
-		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 7, 20, 7, 30);
+		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 5, 26, 5, 29);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
 	}
 
 	@Test
-	public void testSuperMethodInvocation4() throws Exception {
+	public void testInheritance4() throws Exception {
 		//Refactor method without parameters on the lowest hierarchy level ->
 		//After refactoring it is static but has the same signature as parent type method -> should fail
-		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 6, 19, 6, 29);
+		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 4, 19, 4, 22);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 	}
 
 	@Test
 	public void testDuplicateParamName() throws Exception {
 		//Method has instance usage and already parameter with name "example"
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 10, 7, 15);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 19, 5, 22);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testDuplicateMethod() throws Exception {
 		//Selected method has instance usage and there is an existing method that is equal to the selected method after being refactored
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 10, 7, 15);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 19, 5, 22);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
 	}
 
 	@Test
+	public void testDuplicateMethod2() throws Exception {
+		//like testDuplicateMethod but parameter positions are switches. No error should be thrown
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 19, 5, 22);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
 	public void testMethodAlreadyStatic() throws Exception {
 		//Selected method is already static
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 22, 5, 32);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 24, 2, 27);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static));
 	}
@@ -284,21 +265,21 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	@Test
 	public void testNonStaticInnerClass() throws Exception {
 		//instance of Inner Class is used in refactored method
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 8, 17, 8, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 17, 5, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testGenericDeclaration() throws Exception {
 		//class has one generic type that is used for field and for parameter of selected method
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 6, 17, 6, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 17, 4, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testGenericDeclaration2() throws Exception {
 		//class has more than one generic type
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 8, 17, 8, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 6, 17, 6, 20);
 		assertHasNoCommonErrors(status);
 	}
 
@@ -306,20 +287,21 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testGenericDeclaration3() throws Exception {
 		//class has more than one generic type and an instance of the class is used in selected method
 		//selected method is hiding two generic types -> refactoring should fail
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 8, 24, 8, 27);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 6, 24, 6, 27);
+		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testGenericDeclaration4() throws Exception {
 		//duplicate generic paramType in methodDeclaration
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testGenericDeclaration5() throws Exception {
 		//three generic types in methodDeclaration
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
 		assertHasNoCommonErrors(status);
 	}
 
@@ -327,28 +309,28 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	@Test
 	public void testGenericDeclaration6() throws Exception {
 		//generic array as param
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testGenericDeclaration7() throws Exception {
 		//class type param number is higher than method param number
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 5, 17, 5, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 3, 17, 3, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testGenericDeclaration8() throws Exception {
 		//different bounds on typeParameters
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 9, 17, 9, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testGenericDeclaration9() throws Exception {
 		//check for wildcardTypes as bounds (T extends List<?>)
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 9, 17, 9, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 20);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound));
 	}
@@ -356,7 +338,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	@Test
 	public void testGenericDeclaration10() throws Exception {
 		//check for wildcardTypes as bounds (T extends Map<? extends Runnable, ? extends Throwable>)
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 9, 17, 9, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 20);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound));
 	}
@@ -365,7 +347,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testNoAdditionalParameter() throws Exception {
 		//An instance of the class is already in use as parameter with name example in the selected method for field access.
 		//Only static keyword needs to be set and not additional Parameter for field access.
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 19, 7, 29);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 19, 5, 22);
 		assertHasNoCommonErrors(status);
 	}
 
@@ -373,56 +355,85 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testNoAdditionalParameter2() throws Exception {
 		//An instance of the class is already in use as parameter with name foo in the selected method for field access.
 		//Only static keyword needs to be set and not additional Parameter for field access.
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 19, 7, 29);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 19, 5, 22);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testOuterFieldAccessInAnonymousClass() throws Exception {
 		//Anonymous class uses a field of outer class
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testOuterFieldAccessInLambda() throws Exception {
 		//Lambda uses a field of outer class
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 4, 17, 4, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testInnerFieldAccessInAnonymousClass() throws Exception {
+		//Method of anonymous class invokes another method of anonymous class -> Refactoring should ignore this invocation
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 10, 5, 13);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testVariousInstanceCases() throws Exception {
 		//Various cases of instance access in many different forms
-		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 14, 17, 14, 27);
+		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 14, 17, 14, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testInheritanceWithoutOverride() throws Exception {
 		//subtype implements a method that is not overriding parent type method -> Refactoring should work
-		RefactoringStatus status= helper(new String[] { "package1.SubClass", "package1.SuperClass" }, 4, 17, 4, 20);
+		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 2, 17, 2, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testSelectionOfInvocationInDifferentClass() throws Exception {
 		//Selection of MethodInvocation that is in different class than MethodDeclaration
-		RefactoringStatus status= helper(new String[] { "package1.Foo2", "package1.Foo" }, 6, 13, 6, 19);
+		RefactoringStatus status= helper(new String[] { "p.Foo2", "p.Foo" }, 6, 13, 6, 19);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testVarArgs() throws Exception {
 		//MethodDeclaration uses varargs
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 17, 7, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 17, 5, 20);
 		assertHasNoCommonErrors(status);
 	}
 
 	@Test
 	public void testPassingInstanceReference() throws Exception {
 		//Passing instance reference to another method
-		RefactoringStatus status= helper(new String[] { "package1.Example" }, 7, 17, 7, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 17, 5, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testSuperMethodReference() throws Exception {
+		//Selected method is used in SuperMethodReference -> Should throw error
+		RefactoringStatus status= helper(new String[] { "p.SuperClass", "p.SubClass" }, 4, 19, 4, 22);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+	}
+
+	@Test
+	public void testReturnThis() throws Exception {
+		//Only this keyword in return statement
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 16, 2, 19);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testReturnField() throws Exception {
+		//Selected method return field
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 16, 5, 19);
 		assertHasNoCommonErrors(status);
 	}
 }

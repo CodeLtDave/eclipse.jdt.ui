@@ -38,7 +38,6 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Javadoc;
-import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -50,6 +49,7 @@ import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
+import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.TagElement;
 import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.dom.ThisExpression;
@@ -316,7 +316,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 					ASTNode toReplace;
 					if (parent instanceof SuperFieldAccess) {
-						toReplace = parent;
+						toReplace= parent;
 
 					} else {
 						toReplace= node;
@@ -424,10 +424,10 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	private final class MethodReferenceAndLambdaFinder extends ASTVisitor {
+	private final class MethodReferenceFinder extends ASTVisitor {
 		private final RefactoringStatus fstatus;
 
-		private MethodReferenceAndLambdaFinder(RefactoringStatus status) {
+		private MethodReferenceFinder(RefactoringStatus status) {
 			fstatus= status;
 		}
 
@@ -436,23 +436,34 @@ public class MakeStaticRefactoring extends Refactoring {
 			// Check if the method reference refers to the selected method
 			ITypeBinding typeBinding= node.getExpression().resolveTypeBinding();
 			IMethodBinding methodBinding= node.resolveMethodBinding();
-			if (methodBinding != null && fTargetMethod.getElementName().equals(methodBinding.getName())
-					&& fTargetMethod.getDeclaringType().getElementName().equals(typeBinding.getName())) {
-				fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
+			if (methodBinding != null && isTargetMethodReference(methodBinding, typeBinding)) {
+				fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
 			}
 			return super.visit(node);
 		}
 
 		@Override
-		public boolean visit(LambdaExpression node) {
-			// Check if the lambda expression refers to the selected method
-			ITypeBinding typeBinding= node.resolveTypeBinding();
+		public boolean visit(SuperMethodReference node) {
+			// Check if the method reference refers to the selected method
 			IMethodBinding methodBinding= node.resolveMethodBinding();
-			if (methodBinding != null && fTargetMethod.getElementName().equals(methodBinding.getName())
-					&& fTargetMethod.getDeclaringType().getFullyQualifiedName().equals(typeBinding.getQualifiedName())) {
-				fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references_or_lambdas));
+			if (methodBinding != null && isTargetMethodReference(methodBinding)) {
+				ITypeBinding declaringTypeBinding= methodBinding.getDeclaringClass();
+				if (declaringTypeBinding != null && declaringTypeBinding.getName().equals(fTargetMethod.getDeclaringType().getElementName())) {
+					fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+				}
 			}
 			return super.visit(node);
+		}
+
+		private boolean isTargetMethodReference(IMethodBinding methodBinding) {
+			return fTargetMethod.getElementName().equals(methodBinding.getName());
+		}
+
+		private boolean isTargetMethodReference(IMethodBinding methodBinding, ITypeBinding typeBinding) {
+			String methodName= methodBinding.getName();
+			String declaringTypeName= typeBinding.getName();
+
+			return fTargetMethod.getElementName().equals(methodName) && fTargetMethod.getDeclaringType().getElementName().equals(declaringTypeName);
 		}
 	}
 
@@ -498,11 +509,11 @@ public class MakeStaticRefactoring extends Refactoring {
 			boolean contains;
 			String[] paramTypesOfFoundMethod= method.getParameterTypes();
 			String[] paramTypesOfSelectedMethodExtended= new String[parameterAmount];
-			paramTypesOfSelectedMethodExtended[parameterAmount - 1]= extendedClassName;
+			paramTypesOfSelectedMethodExtended[0]= extendedClassName;
 			String[] paramTypesOfSelectedMethod= fTargetMethod.getParameterTypes();
 
 			for (int i= 0; i < paramTypesOfSelectedMethod.length; i++) {
-				paramTypesOfSelectedMethodExtended[i]= paramTypesOfSelectedMethod[i];
+				paramTypesOfSelectedMethodExtended[i + 1]= paramTypesOfSelectedMethod[i];
 			}
 
 			for (int i= 0; i < paramTypesOfFoundMethod.length; i++) {
@@ -521,9 +532,9 @@ public class MakeStaticRefactoring extends Refactoring {
 	private void findMethodInvocations(RefactoringStatus status, ICompilationUnit[] affectedCUs) throws JavaModelException {
 		for (ICompilationUnit affectedCU : affectedCUs) {
 
-			//Check for Lambda or MethodReference that use selected method -> cancel refactoring
+			//Check MethodReferences that use selected method -> cancel refactoring
 			CompilationUnit cu= convertICUtoCU(affectedCU);
-			cu.accept(new MethodReferenceAndLambdaFinder(status));
+			cu.accept(new MethodReferenceFinder(status));
 
 			if (status.hasFatalError()) {
 				return;
