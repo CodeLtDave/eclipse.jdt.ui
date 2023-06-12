@@ -464,7 +464,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void testConcatenatedFieldAccessAndQualifiedNames() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 17, 4, 20);
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 17, 5, 20);
 		assertHasNoCommonErrors(status);
 	}
 }
