@@ -4,6 +4,7 @@ public class Foo {
 	int i= 0;
 
 	public static void toRefactor(Foo foo) {
+		//Field Access
 		foo.foo.foo.foo.method();
 		foo.getInstance().getInstance().method();
 		foo.foo.getInstance().foo.getInstance().foo.method();
@@ -13,6 +14,9 @@ public class Foo {
 		foo.getInstance().getInstance().i++;
 		foo.foo.getInstance().foo.getInstance().i++;
 		foo.getInstance().foo.getInstance().foo.getInstance().i++;
+		
+		//Qualified Name
+		foo.foo.foo.foo = foo.foo.foo;
 	}
 
 	public Foo getInstance() {
