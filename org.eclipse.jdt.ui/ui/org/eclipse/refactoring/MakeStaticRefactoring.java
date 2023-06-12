@@ -133,11 +133,6 @@ public class MakeStaticRefactoring extends Refactoring {
 			return;
 		}
 
-		//Throw warning
-		if (isOverriding(fTargetMethod.getDeclaringType())) {
-			status.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
-		}
-
 		IType parentType= fTargetMethod.getDeclaringType();
 		ITypeParameter[] classTypeParameters= parentType.getTypeParameters();
 
@@ -316,6 +311,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 					ASTNode toReplace;
 					if (parent instanceof SuperFieldAccess) {
+						fstatus.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_uses_super_field_access));
 						toReplace= parent;
 
 					} else {
@@ -352,19 +348,7 @@ public class MakeStaticRefactoring extends Refactoring {
 						} else if (optionalExpression == null) {
 							fRewrite.set(methodInvocation, MethodInvocation.EXPRESSION_PROPERTY, replacementExpression, null);
 						}
-					} else if (parent instanceof SuperMethodInvocation) {
-						SuperMethodInvocation superMethodInvocation= (SuperMethodInvocation) parent;
-						MethodInvocation replacementSuperInvocation= fAst.newMethodInvocation();
-						replacementSuperInvocation.setExpression(replacementExpression);
-						SimpleName copiedName= fAst.newSimpleName(superMethodInvocation.getName().getIdentifier());
-						replacementSuperInvocation.setName(copiedName);
-						List<Expression> args= superMethodInvocation.arguments();
-						for (Expression arg : args) {
-							replacementSuperInvocation.arguments().add(ASTNode.copySubtree(fAst, arg));
-						}
-						fRewrite.replace(superMethodInvocation, replacementSuperInvocation, null);
 					}
-
 				}
 			}
 			return super.visit(node);
@@ -394,31 +378,20 @@ public class MakeStaticRefactoring extends Refactoring {
 			return super.visit(node);
 		}
 
+		@Override
+		public boolean visit(SuperMethodInvocation node) {
+			fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
+			return super.visit(node);
+		}
+
 
 
 		private boolean isRecursion(SimpleName node) {
 			IMethodBinding nodeMethodBinding= (IMethodBinding) node.resolveBinding();
 			IMethodBinding outerMethodBinding= fMethodDeclaration.resolveBinding();
 
-			// Compare the names of the methods
-			if (nodeMethodBinding != null && outerMethodBinding != null) {
-				String nodeMethodName= nodeMethodBinding.getName();
-				String outerMethodName= outerMethodBinding.getName();
-
-				if (nodeMethodName.equals(outerMethodName)) {
-					ASTNode parent= node.getParent();
-					if (parent instanceof SuperMethodInvocation) {
-						return false;
-					}
-
-					while (parent != null) {
-						if (parent.equals(fMethodDeclaration)) {
-							return true;
-						}
-						parent= parent.getParent();
-					}
-					return false;
-				}
+			if (nodeMethodBinding.equals(outerMethodBinding)) {
+				return true;
 			}
 			return false;
 		}

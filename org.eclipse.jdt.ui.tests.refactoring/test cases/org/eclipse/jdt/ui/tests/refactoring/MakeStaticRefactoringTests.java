@@ -62,7 +62,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		MakeStaticRefactoring ref= new MakeStaticRefactoring(cu[0], selection.getOffset(), selection.getLength());
 		RefactoringStatus status= performRefactoringWithStatus(ref);
 
-		if (status.hasEntries()) {
+		if (status.hasFatalError() || status.hasError()) {
 			return status;
 		} else {
 			matchFiles(topLevelName, cu);
@@ -207,7 +207,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		//Refactor of method that overrides method of supertype (Selection is set to MethodDeclaration)
 		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 4, 19, 4, 22);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_overrides_parent_type));
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
 	}
 
 	@Test
@@ -384,7 +384,8 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testVariousInstanceCases() throws Exception {
 		//Various cases of instance access in many different forms
 		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 14, 17, 14, 20);
-		assertHasNoCommonErrors(status);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_uses_super_field_access));
 	}
 
 	@Test
@@ -435,5 +436,29 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		//Selected method return field
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 16, 5, 19);
 		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testExplicitSuperMethodInvocation() throws Exception {
+		//MethodDeclaration uses explcit SuperMethodInvocation to call method of parent type -> semantic change not allowed
+		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 3, 17, 3, 20);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
+	}
+
+	@Test
+	public void testImplicitSuperMethodInvocation() throws Exception {
+		//MethodDeclaration uses implicit SuperMethodInvocation to call method of parent type -> no semantic change
+		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 3, 17, 3, 20);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
+	}
+
+	@Test
+	public void testSuperFieldAccess() throws Exception {
+		//MethodDeclaration uses SuperFieldAccess -> throws warning but is possible
+		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 6, 17, 6, 20);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_uses_super_field_access));
 	}
 }

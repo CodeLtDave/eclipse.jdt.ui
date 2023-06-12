@@ -13,7 +13,6 @@ public class SubClass extends SuperClass {
 
 	public void bar() {
 		super.intParent++;
-		super.instanceParent(1);
 		instanceObject.counter++;
 		this.instanceObject.counter++;
 		intParent= staticInt + 1;

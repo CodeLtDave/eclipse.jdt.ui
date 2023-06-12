@@ -1054,8 +1054,6 @@ public final class RefactoringCoreMessages extends NLS {
 
 	public static String MakeStaticRefactoring_hiding_method_of_parent_type;
 
-	public static String MakeStaticRefactoring_selected_method_overrides_parent_type;
-
 	public static String MakeStaticRefactoring_not_available_for_recursive_methods;
 
 	public static String MakeStaticRefactoring_not_available_for_parametrized_methods;
@@ -1063,6 +1061,10 @@ public final class RefactoringCoreMessages extends NLS {
 	public static String MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound;
 
 	public static String MakeStaticRefactoring_not_available_for_method_references;
+
+	public static String MakeStaticRefactoring_explicit_super_method_invocation;
+
+	public static String MakeStaticRefactoring_selected_method_uses_super_field_access;
 
 	public static String IntroduceParameterObjectRefactoring_cannotalanyzemethod_mappingerror;
 
