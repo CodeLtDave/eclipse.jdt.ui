@@ -1,23 +1,24 @@
 public class Foo {
-    Foo foo;
-    int i = 0;
+	Foo foo;
 
-    public static void toRefactor(Foo foo) {
-        foo.foo.foo.foo.method();
-        foo.getInstance().getInstance().method();
-        foo.foo.getInstance().foo.getInstance().foo.method();
-        foo.getInstance().foo.getInstance().foo.getInstance().method();
+	int i= 0;
 
-        foo.foo.foo.foo.i++;
-        foo.getInstance().getInstance().i++;
-        foo.foo.getInstance().foo.getInstance().i++;
-        foo.getInstance().foo.getInstance().foo.getInstance().i++;
-    }
+	public static void toRefactor(Foo foo) {
+		foo.foo.foo.foo.method();
+		foo.getInstance().getInstance().method();
+		foo.foo.getInstance().foo.getInstance().foo.method();
+		foo.getInstance().foo.getInstance().foo.getInstance().method();
 
-    public Foo getInstance() {
-        return this;
-    }
+		foo.foo.foo.foo.i++;
+		foo.getInstance().getInstance().i++;
+		foo.foo.getInstance().foo.getInstance().i++;
+		foo.getInstance().foo.getInstance().foo.getInstance().i++;
+	}
 
-    public void method() {
-    }
+	public Foo getInstance() {
+		return this;
+	}
+
+	public void method() {
+	}
 }
