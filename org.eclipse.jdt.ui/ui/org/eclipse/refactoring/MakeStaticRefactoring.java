@@ -296,33 +296,33 @@ public class MakeStaticRefactoring extends Refactoring {
 				IVariableBinding variableBinding= (IVariableBinding) binding;
 				if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
 					ASTNode parent= node.getParent();
-					//this ensures only the leftmost SimpleName gets changed see "testVariousInstanceCases"
+
+					//this ensures only the leftmost SimpleName or QualifiedName gets changed see "testConcatenatedFieldAccessAndQualifiedNames"
 					if (parent instanceof FieldAccess) {
 						FieldAccess fieldAccess= (FieldAccess) parent;
 						if (fieldAccess.getExpression() != node) {
 							return super.visit(node);
 						}
-					} else if (parent instanceof QualifiedName) {
+					}
+					else if (parent instanceof QualifiedName) {
 						QualifiedName qualifiedName= (QualifiedName) parent;
 						if (qualifiedName.getQualifier() != node) {
 							return super.visit(node);
 						}
 					}
 
-					ASTNode toReplace;
-					if (parent instanceof SuperFieldAccess) {
-						fstatus.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_uses_super_field_access));
-						toReplace= parent;
-
-					} else {
-						toReplace= node;
-
-					}
-
 					FieldAccess replacement= fAst.newFieldAccess();
 					replacement.setExpression(fAst.newSimpleName(fParamName));
 					replacement.setName(fAst.newSimpleName(node.getIdentifier()));
-					fRewrite.replace(toReplace, replacement, null);
+					if (parent instanceof SuperFieldAccess) {
+						fstatus.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_uses_super_field_access));
+						fRewrite.replace(parent, replacement, null);
+
+					} else {
+						fRewrite.replace(node, replacement, null);
+					}
+
+
 					fHasInstanceUsages= true;
 				}
 			} else if (binding instanceof IMethodBinding) {
@@ -341,11 +341,7 @@ public class MakeStaticRefactoring extends Refactoring {
 						MethodInvocation methodInvocation= (MethodInvocation) parent;
 						Expression optionalExpression= methodInvocation.getExpression();
 
-						if (optionalExpression instanceof SimpleName) {
-							fRewrite.replace(optionalExpression, replacementExpression, null);
-						} else if (optionalExpression instanceof ThisExpression) {
-							fRewrite.replace(optionalExpression, replacementExpression, null);
-						} else if (optionalExpression == null) {
+						if (optionalExpression == null) {
 							fRewrite.set(methodInvocation, MethodInvocation.EXPRESSION_PROPERTY, replacementExpression, null);
 						}
 					}
@@ -545,22 +541,17 @@ public class MakeStaticRefactoring extends Refactoring {
 	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, MethodInvocation invocation) throws JavaModelException {
 		AST ast= invocation.getAST();
 		ASTRewrite rewrite= ASTRewrite.create(ast);
-		MethodInvocation staticMethodInvocation= ast.newMethodInvocation();
 
 		if (fHasInstanceUsages) {
 			//find the variable that needs to be passed as an argument
-			ASTNode expression= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
-			staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, expression));
+			ASTNode newArg= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
+			ListRewrite listRewrite = rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
+			listRewrite.insertFirst(newArg, null);
 		}
 
-		//copy contents in new staticMethodInvocation
-		staticMethodInvocation.setName(ast.newSimpleName(fMethodDeclaration.getName().toString()));
-		staticMethodInvocation.setExpression(ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString()));
-		for (Object argument : invocation.arguments()) {
-			staticMethodInvocation.arguments().add(ASTNode.copySubtree(ast, (ASTNode) argument));
-		}
+		SimpleName optionalExpression= ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString());
+		rewrite.set(invocation, MethodInvocation.EXPRESSION_PROPERTY, optionalExpression, null);
 
-		rewrite.replace(invocation, staticMethodInvocation, null);
 		TextEdit methodInvocationEdit= rewrite.rewriteAST();
 		multiTextEdit.addChild(methodInvocationEdit);
 	}
