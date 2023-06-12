@@ -390,7 +390,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			IMethodBinding nodeMethodBinding= (IMethodBinding) node.resolveBinding();
 			IMethodBinding outerMethodBinding= fMethodDeclaration.resolveBinding();
 
-			if (nodeMethodBinding.equals(outerMethodBinding)) {
+			if (nodeMethodBinding.isEqualTo(outerMethodBinding)) {
 				return true;
 			}
 			return false;
@@ -409,7 +409,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			// Check if the method reference refers to the selected method
 			ITypeBinding typeBinding= node.getExpression().resolveTypeBinding();
 			IMethodBinding methodBinding= node.resolveMethodBinding();
-			if (methodBinding != null && isTargetMethodReference(methodBinding, typeBinding)) {
+			if (isTargetMethodReference(methodBinding, typeBinding)) {
 				fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
 			}
 			return super.visit(node);
@@ -419,9 +419,9 @@ public class MakeStaticRefactoring extends Refactoring {
 		public boolean visit(SuperMethodReference node) {
 			// Check if the method reference refers to the selected method
 			IMethodBinding methodBinding= node.resolveMethodBinding();
-			if (methodBinding != null && isTargetMethodReference(methodBinding)) {
+			if (isTargetMethodReference(methodBinding)) {
 				ITypeBinding declaringTypeBinding= methodBinding.getDeclaringClass();
-				if (declaringTypeBinding != null && declaringTypeBinding.getName().equals(fTargetMethod.getDeclaringType().getElementName())) {
+				if (fTargetMethodBinding.getDeclaringClass().isEqualTo(declaringTypeBinding)) {
 					fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
 				}
 			}
@@ -429,14 +429,11 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 
 		private boolean isTargetMethodReference(IMethodBinding methodBinding) {
-			return fTargetMethod.getElementName().equals(methodBinding.getName());
+			return fTargetMethodBinding.isEqualTo(methodBinding);
 		}
 
 		private boolean isTargetMethodReference(IMethodBinding methodBinding, ITypeBinding typeBinding) {
-			String methodName= methodBinding.getName();
-			String declaringTypeName= typeBinding.getName();
-
-			return fTargetMethod.getElementName().equals(methodName) && fTargetMethod.getDeclaringType().getElementName().equals(declaringTypeName);
+			return fTargetMethodBinding.isEqualTo(methodBinding) && fTargetMethodBinding.getDeclaringClass().isEqualTo(typeBinding);
 		}
 	}
 
