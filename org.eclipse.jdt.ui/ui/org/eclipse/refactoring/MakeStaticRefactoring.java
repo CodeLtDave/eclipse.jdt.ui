@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -41,6 +42,7 @@ import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.QualifiedName;
@@ -294,6 +296,14 @@ public class MakeStaticRefactoring extends Refactoring {
 			IBinding binding= node.resolveBinding();
 			if (binding instanceof IVariableBinding) {
 				IVariableBinding variableBinding= (IVariableBinding) binding;
+
+				//Check if we are inside a anonymous class
+				ITypeBinding declaringClass= variableBinding.getDeclaringClass();
+				if (declaringClass != null && declaringClass.isAnonymous()) {
+					return super.visit(node);
+				}
+
+
 				if (variableBinding.isField() && !Modifier.isStatic(variableBinding.getModifiers())) {
 					ASTNode parent= node.getParent();
 
@@ -303,8 +313,7 @@ public class MakeStaticRefactoring extends Refactoring {
 						if (fieldAccess.getExpression() != node) {
 							return super.visit(node);
 						}
-					}
-					else if (parent instanceof QualifiedName) {
+					} else if (parent instanceof QualifiedName) {
 						QualifiedName qualifiedName= (QualifiedName) parent;
 						if (qualifiedName.getQualifier() != node) {
 							return super.visit(node);
@@ -327,6 +336,14 @@ public class MakeStaticRefactoring extends Refactoring {
 				}
 			} else if (binding instanceof IMethodBinding) {
 				IMethodBinding methodBinding= (IMethodBinding) binding;
+
+				//Check if we are inside a anonymous class
+				ITypeBinding declaringClass= methodBinding.getDeclaringClass();
+				if (declaringClass != null && declaringClass.isAnonymous()) {
+					return super.visit(node);
+				}
+
+
 				if (!Modifier.isStatic(methodBinding.getModifiers())) {
 					fHasInstanceUsages= true;
 
@@ -352,11 +369,36 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		@Override
 		public boolean visit(ThisExpression node) {
-			fHasInstanceUsages= true;
-			SimpleName replacement= fAst.newSimpleName(fParamName);
-			fRewrite.replace(node, replacement, null);
-			return super.visit(node);
+		    ASTNode parentNode = node.getParent();
+
+		    Name qualifier= node.getQualifier();
+		    if (qualifier!=null) {
+			    IBinding qualifierBinding= qualifier.resolveBinding();
+			    ITypeBinding typeBinding= (ITypeBinding) qualifierBinding;
+				if (typeBinding!=null && typeBinding.isLocal()) {
+					return super.visit(node);
+				}
+		    }
+
+		    if (qualifier== null) {
+			    while (parentNode != null) {
+			        if (parentNode instanceof AnonymousClassDeclaration) {
+			            // 'this' keyword is inside an anonymous class, skip
+			            return super.visit(node);
+			        }
+			        parentNode = parentNode.getParent();
+			    }
+		    }
+
+
+		    // 'this' keyword is not inside an anonymous class
+		    fHasInstanceUsages = true;
+		    SimpleName replacement = fAst.newSimpleName(fParamName);
+		    fRewrite.replace(node, replacement, null);
+
+		    return super.visit(node);
 		}
+
 
 		@Override
 		public boolean visit(ClassInstanceCreation node) {
@@ -545,7 +587,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (fHasInstanceUsages) {
 			//find the variable that needs to be passed as an argument
 			ASTNode newArg= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
-			ListRewrite listRewrite = rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
+			ListRewrite listRewrite= rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
 			listRewrite.insertFirst(newArg, null);
 		}
 
