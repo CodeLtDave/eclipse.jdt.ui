@@ -1,7 +1,7 @@
 public class SubClass extends SuperClass {
 
 	public void bar() {
-		instanceParent();
+		super.instanceParent();
 	}
 
 	@Override

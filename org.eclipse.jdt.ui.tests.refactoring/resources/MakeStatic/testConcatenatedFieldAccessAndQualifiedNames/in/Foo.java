@@ -3,7 +3,7 @@ public class Foo {
 
 	int i= 0;
 
-	public void toRefactor() {
+	public void bar() {
 		//Field Access
 		this.foo.foo.foo.method();
 		this.getInstance().getInstance().method();
