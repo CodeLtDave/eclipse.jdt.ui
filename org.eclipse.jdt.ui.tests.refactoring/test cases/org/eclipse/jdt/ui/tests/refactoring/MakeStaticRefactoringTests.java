@@ -450,8 +450,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testImplicitSuperMethodInvocation() throws Exception {
 		//MethodDeclaration uses implicit SuperMethodInvocation to call method of parent type -> no semantic change
 		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 3, 17, 3, 20);
-		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
+		assertHasNoCommonErrors(status);
 	}
 
 	@Test
@@ -466,5 +465,12 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testConcatenatedFieldAccessAndQualifiedNames() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 6, 17, 6, 20);
 		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testSourceNotAvailable() throws Exception {
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 3, 20, 3, 27);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method));
 	}
 }

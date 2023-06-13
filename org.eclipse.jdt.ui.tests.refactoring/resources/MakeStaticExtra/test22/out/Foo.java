@@ -9,7 +9,7 @@ class Foo {
 
 	class A {
 		void blah() {
-			foo(Foo.this);
+			Foo.foo(Foo.this);
 		}
 	}
 }
