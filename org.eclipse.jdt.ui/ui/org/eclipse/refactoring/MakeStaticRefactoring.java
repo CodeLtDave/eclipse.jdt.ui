@@ -299,8 +299,15 @@ public class MakeStaticRefactoring extends Refactoring {
 
 				//Check if we are inside a anonymous class
 				ITypeBinding declaringClass= variableBinding.getDeclaringClass();
-				if (declaringClass != null && declaringClass.isAnonymous()) {
-					return super.visit(node);
+				if (declaringClass != null) {
+					boolean isLocal= declaringClass.isLocal();
+				    boolean isAnonymous= declaringClass.isAnonymous();
+				    boolean isMember= declaringClass.isMember();
+				    boolean isNested= declaringClass.isNested();
+				    boolean isTopLevel= declaringClass.isTopLevel();
+				    if (!isTopLevel || isNested || isAnonymous || isLocal || isMember) {
+						return super.visit(node);
+				    }
 				}
 
 
@@ -339,8 +346,15 @@ public class MakeStaticRefactoring extends Refactoring {
 
 				//Check if we are inside a anonymous class
 				ITypeBinding declaringClass= methodBinding.getDeclaringClass();
-				if (declaringClass != null && declaringClass.isAnonymous()) {
-					return super.visit(node);
+				if (declaringClass != null) {
+					boolean isLocal= declaringClass.isLocal();
+				    boolean isAnonymous= declaringClass.isAnonymous();
+				    boolean isMember= declaringClass.isMember();
+				    boolean isNested= declaringClass.isNested();
+				    boolean isTopLevel= declaringClass.isTopLevel();
+				    if (!isTopLevel || isNested || isAnonymous || isLocal || isMember) {
+						return super.visit(node);
+				    }
 				}
 
 
@@ -375,8 +389,15 @@ public class MakeStaticRefactoring extends Refactoring {
 		    if (qualifier!=null) {
 			    IBinding qualifierBinding= qualifier.resolveBinding();
 			    ITypeBinding typeBinding= (ITypeBinding) qualifierBinding;
-				if (typeBinding!=null && typeBinding.isLocal()) {
-					return super.visit(node);
+				if (typeBinding!=null) {
+				    boolean isLocal= typeBinding.isLocal();
+				    boolean isAnonymous= typeBinding.isAnonymous();
+				    boolean isMember= typeBinding.isMember();
+				    boolean isNested= typeBinding.isNested();
+				    boolean isTopLevel= typeBinding.isTopLevel();
+				    if (!isTopLevel || isNested || isAnonymous || isLocal || isMember) {
+						return super.visit(node);
+				    }
 				}
 		    }
 
@@ -587,6 +608,9 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (fHasInstanceUsages) {
 			//find the variable that needs to be passed as an argument
 			ASTNode newArg= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
+
+			ITypeBinding typeBinding= invocation.resolveTypeBinding();
+
 			ListRewrite listRewrite= rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
 			listRewrite.insertFirst(newArg, null);
 		}
