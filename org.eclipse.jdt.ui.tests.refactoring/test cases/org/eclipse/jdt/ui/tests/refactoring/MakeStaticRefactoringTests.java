@@ -233,6 +233,13 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	}
 
 	@Test
+	public void testInheritance5() throws Exception {
+		//Inheritance with Recursion
+		RefactoringStatus status= helper(new String[] { "p.SubClass", "p.SuperClass" }, 4, 10, 4, 13);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage().equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
+	}
+
+	@Test
 	public void testDuplicateParamName() throws Exception {
 		//Method has instance usage and already parameter with name "example"
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 19, 5, 22);
@@ -504,7 +511,47 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void testMethodReference() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 28);
+		//TypeMethodReference
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 8, 10, 8, 13);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+	}
+
+	@Test
+	public void testMethodReference2() throws Exception {
+		//ExpressionMethodReference in anonymous class -> Refactoring not allowed in anonymous class and method references also not allowed
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 26, 4, 29);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types));
+	}
+
+	@Test
+	public void testMethodReference3() throws Exception {
+		//ExpressionMethodReference with recursion
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
+	}
+
+	@Test
+	public void testMethodReference4() throws Exception {
+		//ExpressionMethodReference
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 8, 17, 8, 20);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+	}
+
+	@Test
+	public void testAlignment() throws Exception {
+		//Alignment of parameters should not be changed
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testInstanceAccessInInnerClass() throws Exception {
+		//Instance method is called in Inner class and instance parameter is added to selected method
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 17, 5, 20);
 		assertHasNoCommonErrors(status);
 	}
 }
