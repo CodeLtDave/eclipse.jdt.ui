@@ -301,13 +301,13 @@ public class MakeStaticRefactoring extends Refactoring {
 				ITypeBinding declaringClass= variableBinding.getDeclaringClass();
 				if (declaringClass != null) {
 					boolean isLocal= declaringClass.isLocal();
-				    boolean isAnonymous= declaringClass.isAnonymous();
-				    boolean isMember= declaringClass.isMember();
-				    boolean isNested= declaringClass.isNested();
-				    boolean isTopLevel= declaringClass.isTopLevel();
-				    if (!isTopLevel || isNested || isAnonymous || isLocal || isMember) {
+					boolean isAnonymous= declaringClass.isAnonymous();
+					boolean isMember= declaringClass.isMember();
+					boolean isNested= declaringClass.isNested();
+					boolean isTopLevel= declaringClass.isTopLevel();
+					if (!isTopLevel || isNested || isAnonymous || isLocal || isMember) {
 						return super.visit(node);
-				    }
+					}
 				}
 
 
@@ -348,13 +348,13 @@ public class MakeStaticRefactoring extends Refactoring {
 				ITypeBinding declaringClass= methodBinding.getDeclaringClass();
 				if (declaringClass != null) {
 					boolean isLocal= declaringClass.isLocal();
-				    boolean isAnonymous= declaringClass.isAnonymous();
-				    boolean isMember= declaringClass.isMember();
-				    boolean isNested= declaringClass.isNested();
-				    boolean isTopLevel= declaringClass.isTopLevel();
-				    if (!isTopLevel || isNested || isAnonymous || isLocal || isMember) {
+					boolean isAnonymous= declaringClass.isAnonymous();
+					boolean isMember= declaringClass.isMember();
+					boolean isNested= declaringClass.isNested();
+					boolean isTopLevel= declaringClass.isTopLevel();
+					if (!isTopLevel || isNested || isAnonymous || isLocal || isMember) {
 						return super.visit(node);
-				    }
+					}
 				}
 
 
@@ -383,41 +383,41 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		@Override
 		public boolean visit(ThisExpression node) {
-		    ASTNode parentNode = node.getParent();
+			ASTNode parentNode= node.getParent();
 
-		    Name qualifier= node.getQualifier();
-		    if (qualifier!=null) {
-			    IBinding qualifierBinding= qualifier.resolveBinding();
-			    ITypeBinding typeBinding= (ITypeBinding) qualifierBinding;
-				if (typeBinding!=null) {
-				    boolean isLocal= typeBinding.isLocal();
-				    boolean isAnonymous= typeBinding.isAnonymous();
-				    boolean isMember= typeBinding.isMember();
-				    boolean isNested= typeBinding.isNested();
-				    boolean isTopLevel= typeBinding.isTopLevel();
-				    if (!isTopLevel || isNested || isAnonymous || isLocal || isMember) {
+			Name qualifier= node.getQualifier();
+			if (qualifier != null) {
+				IBinding qualifierBinding= qualifier.resolveBinding();
+				ITypeBinding typeBinding= (ITypeBinding) qualifierBinding;
+				if (typeBinding != null) {
+					boolean isLocal= typeBinding.isLocal();
+					boolean isAnonymous= typeBinding.isAnonymous();
+					boolean isMember= typeBinding.isMember();
+					boolean isNested= typeBinding.isNested();
+					boolean isTopLevel= typeBinding.isTopLevel();
+					if (!isTopLevel || isNested || isAnonymous || isLocal || isMember) {
 						return super.visit(node);
-				    }
+					}
 				}
-		    }
+			}
 
-		    if (qualifier== null) {
-			    while (parentNode != null) {
-			        if (parentNode instanceof AnonymousClassDeclaration) {
-			            // 'this' keyword is inside an anonymous class, skip
-			            return super.visit(node);
-			        }
-			        parentNode = parentNode.getParent();
-			    }
-		    }
+			if (qualifier == null) {
+				while (parentNode != null) {
+					if (parentNode instanceof AnonymousClassDeclaration) {
+						// 'this' keyword is inside an anonymous class, skip
+						return super.visit(node);
+					}
+					parentNode= parentNode.getParent();
+				}
+			}
 
 
-		    // 'this' keyword is not inside an anonymous class
-		    fHasInstanceUsages = true;
-		    SimpleName replacement = fAst.newSimpleName(fParamName);
-		    fRewrite.replace(node, replacement, null);
+			// 'this' keyword is not inside an anonymous class
+			fHasInstanceUsages= true;
+			SimpleName replacement= fAst.newSimpleName(fParamName);
+			fRewrite.replace(node, replacement, null);
 
-		    return super.visit(node);
+			return super.visit(node);
 		}
 
 
@@ -606,14 +606,24 @@ public class MakeStaticRefactoring extends Refactoring {
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 
 		if (fHasInstanceUsages) {
-			//find the variable that needs to be passed as an argument
-			ASTNode newArg= (invocation.getExpression() != null) ? invocation.getExpression() : ast.newThisExpression();
+	        ASTNode newArg;
+	        if (invocation.getExpression() != null) {
+	            newArg = invocation.getExpression();
+	        } else {
+	            // Check if inside a nested class
+	            ASTNode parent = invocation.getParent();
+	            while (!(parent instanceof TypeDeclaration) || ((TypeDeclaration)parent).isMemberTypeDeclaration()) {
+	                parent = parent.getParent();
+	            }
+	            // Create a this expression qualified by the name of the enclosing non-nested class
+	            ThisExpression thisExpression = ast.newThisExpression();
+	            thisExpression.setQualifier(ast.newSimpleName(((TypeDeclaration) parent).getName().toString()));
+	            newArg = thisExpression;
+	        }
 
-			ITypeBinding typeBinding= invocation.resolveTypeBinding();
-
-			ListRewrite listRewrite= rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
-			listRewrite.insertFirst(newArg, null);
-		}
+	        ListRewrite listRewrite= rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
+	        listRewrite.insertFirst(newArg, null);
+	    }
 
 		SimpleName optionalExpression= ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString());
 		rewrite.set(invocation, MethodInvocation.EXPRESSION_PROPERTY, optionalExpression, null);
@@ -681,6 +691,8 @@ public class MakeStaticRefactoring extends Refactoring {
 					fTargetMethodBinding= targetMethodBinding.getMethodDeclaration(); // resolve generics
 					if (fTargetMethodBinding != null) {
 						fTargetMethod= (IMethod) fTargetMethodBinding.getJavaElement();
+						if (fTargetMethod.getCompilationUnit() == null)
+							return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method);
 						CompilationUnit targetCU= convertICUtoCU(fTargetMethod.getCompilationUnit());
 						fMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, targetCU);
 					}
