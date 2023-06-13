@@ -109,24 +109,6 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 	}
 
 	@Test
-	public void test10() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 4, 9, 4, 15);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test14() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 9, 2, 15);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void test20() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 20);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
 	public void test22() throws Exception {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 3, 17, 3, 20);
 		assertHasNoCommonErrors(status);
@@ -137,13 +119,6 @@ public class MakeStaticRefactoringExtraTests extends GenericRefactoringTest {
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 18, 7, 22);
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
-	}
-
-	@Test
-	public void testExpandMethodReference() throws Exception {
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 10, 7, 10, 11);
-		assertTrue(status.getEntryWithHighestSeverity().getMessage()
-				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
 	}
 
 	@Test

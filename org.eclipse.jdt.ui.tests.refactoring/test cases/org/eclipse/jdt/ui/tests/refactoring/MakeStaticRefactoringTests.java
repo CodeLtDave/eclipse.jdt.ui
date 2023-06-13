@@ -473,4 +473,38 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		assertTrue(status.getEntryWithHighestSeverity().getMessage()
 				.equals(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method));
 	}
+
+	@Test
+	public void testInstanceFieldAccessInOtherClass() throws Exception {
+		//Access to instance method with field as member in another class
+		RefactoringStatus status= helper(new String[] { "p.Foo", "p.Foo2" }, 6, 12, 6, 15);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testClassInstanceCreation() throws Exception {
+		//new keyword needs to be called on instance after refactoring
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 2, 17, 2, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testConvertMethodReferenceToLambda() throws Exception {
+		//MethodReference needs to be co0nverted to lambda because refactored method accepts two parameters
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 10, 10, 10, 13);
+		assertTrue(status.getEntryWithHighestSeverity().getMessage()
+				.equals(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+	}
+
+	@Test
+	public void testNested() throws Exception {
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 28);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testMethodReference() throws Exception {
+		RefactoringStatus status= helper(new String[] { "p.Foo" }, 7, 17, 7, 28);
+		assertHasNoCommonErrors(status);
+	}
 }
