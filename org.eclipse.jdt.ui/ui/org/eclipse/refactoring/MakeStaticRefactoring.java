@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
@@ -610,15 +611,30 @@ public class MakeStaticRefactoring extends Refactoring {
 	        if (invocation.getExpression() != null) {
 	            newArg = invocation.getExpression();
 	        } else {
-	            // Check if inside a nested class
-	            ASTNode parent = invocation.getParent();
-	            while (!(parent instanceof TypeDeclaration) || ((TypeDeclaration)parent).isMemberTypeDeclaration()) {
+	            // We need to find the class that this invocation is inside
+	            ASTNode parent = invocation;
+	            while (!(parent instanceof AbstractTypeDeclaration)) {
 	                parent = parent.getParent();
 	            }
-	            // Create a this expression qualified by the name of the enclosing non-nested class
-	            ThisExpression thisExpression = ast.newThisExpression();
-	            thisExpression.setQualifier(ast.newSimpleName(((TypeDeclaration) parent).getName().toString()));
-	            newArg = thisExpression;
+	            AbstractTypeDeclaration currentClass = (AbstractTypeDeclaration) parent;
+
+	            // If the current class is a member of another class, we need to qualify this
+	            if (currentClass.isMemberTypeDeclaration()) {
+	                ThisExpression thisExpression = ast.newThisExpression();
+
+	                // Find the outer class
+	                parent = currentClass.getParent();
+	                while (!(parent instanceof AbstractTypeDeclaration)) {
+	                    parent = parent.getParent();
+	                }
+	                AbstractTypeDeclaration outerClass = (AbstractTypeDeclaration) parent;
+
+	                // Qualify this with the name of the outer class
+	                thisExpression.setQualifier(ast.newSimpleName(outerClass.getName().getIdentifier()));
+	                newArg = thisExpression;
+	            } else {
+	                newArg = ast.newThisExpression();
+	            }
 	        }
 
 	        ListRewrite listRewrite= rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
