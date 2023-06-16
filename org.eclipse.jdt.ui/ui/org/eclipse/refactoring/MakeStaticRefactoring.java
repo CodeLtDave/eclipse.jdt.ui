@@ -603,50 +603,59 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, MethodInvocation invocation) throws JavaModelException {
-		AST ast= invocation.getAST();
-		ASTRewrite rewrite= ASTRewrite.create(ast);
+	    AST ast= invocation.getAST();
+	    ASTRewrite rewrite= ASTRewrite.create(ast);
 
-		if (fHasInstanceUsages) {
+	    if (fHasInstanceUsages) {
 	        ASTNode newArg;
 	        if (invocation.getExpression() != null) {
-	            newArg = invocation.getExpression();
+	            newArg = ASTNode.copySubtree(ast, invocation.getExpression()); // copy the expression
 	        } else {
 	            // We need to find the class that this invocation is inside
 	            ASTNode parent = invocation;
-	            while (!(parent instanceof AbstractTypeDeclaration)) {
+	            while ((!(parent instanceof AbstractTypeDeclaration)) && (!(parent instanceof AnonymousClassDeclaration))) {
 	                parent = parent.getParent();
 	            }
-	            AbstractTypeDeclaration currentClass = (AbstractTypeDeclaration) parent;
+
+	            boolean isMember = false;
+	            if (parent instanceof AbstractTypeDeclaration) {
+	            	AbstractTypeDeclaration currentClass = (AbstractTypeDeclaration) parent;
+	            	if (currentClass.isMemberTypeDeclaration()) {
+	            		isMember = true;
+	            	}
+	            }
+	            else if (parent instanceof AnonymousClassDeclaration) {
+	            	isMember = true;
+	            }
+
 
 	            // If the current class is a member of another class, we need to qualify this
-	            if (currentClass.isMemberTypeDeclaration()) {
-	                ThisExpression thisExpression = ast.newThisExpression();
+	            if (isMember) {
+	            	ThisExpression thisExpression = ast.newThisExpression();
 
 	                // Find the outer class
-	                parent = currentClass.getParent();
-	                while (!(parent instanceof AbstractTypeDeclaration)) {
-	                    parent = parent.getParent();
-	                }
-	                AbstractTypeDeclaration outerClass = (AbstractTypeDeclaration) parent;
+	                IMethodBinding invocationBinding= invocation.resolveMethodBinding();
+	                ITypeBinding outerClassBinding= invocationBinding.getDeclaringClass();
+	                String outerClassName= outerClassBinding.getName();
 
 	                // Qualify this with the name of the outer class
-	                thisExpression.setQualifier(ast.newSimpleName(outerClass.getName().getIdentifier()));
+	                thisExpression.setQualifier(ast.newSimpleName(outerClassName));
 	                newArg = thisExpression;
 	            } else {
 	                newArg = ast.newThisExpression();
 	            }
 	        }
-
 	        ListRewrite listRewrite= rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
 	        listRewrite.insertFirst(newArg, null);
 	    }
 
-		SimpleName optionalExpression= ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString());
-		rewrite.set(invocation, MethodInvocation.EXPRESSION_PROPERTY, optionalExpression, null);
+	    SimpleName optionalExpression= ast.newSimpleName(((TypeDeclaration) fMethodDeclaration.getParent()).getName().getIdentifier());
+	    rewrite.set(invocation, MethodInvocation.EXPRESSION_PROPERTY, optionalExpression, null);
 
-		TextEdit methodInvocationEdit= rewrite.rewriteAST();
-		multiTextEdit.addChild(methodInvocationEdit);
+	    TextEdit methodInvocationEdit= rewrite.rewriteAST();
+	    multiTextEdit.addChild(methodInvocationEdit);
 	}
+
 
 	private void addEditToChangeManager(TextEdit editToAdd, ICompilationUnit iCompilationUnit) {
 		//get CompilationUnitChange from ChangeManager, otherwise create one
