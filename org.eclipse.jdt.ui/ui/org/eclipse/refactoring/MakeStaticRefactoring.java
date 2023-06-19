@@ -120,16 +120,15 @@ public class MakeStaticRefactoring extends Refactoring {
 		ModifierRewrite modRewrite= ModifierRewrite.create(rewrite, fMethodDeclaration);
 		modRewrite.setModifiers(fMethodDeclaration.getModifiers() | Modifier.STATIC, null);
 
-		// Find unused name for potential new parameter
+		//If fMethodDeclaraion hasInstanceUsages, adding a new parameter will be necessary
 		List<SingleVariableDeclaration> alreadyUsedParameters= fMethodDeclaration.parameters();
 		String className= ((TypeDeclaration) fMethodDeclaration.getParent()).getName().toString();
 		String paramName= generateUniqueParameterName(className, alreadyUsedParameters);
 
-		//Change instance Usages ("this" and "super" to paramName and set fHasInstanceUsage flag
+		//Change instance Usages ("this" and "super") to paramName and set fHasInstanceUsage flag
 		fMethodDeclaration.getBody().accept(new ChangeInstanceUsagesInMethodBody(paramName, rewrite, ast, status));
 
-		// check if method is overriding in hierarchy and has no instance usage
-		//-> after refactoring method would be static and have same signature as parent method
+		//Refactored method could unintentionally hide method of parent class
 		if (!fHasInstanceUsages && isOverriding(fTargetMethod.getDeclaringType())) {
 			status.merge(RefactoringStatus
 					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
@@ -139,67 +138,67 @@ public class MakeStaticRefactoring extends Refactoring {
 		IType parentType= fTargetMethod.getDeclaringType();
 		ITypeParameter[] classTypeParameters= parentType.getTypeParameters();
 
+		//Adding an instance parameter to the newly static method to ensure it can still access class-level state and behavior.
 		if (fHasInstanceUsages) {
-			SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
-
-			//if generic TypeParameters exist in class the newParam type needs to be parametrized
-			if (classTypeParameters.length != 0) {
-				SimpleType simpleType= ast.newSimpleType(ast.newName(className));
-				ParameterizedType parameterizedType= ast.newParameterizedType(simpleType);
-
-				for (int i= 0; i < classTypeParameters.length; i++) {
-					SimpleType typeParameter= ast.newSimpleType(ast.newSimpleName(classTypeParameters[i].getElementName()));
-					parameterizedType.typeArguments().add(typeParameter);
-				}
-				newParam.setType(parameterizedType);
-
-			} else {
-				newParam.setType(ast.newSimpleType(ast.newName(className)));
-			}
-			newParam.setName(ast.newSimpleName(paramName));
-
-			//Check if duplicate method exists after refactoring
-			int parameterAmount= alreadyUsedParameters.size() + 1;
-			checkDuplicateMethod(status, parameterAmount);
-
-			if (status.hasFatalError())
-				return;
-
-			//Add new parameter to method declaration arguments
-			ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
-			lrw.insertFirst(newParam, null);
-
-			//Update Javadoc
-			Javadoc javadoc= fMethodDeclaration.getJavadoc();
-			if (javadoc != null) {
-				TagElement newParameterTag= ast.newTagElement();
-				newParameterTag.setTagName(TagElement.TAG_PARAM);
-				newParameterTag.fragments().add(ast.newSimpleName(paramName));
-				ListRewrite tagsRewrite= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
-				tagsRewrite.insertFirst(newParameterTag, null);
-			}
+			addInstanceAsParamIfUsed(status, ast, rewrite, alreadyUsedParameters, className, paramName, classTypeParameters);
 		}
-
-		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
-		updateTypeParamList(status, ast, rewrite, classTypeParameters);
 
 		if (status.hasFatalError()) {
 			return;
 		}
 
-		// Delete @Override annotation
+		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
+		updateTypeParamList(status, ast, rewrite, classTypeParameters);
+
+		//A static method can't have override annotations
 		deleteOverrideAnnotation(rewrite);
 
+		//Changes can't be applied to directly to AST, edits are saved in fChangeManager
 		TextEdit methodDeclarationEdit= rewrite.rewriteAST();
 		addEditToChangeManager(methodDeclarationEdit, fTargetMethod.getCompilationUnit());
+	}
+
+	private void addInstanceAsParamIfUsed(RefactoringStatus status, AST ast, ASTRewrite rewrite, List<SingleVariableDeclaration> alreadyUsedParameters, String className, String paramName,
+			ITypeParameter[] classTypeParameters) throws JavaModelException {
+		SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
+
+		//If generic TypeParameters exist in class the newParam type needs to be parameterized
+		if (classTypeParameters.length != 0) {
+			SimpleType simpleType= ast.newSimpleType(ast.newName(className));
+			ParameterizedType parameterizedType= ast.newParameterizedType(simpleType);
+			for (int i= 0; i < classTypeParameters.length; i++) {
+				SimpleType typeParameter= ast.newSimpleType(ast.newSimpleName(classTypeParameters[i].getElementName()));
+				parameterizedType.typeArguments().add(typeParameter);
+			}
+			newParam.setType(parameterizedType);
+
+		} else {
+			newParam.setType(ast.newSimpleType(ast.newName(className)));
+		}
+		newParam.setName(ast.newSimpleName(paramName));
+
+		//While refactoring, the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
+		int parameterAmount= alreadyUsedParameters.size() + 1;
+		checkDuplicateMethod(status, parameterAmount);
+
+		//Add new parameter to method declaration arguments
+		ListRewrite lrw= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
+		lrw.insertFirst(newParam, null);
+
+		//Changes to fMethodDeclaration's signature need to be adjusted in JavaDocs too
+		Javadoc javadoc= fMethodDeclaration.getJavadoc();
+		if (javadoc != null) {
+			TagElement newParameterTag= ast.newTagElement();
+			newParameterTag.setTagName(TagElement.TAG_PARAM);
+			newParameterTag.fragments().add(ast.newSimpleName(paramName));
+			ListRewrite tagsRewrite= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
+			tagsRewrite.insertFirst(newParameterTag, null);
+		}
 	}
 
 	private void updateTypeParamList(RefactoringStatus status, AST ast, ASTRewrite rewrite, ITypeParameter[] classTypeParameters) throws JavaModelException {
 		ListRewrite typeParamsRewrite= rewrite.getListRewrite(fMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
 		Javadoc javadoc= fMethodDeclaration.getJavadoc();
-
-
-
 		List<SingleVariableDeclaration> methodParams= fMethodDeclaration.parameters();
 		List<String> methodParameterTypes= new ArrayList<>(methodParams.size());
 
@@ -847,7 +846,6 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(status, new ReferencesInBinaryContext(""), pm); //$NON-NLS-1$
 		findMethodInvocations(status, affectedCUs);
-
 
 		return status;
 	}
