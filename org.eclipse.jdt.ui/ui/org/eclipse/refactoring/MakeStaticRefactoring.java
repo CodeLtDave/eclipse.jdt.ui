@@ -180,21 +180,23 @@ public class MakeStaticRefactoring extends Refactoring {
 		return checkNode(NodeFinder.perform(root, offset, length));
 	}
 
-	private static ASTNode checkNode(ASTNode node) {	//TODO fix method structure, bad coding style, uninformative name
-		if (node == null)
-			return null;
-		if (node.getNodeType() == ASTNode.SIMPLE_NAME) {
-			node= node.getParent();
-		} else if (node.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
-			node= ((ExpressionStatement) node).getExpression();
-		}
-		switch (node.getNodeType()) {	//TODO no default switch case
-			case ASTNode.METHOD_INVOCATION:
-			case ASTNode.METHOD_DECLARATION:
-			case ASTNode.SUPER_METHOD_INVOCATION:
-				return node;
-		}
-		return null;
+	private static ASTNode checkNode(ASTNode node) {	//TODO uninformative name
+		if (node == null) {
+	        return null;
+	    }
+
+	    if (node.getNodeType() == ASTNode.SIMPLE_NAME) {
+	        node = node.getParent();
+	    } else if (node.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
+	        node = ((ExpressionStatement) node).getExpression();
+	    }
+
+	    int nodeType = node.getNodeType();
+	    if (nodeType == ASTNode.METHOD_INVOCATION || nodeType == ASTNode.METHOD_DECLARATION || nodeType == ASTNode.SUPER_METHOD_INVOCATION) {
+	        return node;
+	    }
+
+	    return null;
 	}
 
 	private IMethodBinding getMethodBindingFromSelectionNode(ASTNode selectionNode) {
