@@ -116,11 +116,11 @@ public class MakeStaticRefactoring extends Refactoring {
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		try {
 			pm.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_activation, 1);
-			RefactoringStatus status = new RefactoringStatus();
+			RefactoringStatus status= new RefactoringStatus();
 
 			if (fTargetMethod == null) {
 				// (1) invoked on a text selection
-				status = checkInitialConditionsFromTextSelection();
+				status= checkInitialConditionsFromTextSelection();
 			} else {
 				// (2) invoked on an IMethod: Source may not be available
 				status.merge(checkInitialConditionsFromMethod());
@@ -135,31 +135,33 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	private RefactoringStatus checkInitialConditionsFromTextSelection() throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
+		RefactoringStatus status= new RefactoringStatus();
 
 		if (fSelectionStart == 0)
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 
-		CompilationUnit selectionCURoot = new CompilationUnitRewrite(fSelectionCompilationUnit).getRoot();
-		ASTNode selectionNode = getSelectedNode(fSelectionCompilationUnit, selectionCURoot, fSelectionStart, fSelectionLength);
+		CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionCompilationUnit).getRoot();
+		ASTNode selectionNode= getSelectedNode(fSelectionCompilationUnit, selectionCURoot, fSelectionStart, fSelectionLength);
 
-		if (selectionNode == null)
+		if (selectionNode == null) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+		}
 
-		IMethodBinding targetMethodBinding = getMethodBindingFromSelectionNode(selectionNode, status);
+		IMethodBinding targetMethodBinding= getMethodBindingFromSelectionNode(selectionNode, status);
 
 		if (status.hasError()) {
 			return status;
 		}
 
 		if (targetMethodBinding != null) {
-			fTargetMethodBinding = targetMethodBinding.getMethodDeclaration(); // resolve generics
+			fTargetMethodBinding= targetMethodBinding.getMethodDeclaration(); // resolve generics
 			if (fTargetMethodBinding != null) {
-				fTargetMethod = (IMethod) fTargetMethodBinding.getJavaElement();
-				if (fTargetMethod.getCompilationUnit() == null)
+				fTargetMethod= (IMethod) fTargetMethodBinding.getJavaElement();
+				if (fTargetMethod.getCompilationUnit() == null) {
 					return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method);
-				CompilationUnit targetCU = convertICUtoCU(fTargetMethod.getCompilationUnit());
-				fTargetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, targetCU);
+				}
+				CompilationUnit targetCU= convertICUtoCU(fTargetMethod.getCompilationUnit());
+				fTargetMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, targetCU);
 			}
 		}
 		if (targetMethodBinding == null || fTargetMethodBinding == null) {
@@ -169,42 +171,44 @@ public class MakeStaticRefactoring extends Refactoring {
 		return status;
 	}
 
-	private static ASTNode getSelectedNode(ICompilationUnit unit, CompilationUnit root, int offset, int length) {	//TODO fix method structure, bad coding style
+	private static ASTNode getSelectedNode(ICompilationUnit unit, CompilationUnit root, int offset, int length) { //TODO fix method structure, bad coding style
 		ASTNode node= null;
 		try {
-			if (unit != null)
+			if (unit != null) {
 				node= checkNode(NodeFinder.perform(root, offset, length, unit));
-			else
+			} else {
 				node= checkNode(NodeFinder.perform(root, offset, length));
+			}
 		} catch (JavaModelException e) {
 			//TODO no catch
 		}
-		if (node != null)
+		if (node != null) {
 			return node;
+		}
 		return checkNode(NodeFinder.perform(root, offset, length));
 	}
 
-	private static ASTNode checkNode(ASTNode node) {	//TODO uninformative name
+	private static ASTNode checkNode(ASTNode node) { //TODO uninformative name
 		if (node == null) {
-	        return null;
-	    }
+			return null;
+		}
 
-	    if (node.getNodeType() == ASTNode.SIMPLE_NAME) {
-	        node = node.getParent();
-	    } else if (node.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
-	        node = ((ExpressionStatement) node).getExpression();
-	    }
+		if (node.getNodeType() == ASTNode.SIMPLE_NAME) {
+			node= node.getParent();
+		} else if (node.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
+			node= ((ExpressionStatement) node).getExpression();
+		}
 
-	    int nodeType = node.getNodeType();
-	    if (nodeType == ASTNode.METHOD_INVOCATION || nodeType == ASTNode.METHOD_DECLARATION || nodeType == ASTNode.SUPER_METHOD_INVOCATION) {
-	        return node;
-	    }
+		int nodeType= node.getNodeType();
+		if (nodeType == ASTNode.METHOD_INVOCATION || nodeType == ASTNode.METHOD_DECLARATION || nodeType == ASTNode.SUPER_METHOD_INVOCATION) {
+			return node;
+		}
 
-	    return null;
+		return null;
 	}
 
 	private IMethodBinding getMethodBindingFromSelectionNode(ASTNode selectionNode, RefactoringStatus status) {
-		int nodeType = selectionNode.getNodeType();
+		int nodeType= selectionNode.getNodeType();
 
 		if (nodeType == ASTNode.METHOD_INVOCATION) {
 			return ((MethodInvocation) selectionNode).resolveMethodBinding();
@@ -219,18 +223,17 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	private RefactoringStatus checkInitialConditionsFromMethod() throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
+		RefactoringStatus status= new RefactoringStatus();
 
 		fSelectionCompilationUnit= fTargetMethod.getCompilationUnit();
-		if (fTargetMethod.getDeclaringType().isAnnotation())
+		if (fTargetMethod.getDeclaringType().isAnnotation()) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
-
-		if (fSelectionCompilationUnit != null) {		//TODO extract into findMethodDeclaration
+		}
+		if (fSelectionCompilationUnit != null) { //TODO extract into findMethodDeclaration
 			CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionCompilationUnit).getRoot();
 			fTargetMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, selectionCURoot);
 			fTargetMethodBinding= fTargetMethodDeclaration.resolveBinding().getMethodDeclaration();
-		}
-		else {
+		} else {
 			//TODO what if null
 		}
 
@@ -242,23 +245,23 @@ public class MakeStaticRefactoring extends Refactoring {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 		}
 
-		if (fTargetMethod.getDeclaringType().isLocal() || fTargetMethod.getDeclaringType().isAnonymous())
+		if (fTargetMethod.getDeclaringType().isLocal() || fTargetMethod.getDeclaringType().isAnonymous()) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types);
-
-		if (fTargetMethod.isConstructor())
+		}
+		if (fTargetMethod.isConstructor()) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors);
-
+		}
 		int flags= fTargetMethod.getFlags();
-		if (Modifier.isStatic(flags))
+		if (Modifier.isStatic(flags)) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static);
-
-		if (isOverridden(fTargetMethod.getDeclaringType()))
+		}
+		if (isOverridden(fTargetMethod.getDeclaringType())) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype);
-
+		}
 		return null;
 	}
 
-	private boolean isOverridden(IType type) throws JavaModelException {	//TODO duplicate isOverriding()?
+	private boolean isOverridden(IType type) throws JavaModelException { //TODO duplicate isOverriding()?
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] subtypes= hierarchy.getAllSubtypes(type);
 		for (IType subtype : subtypes) {
@@ -341,9 +344,9 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private String generateUniqueParameterName(String className, List<SingleVariableDeclaration> parameters) {
 		String classNameFirstLowerCase= Character.toLowerCase(className.charAt(0)) + className.substring(1); //makes first char lower to match name conventions
-		if (parameters == null || parameters.isEmpty())
+		if (parameters == null || parameters.isEmpty()) {
 			return classNameFirstLowerCase;
-
+		}
 		boolean duplicateExists= false;
 		String combinedName= classNameFirstLowerCase;
 		int counter= 2;
@@ -546,7 +549,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	private boolean isOverriding(IType type) throws JavaModelException {	//TODO duplicate isOverridden()?
+	private boolean isOverriding(IType type) throws JavaModelException { //TODO duplicate isOverridden()?
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] supertypes= hierarchy.getAllSupertypes(type);
 		for (IType supertype : supertypes) {
@@ -813,57 +816,56 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, MethodInvocation invocation) throws JavaModelException {
-	    AST ast= invocation.getAST();
-	    ASTRewrite rewrite= ASTRewrite.create(ast);
+		AST ast= invocation.getAST();
+		ASTRewrite rewrite= ASTRewrite.create(ast);
 
-	    if (fHasInstanceUsages) {
-	        ASTNode newArg;
-	        if (invocation.getExpression() != null) {
-	            newArg = ASTNode.copySubtree(ast, invocation.getExpression()); // copy the expression
-	        } else {
-	            // We need to find the class that this invocation is inside
-	            ASTNode parent = invocation;
-	            while ((!(parent instanceof AbstractTypeDeclaration)) && (!(parent instanceof AnonymousClassDeclaration))) {
-	                parent = parent.getParent();
-	            }
+		if (fHasInstanceUsages) {
+			ASTNode newArg;
+			if (invocation.getExpression() != null) {
+				newArg= ASTNode.copySubtree(ast, invocation.getExpression()); // copy the expression
+			} else {
+				// We need to find the class that this invocation is inside
+				ASTNode parent= invocation;
+				while ((!(parent instanceof AbstractTypeDeclaration)) && (!(parent instanceof AnonymousClassDeclaration))) {
+					parent= parent.getParent();
+				}
 
-	            boolean isMember = false;
-	            if (parent instanceof AbstractTypeDeclaration) {
-	            	AbstractTypeDeclaration currentClass = (AbstractTypeDeclaration) parent;
-	            	if (currentClass.isMemberTypeDeclaration()) {
-	            		isMember = true;
-	            	}
-	            }
-	            else if (parent instanceof AnonymousClassDeclaration) {
-	            	isMember = true;
-	            }
+				boolean isMember= false;
+				if (parent instanceof AbstractTypeDeclaration) {
+					AbstractTypeDeclaration currentClass= (AbstractTypeDeclaration) parent;
+					if (currentClass.isMemberTypeDeclaration()) {
+						isMember= true;
+					}
+				} else if (parent instanceof AnonymousClassDeclaration) {
+					isMember= true;
+				}
 
 
-	            // If the current class is a member of another class, we need to qualify this
-	            if (isMember) {
-	            	ThisExpression thisExpression = ast.newThisExpression();
+				// If the current class is a member of another class, we need to qualify this
+				if (isMember) {
+					ThisExpression thisExpression= ast.newThisExpression();
 
-	                // Find the outer class
-	                IMethodBinding invocationBinding= invocation.resolveMethodBinding();
-	                ITypeBinding outerClassBinding= invocationBinding.getDeclaringClass();
-	                String outerClassName= outerClassBinding.getName();
+					// Find the outer class
+					IMethodBinding invocationBinding= invocation.resolveMethodBinding();
+					ITypeBinding outerClassBinding= invocationBinding.getDeclaringClass();
+					String outerClassName= outerClassBinding.getName();
 
-	                // Qualify this with the name of the outer class
-	                thisExpression.setQualifier(ast.newSimpleName(outerClassName));
-	                newArg = thisExpression;
-	            } else {
-	                newArg = ast.newThisExpression();
-	            }
-	        }
-	        ListRewrite listRewrite= rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
-	        listRewrite.insertFirst(newArg, null);
-	    }
+					// Qualify this with the name of the outer class
+					thisExpression.setQualifier(ast.newSimpleName(outerClassName));
+					newArg= thisExpression;
+				} else {
+					newArg= ast.newThisExpression();
+				}
+			}
+			ListRewrite listRewrite= rewrite.getListRewrite(invocation, MethodInvocation.ARGUMENTS_PROPERTY);
+			listRewrite.insertFirst(newArg, null);
+		}
 
-	    SimpleName optionalExpression= ast.newSimpleName(((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().getIdentifier());
-	    rewrite.set(invocation, MethodInvocation.EXPRESSION_PROPERTY, optionalExpression, null);
+		SimpleName optionalExpression= ast.newSimpleName(((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().getIdentifier());
+		rewrite.set(invocation, MethodInvocation.EXPRESSION_PROPERTY, optionalExpression, null);
 
-	    TextEdit methodInvocationEdit= rewrite.rewriteAST();
-	    multiTextEdit.addChild(methodInvocationEdit);
+		TextEdit methodInvocationEdit= rewrite.rewriteAST();
+		multiTextEdit.addChild(methodInvocationEdit);
 	}
 
 	@Override
@@ -878,9 +880,9 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		//get all Edits from compilationUnitChange, otherwise create a MultiTextEdit
 		MultiTextEdit allTextEdits= (MultiTextEdit) compilationUnitChange.getEdit();
-		if (allTextEdits == null)
+		if (allTextEdits == null) {
 			allTextEdits= new MultiTextEdit();
-
+		}
 		allTextEdits.addChild(editToAdd);
 		String changeName= "Change in " + iCompilationUnit.getElementName(); //$NON-NLS-1$
 		CompilationUnitChange newCompilationUnitChange= new CompilationUnitChange(changeName, iCompilationUnit);
