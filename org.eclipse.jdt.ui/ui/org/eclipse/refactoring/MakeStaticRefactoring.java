@@ -146,7 +146,11 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (selectionNode == null)
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 
-		IMethodBinding targetMethodBinding = getMethodBindingFromSelectionNode(selectionNode);
+		IMethodBinding targetMethodBinding = getMethodBindingFromSelectionNode(selectionNode, status);
+
+		if (status.hasError()) {
+			return status;
+		}
 
 		if (targetMethodBinding != null) {
 			fTargetMethodBinding = targetMethodBinding.getMethodDeclaration(); // resolve generics
@@ -199,7 +203,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	    return null;
 	}
 
-	private IMethodBinding getMethodBindingFromSelectionNode(ASTNode selectionNode) {
+	private IMethodBinding getMethodBindingFromSelectionNode(ASTNode selectionNode, RefactoringStatus status) {
 		int nodeType = selectionNode.getNodeType();
 
 		if (nodeType == ASTNode.METHOD_INVOCATION) {
@@ -207,6 +211,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		} else if (nodeType == ASTNode.METHOD_DECLARATION) {
 			return ((MethodDeclaration) selectionNode).resolveBinding();
 		} else if (nodeType == ASTNode.SUPER_METHOD_INVOCATION) {
+			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
 			return null;
 		}
 
