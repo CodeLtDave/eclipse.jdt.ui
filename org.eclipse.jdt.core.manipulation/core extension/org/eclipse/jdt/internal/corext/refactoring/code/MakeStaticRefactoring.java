@@ -1,4 +1,4 @@
-package org.eclipse.refactoring;
+package org.eclipse.jdt.internal.corext.refactoring.code;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,10 +64,8 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
-import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
-import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
@@ -241,7 +239,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	private RefactoringStatus checkGeneralInitialConditions() throws JavaModelException {
-		if (fTargetMethod == null || fTargetMethodBinding == null || (!RefactoringAvailabilityTester.isMakeStaticAvailable(fTargetMethod))) {
+		if (fTargetMethod == null || fTargetMethodBinding == null) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 		}
 

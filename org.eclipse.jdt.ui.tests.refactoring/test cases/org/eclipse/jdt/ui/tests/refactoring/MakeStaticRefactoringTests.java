@@ -10,7 +10,6 @@ import java.util.List;
 import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
-import org.eclipse.refactoring.MakeStaticRefactoring;
 
 import org.eclipse.core.runtime.CoreException;
 
@@ -26,6 +25,7 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
+import org.eclipse.jdt.internal.corext.refactoring.code.MakeStaticRefactoring;
 
 import org.eclipse.jdt.ui.tests.refactoring.infra.TextRangeUtil;
 import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;

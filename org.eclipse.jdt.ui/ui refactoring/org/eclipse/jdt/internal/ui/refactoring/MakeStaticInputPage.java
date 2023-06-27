@@ -1,8 +1,6 @@
 
 package org.eclipse.jdt.internal.ui.refactoring;
 
-import org.eclipse.refactoring.MakeStaticRefactoring;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -13,6 +11,8 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.wizard.IWizardPage;
 
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
+
+import org.eclipse.jdt.internal.corext.refactoring.code.MakeStaticRefactoring;
 
 class MakeStaticInputPage extends UserInputWizardPage {
 

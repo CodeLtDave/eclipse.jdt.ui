@@ -18,8 +18,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.refactoring.MakeStaticRefactoring;
-
 import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.CoreException;
@@ -78,6 +76,7 @@ import org.eclipse.jdt.internal.corext.refactoring.code.InlineTempRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.IntroduceFactoryRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.IntroduceIndirectionRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.IntroduceParameterRefactoring;
+import org.eclipse.jdt.internal.corext.refactoring.code.MakeStaticRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.ReplaceInvocationsRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.generics.InferTypeArgumentsRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.reorg.IReorgPolicy.ICopyPolicy;
