@@ -352,14 +352,6 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	@Test
 	public void testNoAdditionalParameter() throws Exception {
-		//An instance of the class is already in use as parameter with name example in the selected method for field access.
-		//Only static keyword needs to be set and not additional Parameter for field access.
-		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 19, 5, 22);
-		assertHasNoCommonErrors(status);
-	}
-
-	@Test
-	public void testNoAdditionalParameter2() throws Exception {
 		//An instance of the class is already in use as parameter with name foo in the selected method for field access.
 		//Only static keyword needs to be set and not additional Parameter for field access.
 		RefactoringStatus status= helper(new String[] { "p.Foo" }, 5, 19, 5, 22);
