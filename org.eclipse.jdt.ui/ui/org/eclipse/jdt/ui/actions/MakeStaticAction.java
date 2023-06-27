@@ -61,7 +61,7 @@ public final class MakeStaticAction extends SelectionDispatchAction {
 	/**
 	 * Note: This constructor is for internal use only. Clients should not call this constructor.
 	 *
-	 * @param editor the java editor
+	 * @param editor the java editor. Must not be null.
 	 *
 	 * @noreference This constructor is not intended to be referenced by clients.
 	 */

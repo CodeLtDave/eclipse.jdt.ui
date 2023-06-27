@@ -623,32 +623,29 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		IMethod method= org.eclipse.jdt.internal.corext.refactoring.Checks.findMethod(methodName, parameterAmount, false, type);
 
-		if (method != null) {
+		if (method == null) { return; }
 
-			//check if parameter types match (also compare new parameter that is added by refactoring)
-			String className= ((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().toString();
-			String extendedClassName= "Q" + className + ";"; //$NON-NLS-1$ //$NON-NLS-2$
-			boolean contains;
-			String[] paramTypesOfFoundMethod= method.getParameterTypes();
-			String[] paramTypesOfSelectedMethodExtended= new String[parameterAmount];
-			paramTypesOfSelectedMethodExtended[0]= extendedClassName;
-			String[] paramTypesOfSelectedMethod= fTargetMethod.getParameterTypes();
+		//check if parameter types match (also compare new parameter that is added by refactoring)
+		String className= ((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().toString();
+		String extendedClassName= "Q" + className + ";"; //$NON-NLS-1$ //$NON-NLS-2$
+		boolean contains;
+		String[] paramTypesOfFoundMethod= method.getParameterTypes();
+		String[] paramTypesOfSelectedMethodExtended= new String[parameterAmount];
+		paramTypesOfSelectedMethodExtended[0]= extendedClassName;
+		String[] paramTypesOfSelectedMethod= fTargetMethod.getParameterTypes();
 
-			for (int i= 0; i < paramTypesOfSelectedMethod.length; i++) {
-				paramTypesOfSelectedMethodExtended[i + 1]= paramTypesOfSelectedMethod[i];
-			}
-
-			for (int i= 0; i < paramTypesOfFoundMethod.length; i++) {
-				contains= paramTypesOfSelectedMethodExtended[i].equals(paramTypesOfFoundMethod[i]);
-				if (!contains) {
-					return;
-				}
-			}
-
-			status.merge(RefactoringStatus
-					.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
-			return;
+		for (int i= 0; i < paramTypesOfSelectedMethod.length; i++) {
+			paramTypesOfSelectedMethodExtended[i + 1]= paramTypesOfSelectedMethod[i];
 		}
+
+		for (int i= 0; i < paramTypesOfFoundMethod.length; i++) {
+			contains= paramTypesOfSelectedMethodExtended[i].equals(paramTypesOfFoundMethod[i]);
+			if (!contains) { return; }
+		}
+
+		status.merge(RefactoringStatus
+				.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
+		return;
 	}
 
 	private void updateMethodParameterTypes(RefactoringStatus status, AST ast, ASTRewrite rewrite, ITypeParameter[] classTypeParameters) throws JavaModelException {
@@ -737,8 +734,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	private void deleteOverrideAnnotation(ASTRewrite rewrite) {
 		ListRewrite listRewrite= rewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.MODIFIERS2_PROPERTY);
 		for (Object obj : fTargetMethodDeclaration.modifiers()) {
-			if (obj instanceof org.eclipse.jdt.core.dom.MarkerAnnotation) {
-				org.eclipse.jdt.core.dom.MarkerAnnotation markerAnnotation= (org.eclipse.jdt.core.dom.MarkerAnnotation) obj;
+			if (obj instanceof org.eclipse.jdt.core.dom.MarkerAnnotation markerAnnotation) {
 				if (markerAnnotation.getTypeName().getFullyQualifiedName().equals("Override")) { //$NON-NLS-1$
 					listRewrite.remove(markerAnnotation, null);
 				}
