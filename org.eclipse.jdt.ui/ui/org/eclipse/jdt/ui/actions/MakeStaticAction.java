@@ -1,10 +1,3 @@
-package org.eclipse.jdt.ui.actions;
-
-import org.eclipse.core.runtime.Assert;
-import org.eclipse.core.runtime.CoreException;
-
-import org.eclipse.jface.viewers.IStructuredSelection;
-
 /*******************************************************************************
  * Copyright (c) 2023 David Erdös and Michael Bangas.
  *
@@ -20,6 +13,13 @@ import org.eclipse.jface.viewers.IStructuredSelection;
  *     Michael Bangas - initial API and implementation
  *******************************************************************************/
 
+
+package org.eclipse.jdt.ui.actions;
+
+import org.eclipse.core.runtime.Assert;
+import org.eclipse.core.runtime.CoreException;
+
+import org.eclipse.jface.viewers.IStructuredSelection;
 
 import org.eclipse.jface.text.ITextSelection;
 
@@ -48,7 +48,8 @@ import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
  * Extracts an expression into a constant field and replaces all occurrences of the expression with
  * the new constant.
  *
- * Modifies a method with the static keyword and changes all method invocations to properly invoke the refactored method.
+ * Modifies a method with the static keyword and changes all method invocations to properly invoke
+ * the refactored method.
  *
  * @since 3.29
  *
