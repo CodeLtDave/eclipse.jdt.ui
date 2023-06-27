@@ -6,7 +6,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.viewers.IStructuredSelection;
 
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2023 David Erdös and Michael Bangas.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,8 +16,10 @@ import org.eclipse.jface.viewers.IStructuredSelection;
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
- *     IBM Corporation - initial API and implementation
+ *     David Erdös - initial API and implementation
+ *     Michael Bangas - initial API and implementation
  *******************************************************************************/
+
 
 import org.eclipse.jface.text.ITextSelection;
 
