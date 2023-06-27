@@ -12,7 +12,9 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.refactoring;
+package org.eclipse.jdt.internal.ui.refactoring;
+
+import org.eclipse.refactoring.MakeStaticRefactoring;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;

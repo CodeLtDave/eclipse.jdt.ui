@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.refactoring.MakeStaticRefactoring;
-import org.eclipse.refactoring.MakeStaticWizard;
 
 import org.eclipse.swt.widgets.Shell;
 
@@ -123,6 +122,7 @@ import org.eclipse.jdt.internal.ui.refactoring.IntroduceFactoryWizard;
 import org.eclipse.jdt.internal.ui.refactoring.IntroduceIndirectionWizard;
 import org.eclipse.jdt.internal.ui.refactoring.IntroduceParameterObjectWizard;
 import org.eclipse.jdt.internal.ui.refactoring.IntroduceParameterWizard;
+import org.eclipse.jdt.internal.ui.refactoring.MakeStaticWizard;
 import org.eclipse.jdt.internal.ui.refactoring.MoveInnerToTopWizard;
 import org.eclipse.jdt.internal.ui.refactoring.MoveInstanceMethodWizard;
 import org.eclipse.jdt.internal.ui.refactoring.MoveMembersWizard;

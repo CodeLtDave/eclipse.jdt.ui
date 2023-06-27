@@ -1,5 +1,7 @@
 
-package org.eclipse.refactoring;
+package org.eclipse.jdt.internal.ui.refactoring;
+
+import org.eclipse.refactoring.MakeStaticRefactoring;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
