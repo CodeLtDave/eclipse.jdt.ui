@@ -16,8 +16,6 @@ package org.eclipse.jdt.ui.actions;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.refactoring.MakeStaticAction;
-
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.widgets.Menu;
