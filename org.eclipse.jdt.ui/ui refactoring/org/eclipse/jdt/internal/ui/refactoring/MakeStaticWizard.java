@@ -14,13 +14,13 @@
 
 package org.eclipse.jdt.internal.ui.refactoring;
 
+import org.eclipse.refactoring.MakeStaticRefactoring;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
-
-import org.eclipse.jdt.internal.corext.refactoring.code.MakeStaticRefactoring;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
