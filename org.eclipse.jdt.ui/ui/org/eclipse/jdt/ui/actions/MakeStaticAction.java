@@ -30,7 +30,6 @@ import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
-import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringExecutionStarter;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
@@ -47,15 +46,12 @@ import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
  * Extracts an expression into a constant field and replaces all occurrences of the expression with
  * the new constant.
  *
- * <p>
- * This class may be instantiated; it is not intended to be subclassed.
- * </p>
+ * Modifies a method with the static keyword and changes all method invocations to properly invoke the refactored method.
  *
  * @since 3.29
  *
- * @noextend This class is not intended to be subclassed by clients.
  */
-public class MakeStaticAction extends SelectionDispatchAction {
+public final class MakeStaticAction extends SelectionDispatchAction {
 
 	private JavaEditor fEditor;
 
@@ -68,7 +64,9 @@ public class MakeStaticAction extends SelectionDispatchAction {
 	 */
 	public MakeStaticAction(JavaEditor editor) {
 		super(editor.getEditorSite());
-		setText(RefactoringCoreMessages.MakeStaticRefactoring_name);
+		setText(RefactoringMessages.MakeStaticAction_title);
+		setToolTipText(RefactoringMessages.MakeStaticAction_tooltip);
+		setDescription(RefactoringMessages.MakeStaticAction_description);
 		fEditor= editor;
 		setEnabled(SelectionConverter.getInputAsCompilationUnit(fEditor) != null);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IJavaHelpContextIds.MAKE_STATIC_ACTION);
@@ -85,6 +83,9 @@ public class MakeStaticAction extends SelectionDispatchAction {
 	// Selected in Editor window
 	@Override
 	public void selectionChanged(ITextSelection selection) {
+		setText(RefactoringMessages.MakeStaticAction_title);
+		setToolTipText(RefactoringMessages.MakeStaticAction_tooltip);
+		setDescription(RefactoringMessages.MakeStaticAction_description);
 		setEnabled(fEditor != null && SelectionConverter.getInputAsCompilationUnit(fEditor) != null);
 	}
 

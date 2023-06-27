@@ -376,13 +376,13 @@ public final class RefactoringExecutionStarter {
 
 	public static void startMakeStaticRefactoring(final ICompilationUnit unit, final int offset, final int length, final Shell shell) {
 		final MakeStaticRefactoring refactoring= new MakeStaticRefactoring(unit, offset, length);
-		new RefactoringStarter().activate(new MakeStaticWizard(refactoring), shell,
+		new RefactoringStarter().activate(new MakeStaticWizard(refactoring, RefactoringMessages.MakeStaticAction_dialog_title), shell,
 				RefactoringMessages.MakeStaticAction_dialog_title, RefactoringSaveHelper.SAVE_REFACTORING);
 	}
 
 	public static void startMakeStaticRefactoring(final IMethod method, final Shell shell) {
 		final MakeStaticRefactoring refactoring= new MakeStaticRefactoring(method);
-		new RefactoringStarter().activate(new MakeStaticWizard(refactoring), shell,
+		new RefactoringStarter().activate(new MakeStaticWizard(refactoring, RefactoringMessages.MakeStaticAction_dialog_title), shell,
 				RefactoringMessages.MakeStaticAction_dialog_title, RefactoringSaveHelper.SAVE_REFACTORING);
 	}
 

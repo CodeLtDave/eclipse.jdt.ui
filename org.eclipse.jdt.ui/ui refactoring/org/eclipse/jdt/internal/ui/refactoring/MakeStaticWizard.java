@@ -31,23 +31,13 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
  */
 public class MakeStaticWizard extends RefactoringWizard {
 
-	/* package */ static final String DIALOG_SETTING_SECTION= "MakeStaticWizard"; //$NON-NLS-1$
-
-	public MakeStaticWizard(MakeStaticRefactoring ref){
+	public MakeStaticWizard(MakeStaticRefactoring ref, String pagetitle){
 		super(ref, DIALOG_BASED_USER_INTERFACE | PREVIEW_EXPAND_FIRST_NODE);
-		setDefaultPageTitle("Make method static"); //$NON-NLS-1$
+		setDefaultPageTitle(pagetitle);
 		setDialogSettings(JavaPlugin.getDefault().getDialogSettings());
 	}
 
-	public Change createChange(){
-		// creating the change is cheap. So we don't need to show progress.
-		try {
-			return getRefactoring().createChange(new NullProgressMonitor());
-		} catch (CoreException e) {
-			JavaPlugin.log(e);
-			return null;
-		}
-	}
+
 
 	@Override
 	protected void addUserInputPages(){
