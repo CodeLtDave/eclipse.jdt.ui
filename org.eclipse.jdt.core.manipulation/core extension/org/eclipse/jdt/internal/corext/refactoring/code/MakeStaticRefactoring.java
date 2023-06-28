@@ -322,7 +322,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		//Change instance Usages ("this" and "super") to paramName and set fHasInstanceUsage flag
 		ChangeInstanceUsagesInMethodBody visitor = new ChangeInstanceUsagesInMethodBody(paramName, rewrite, ast, status, fTargetMethodDeclaration);
 		fTargetMethodDeclaration.getBody().accept(visitor);
-		status.merge(visitor.fstatus);
 		fHasInstanceUsages = visitor.fHasInstanceUsages;
 
 
