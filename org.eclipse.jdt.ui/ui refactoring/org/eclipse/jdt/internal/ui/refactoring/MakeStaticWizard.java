@@ -38,6 +38,6 @@ public class MakeStaticWizard extends RefactoringWizard {
 
 	@Override
 	protected void addUserInputPages(){
-		addPage(new MakeStaticInputPage(null));
+		addPage(new MakeStaticInputPage());
 	}
 }
