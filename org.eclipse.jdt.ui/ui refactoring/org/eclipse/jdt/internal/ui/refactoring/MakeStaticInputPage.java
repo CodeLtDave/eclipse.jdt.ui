@@ -35,18 +35,18 @@ class MakeStaticInputPage extends UserInputWizardPage {
 
 	@Override
 	public void createControl(Composite parent) {
-		Composite composite= new Composite(parent, SWT.NONE);
-		composite.setLayout(new GridLayout(2, false));
-		GridData gridData= new GridData(SWT.FILL, SWT.FILL, true, true);
-		composite.setLayoutData(gridData);
-		composite.setFont(parent.getFont());
+		Composite mainPart= new Composite(parent, SWT.NONE);
+		mainPart.setLayout(new GridLayout(2, false));
+		GridData layoutData= new GridData(SWT.FILL, SWT.FILL, true, true);
+		mainPart.setLayoutData(layoutData);
+		mainPart.setFont(parent.getFont());
 
 
-		Label label1= new Label(composite, SWT.NONE);
-		label1.setText(RefactoringMessages.MakeStaticAction_description);
-		label1.setLayoutData(new GridData());
-		setControl(composite);
+		Label description= new Label(mainPart, SWT.NONE);
+		description.setText(RefactoringMessages.MakeStaticAction_description);
+		description.setLayoutData(new GridData());
+		setControl(mainPart);
 
-		Dialog.applyDialogFont(composite);
+		Dialog.applyDialogFont(mainPart);
 	}
 }
