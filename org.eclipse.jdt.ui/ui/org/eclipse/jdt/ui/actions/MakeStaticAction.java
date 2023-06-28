@@ -89,7 +89,7 @@ public final class MakeStaticAction extends SelectionDispatchAction {
 		setText(RefactoringMessages.MakeStaticAction_title);
 		setToolTipText(RefactoringMessages.MakeStaticAction_tooltip);
 		setDescription(RefactoringMessages.MakeStaticAction_description);
-		setEnabled(fEditor != null && SelectionConverter.getInputAsCompilationUnit(fEditor) != null);
+		setEnabled(SelectionConverter.getInputAsCompilationUnit(fEditor) != null);
 	}
 
 	// Selected in outline window

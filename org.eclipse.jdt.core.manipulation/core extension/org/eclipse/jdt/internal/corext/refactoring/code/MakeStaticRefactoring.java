@@ -176,16 +176,12 @@ public class MakeStaticRefactoring extends Refactoring {
 		return status;
 	}
 
-	private static ASTNode getSelectedNode(ICompilationUnit unit, CompilationUnit root, int offset, int length) { //TODO fix method structure, bad coding style
+	private static ASTNode getSelectedNode(ICompilationUnit unit, CompilationUnit root, int offset, int length) throws JavaModelException { //TODO fix method structure, bad coding style
 		ASTNode node= null;
-		try {
-			if (unit != null) {
-				node= checkNode(NodeFinder.perform(root, offset, length, unit));
-			} else {
-				node= checkNode(NodeFinder.perform(root, offset, length));
-			}
-		} catch (JavaModelException e) {
-			//TODO no catch
+		if (unit != null) {
+			node= checkNode(NodeFinder.perform(root, offset, length, unit));
+		} else {
+			node= checkNode(NodeFinder.perform(root, offset, length));
 		}
 		if (node != null) {
 			return node;
@@ -320,9 +316,9 @@ public class MakeStaticRefactoring extends Refactoring {
 		String paramName= generateUniqueParameterName(className, alreadyUsedParameters);
 
 		//Change instance Usages ("this" and "super") to paramName and set fHasInstanceUsage flag
-		ChangeInstanceUsagesInMethodBody visitor = new ChangeInstanceUsagesInMethodBody(paramName, rewrite, ast, status, fTargetMethodDeclaration);
+		ChangeInstanceUsagesInMethodBody visitor= new ChangeInstanceUsagesInMethodBody(paramName, rewrite, ast, status, fTargetMethodDeclaration);
 		fTargetMethodDeclaration.getBody().accept(visitor);
-		fHasInstanceUsages = visitor.fHasInstanceUsages;
+		fHasInstanceUsages= visitor.fHasInstanceUsages;
 
 
 		//Refactored method could unintentionally hide method of parent class
