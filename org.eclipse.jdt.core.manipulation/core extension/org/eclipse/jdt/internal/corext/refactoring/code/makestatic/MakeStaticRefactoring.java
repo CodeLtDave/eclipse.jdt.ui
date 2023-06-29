@@ -169,7 +169,11 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	/**
-	 * Returns the name of the refactoring.
+	 * {@inheritDoc}
+	 *
+	 * Returns the name of the refactoring operation.
+	 *
+	 * @return The name of the refactoring operation.
 	 */
 	@Override
 	public String getName() {
@@ -177,9 +181,9 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	@Override
-	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+	public RefactoringStatus checkInitialConditions(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
 		try {
-			pm.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_activation, 1);
+			progressMonitor.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_activation, 1);
 			RefactoringStatus status= new RefactoringStatus();
 
 			if (fTargetMethod == null) {
@@ -194,7 +198,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 			return status;
 		} finally {
-			pm.done();
+			progressMonitor.done();
 		}
 	}
 
@@ -339,7 +343,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	@Override
-	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
 		RefactoringStatus status= new RefactoringStatus();
 		fChangeManager= new TextEditBasedChangeManager();
 		fHasInstanceUsages= false;
@@ -355,7 +359,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		fTargetProvider= TargetProvider.create(fTargetMethodDeclaration);
 		fTargetProvider.initialize();
 
-		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(status, new ReferencesInBinaryContext(""), pm); //$NON-NLS-1$
+		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(status, new ReferencesInBinaryContext(""), progressMonitor); //$NON-NLS-1$
 		handleMethodInvocations(status, affectedCUs);
 
 		return status;
@@ -706,9 +710,21 @@ public class MakeStaticRefactoring extends Refactoring {
 		multiTextEdit.addChild(methodInvocationEdit);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Creates a {@code Change} object representing the refactoring changes to be performed. This
+	 * method constructs a composite change that encapsulates all the individual changes managed by
+	 * the {@code fChangeManager}.
+	 *
+	 * @param progressMonitor The progress monitor used to track the progress of the operation.
+	 * @return A {@code Change} object representing all refactoring changes.
+	 * @throws CoreException If an error occurs during the creation of the change.
+	 * @throws OperationCanceledException If the operation is canceled by the user.
+	 */
 	@Override
-	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		CompositeChange multiChange= new CompositeChange("Make Static", fChangeManager.getAllChanges()); //$NON-NLS-1$
+	public Change createChange(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
+		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_name, fChangeManager.getAllChanges());
 		return multiChange;
 	}
 
