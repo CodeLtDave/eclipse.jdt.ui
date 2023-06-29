@@ -71,6 +71,7 @@ import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
+import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
 import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
@@ -85,9 +86,9 @@ import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManag
  */
 public class MakeStaticRefactoring extends Refactoring {
 
-	private IMethod fTargetMethod;
+	private IMethod fTargetMethod;	//TODO remove
 
-	private ICompilationUnit fSelectionCompilationUnit;
+	private ICompilationUnit fSelectionCompilationUnit;	//TODO remove
 
 	private TextEditBasedChangeManager fChangeManager;
 
@@ -97,20 +98,22 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private boolean fHasInstanceUsages;
 
-	private int fSelectionStart;
-
-	private int fSelectionLength;
+	private Selection fTargetSelection;	//TODO remove
 
 	private IMethodBinding fTargetMethodBinding;
 
-	public MakeStaticRefactoring(ICompilationUnit inputAsCompilationUnit, int offset, int length) {
-		fSelectionStart= offset;
-		fSelectionLength= length;
+	private ContextCalculator fContextCalculator;
+
+	private InitialConditionsChecker fIntialConditionsChecker;
+
+	public MakeStaticRefactoring(ICompilationUnit inputAsCompilationUnit, int selectionStart, int selectionLength) {
+		fTargetSelection= Selection.createFromStartLength(selectionStart, selectionLength);
 		fSelectionCompilationUnit= inputAsCompilationUnit;
+		fContextCalculator = new ContextCalculator(fSelectionCompilationUnit, fTargetSelection);
 	}
 
 	public MakeStaticRefactoring(IMethod method) {
-		fTargetMethod= method;
+		fContextCalculator = new ContextCalculator(method);
 	}
 
 	@Override
@@ -120,9 +123,10 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+		RefactoringStatus status= new RefactoringStatus();
+
 		try {
 			pm.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_activation, 1);
-			RefactoringStatus status= new RefactoringStatus();
 
 			if (fTargetMethod == null) {
 				// (1) invoked on a text selection
@@ -132,22 +136,28 @@ public class MakeStaticRefactoring extends Refactoring {
 				status.merge(checkInitialConditionsFromMethod());
 			}
 
-			status.merge(checkGeneralInitialConditions());
+			fContextCalculator.calculateCompleteContext();
 
+			status.merge(checkGeneralInitialConditions());
 			return status;
-		} finally {
+		}
+
+		finally {
 			pm.done();
 		}
+
+
 	}
 
 	private RefactoringStatus checkInitialConditionsFromTextSelection() throws JavaModelException {
+
 		RefactoringStatus status= new RefactoringStatus();
 
-		if (fSelectionStart == 0)
+		if (fTargetSelection.getOffset() == 0)
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 
 		CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionCompilationUnit).getRoot();
-		ASTNode selectionNode= getSelectedNode(fSelectionCompilationUnit, selectionCURoot, fSelectionStart, fSelectionLength);
+		ASTNode selectionNode= getSelectedNode(fSelectionCompilationUnit, selectionCURoot, fTargetSelection.getOffset(), fTargetSelection.getLength());
 
 		if (selectionNode == null) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
@@ -210,6 +220,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	private IMethodBinding getMethodBindingFromSelectionNode(ASTNode selectionNode, RefactoringStatus status) {
+
 		int nodeType= selectionNode.getNodeType();
 
 		if (nodeType == ASTNode.METHOD_INVOCATION) {
