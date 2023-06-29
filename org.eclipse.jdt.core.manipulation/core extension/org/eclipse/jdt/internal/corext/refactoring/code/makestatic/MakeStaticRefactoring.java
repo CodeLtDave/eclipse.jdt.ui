@@ -40,12 +40,10 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ExpressionMethodReference;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -58,7 +56,6 @@ import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.TagElement;
 import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.dom.ThisExpression;
@@ -617,18 +614,18 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	private void handleMethodInvocations(RefactoringStatus status, ICompilationUnit[] affectedCUs) throws JavaModelException {
-		for (ICompilationUnit affectedCU : affectedCUs) {
+	private void handleMethodInvocations(RefactoringStatus status, ICompilationUnit[] affectedICompilationUnits) throws JavaModelException {
+		for (ICompilationUnit affectedICompilationUnit : affectedICompilationUnits) {
 
-			//Check MethodReferences that use selected method -> cancel refactoring
-			CompilationUnit cu= convertICUtoCU(affectedCU);
-			cu.accept(new MethodReferenceFinder(status));
+			//Check if MethodReferences use selected method -> cancel refactoring
+			CompilationUnit affectedCompilationUnit= convertICUtoCU(affectedICompilationUnit);
+			affectedCompilationUnit.accept(new MethodReferenceFinder(status, fTargetMethodBinding));
 
 			if (status.hasFatalError()) {
 				return;
 			}
 
-			BodyDeclaration[] bodies= fTargetProvider.getAffectedBodyDeclarations(affectedCU, null);
+			BodyDeclaration[] bodies= fTargetProvider.getAffectedBodyDeclarations(affectedICompilationUnit, null);
 			MultiTextEdit multiTextEdit= new MultiTextEdit();
 			for (BodyDeclaration body : bodies) {
 				ASTNode[] invocations= fTargetProvider.getInvocations(body, null);
@@ -642,7 +639,7 @@ public class MakeStaticRefactoring extends Refactoring {
 				return;
 			}
 
-			addEditToChangeManager(multiTextEdit, affectedCU);
+			addEditToChangeManager(multiTextEdit, affectedICompilationUnit);
 		}
 	}
 
@@ -654,50 +651,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		parser.setResolveBindings(true);
 
 		return (CompilationUnit) parser.createAST(null);
-	}
-
-	private final class MethodReferenceFinder extends ASTVisitor {
-		private final RefactoringStatus fstatus;
-
-		private MethodReferenceFinder(RefactoringStatus status) {
-			fstatus= status;
-		}
-
-		@Override
-		public boolean visit(ExpressionMethodReference node) {
-			// Check if the method reference refers to the selected method
-			if (!fstatus.hasFatalError()) {
-				ITypeBinding typeBinding= node.getExpression().resolveTypeBinding();
-				IMethodBinding methodBinding= node.resolveMethodBinding();
-				if (isTargetMethodReference(methodBinding, typeBinding)) {
-					fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
-				}
-			}
-			return super.visit(node);
-		}
-
-		@Override
-		public boolean visit(SuperMethodReference node) {
-			// Check if the method reference refers to the selected method
-			if (!fstatus.hasFatalError()) {
-				IMethodBinding methodBinding= node.resolveMethodBinding();
-				if (isTargetMethodReference(methodBinding)) {
-					ITypeBinding declaringTypeBinding= methodBinding.getDeclaringClass();
-					if (fTargetMethodBinding.getDeclaringClass().isEqualTo(declaringTypeBinding)) {
-						fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
-					}
-				}
-			}
-			return super.visit(node);
-		}
-
-		private boolean isTargetMethodReference(IMethodBinding methodBinding) {
-			return fTargetMethodBinding.isEqualTo(methodBinding);
-		}
-
-		private boolean isTargetMethodReference(IMethodBinding methodBinding, ITypeBinding typeBinding) {
-			return fTargetMethodBinding.isEqualTo(methodBinding) && fTargetMethodBinding.getDeclaringClass().isEqualTo(typeBinding);
-		}
 	}
 
 	private void modifyMethodInvocation(MultiTextEdit multiTextEdit, MethodInvocation invocation) throws JavaModelException {
