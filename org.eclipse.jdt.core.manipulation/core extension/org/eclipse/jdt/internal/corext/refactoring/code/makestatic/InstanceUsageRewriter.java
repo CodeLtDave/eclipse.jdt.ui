@@ -1,4 +1,4 @@
-package org.eclipse.jdt.internal.corext.refactoring.code;
+package org.eclipse.jdt.internal.corext.refactoring.code.makestatic;
 
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 

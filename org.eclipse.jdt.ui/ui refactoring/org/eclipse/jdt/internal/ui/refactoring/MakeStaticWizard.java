@@ -17,7 +17,7 @@ package org.eclipse.jdt.internal.ui.refactoring;
 
 import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
 
-import org.eclipse.jdt.internal.corext.refactoring.code.MakeStaticRefactoring;
+import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.MakeStaticRefactoring;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
