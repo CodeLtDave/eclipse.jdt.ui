@@ -90,22 +90,61 @@ import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManag
  */
 public class MakeStaticRefactoring extends Refactoring {
 
+	/**
+	 * The {@code IMethod} object representing the selected method on which the refactoring should
+	 * be performed.
+	 */
 	private IMethod fTargetMethod;
 
+
+	/**
+	 * The ICompilationUnit object representing the class that contains the refactored method.
+	 */
 	private ICompilationUnit fSelectionCompilationUnit;
 
+	/**
+	 * Manages all changes to the source code that will be performed at the end of the refactoring.
+	 */
 	private TextEditBasedChangeManager fChangeManager;
 
+
+	/**
+	 * Provides all invocations of the refactored method in the workspace.
+	 */
 	private TargetProvider fTargetProvider;
 
+	/**
+	 * The {@code MethodDeclaration} object representing the selected method on which the
+	 * refactoring should be performed. This field is used to analyze and modify the method's
+	 * declaration during the refactoring process.
+	 */
 	private MethodDeclaration fTargetMethodDeclaration;
 
+	/**
+	 * Indicates whether there is access to instance variables or instance methods within the body
+	 * of the method.
+	 */
 	private boolean fHasInstanceUsages;
 
+	/**
+	 * The start of the selection in the editor when the refactoring is performed. This field is
+	 * used together with the field fSelectionLength to retrieve the IMethod object representing the
+	 * refactored method out of the user selection. In case the refactoring will be performed in the
+	 * outline window this field is not used.
+	 */
 	private int fSelectionStart;
 
+	/**
+	 * The length of the selection in the editor when the refactoring is performed. This field is
+	 * used together with the field fSelectionStart to retrieve the IMethod object representing the
+	 * refactored method out of the user selection. In case the refactoring will be performed in the
+	 * outline window this field is not used.
+	 */
 	private int fSelectionLength;
 
+	/**
+	 * The {@code IMethodBinding} object representing the binding of the refactored method.
+	 */
 	private IMethodBinding fTargetMethodBinding;
 
 
@@ -113,8 +152,8 @@ public class MakeStaticRefactoring extends Refactoring {
 	 * Constructs a new {@code MakeStaticRefactoring} object for a text selection.
 	 *
 	 * @param inputAsCompilationUnit The compilation unit containing the selected method.
-	 * @param offset                 The offset of the text selection.
-	 * @param length                 The length of the text selection.
+	 * @param offset The offset of the text selection.
+	 * @param length The length of the text selection.
 	 */
 	public MakeStaticRefactoring(ICompilationUnit inputAsCompilationUnit, int offset, int length) {
 		fSelectionStart= offset;
@@ -123,8 +162,8 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	/**
-	 * Constructs a new {@code MakeStaticRefactoring} object.
-	 * This constructor is called when performing the refactoring on a method in the outline menu.
+	 * Constructs a new {@code MakeStaticRefactoring} object. This constructor is called when
+	 * performing the refactoring on a method in the outline menu.
 	 *
 	 * @param method The target method the refactoring should be performed on.
 	 */
