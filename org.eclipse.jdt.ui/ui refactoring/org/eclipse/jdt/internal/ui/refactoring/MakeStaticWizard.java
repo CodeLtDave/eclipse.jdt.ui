@@ -22,22 +22,27 @@ import org.eclipse.jdt.internal.corext.refactoring.code.MakeStaticRefactoring;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
 /**
+ * The MakeStaticWizard class represents a wizard for performing the "Make Static" refactoring
+ * operation.
  *
  * @since 3.29
- *
  */
 public class MakeStaticWizard extends RefactoringWizard {
 
-	public MakeStaticWizard(MakeStaticRefactoring ref, String pagetitle){
-		super(ref, DIALOG_BASED_USER_INTERFACE | PREVIEW_EXPAND_FIRST_NODE);
+	/**
+	 * Constructs a new MakeStaticWizard with the specified MakeStaticRefactoring and page title.
+	 *
+	 * @param refactoring the MakeStaticRefactoring object representing the refactoring operation
+	 * @param pagetitle the title to be set as the default page title
+	 */
+	public MakeStaticWizard(MakeStaticRefactoring refactoring, String pagetitle) {
+		super(refactoring, DIALOG_BASED_USER_INTERFACE | PREVIEW_EXPAND_FIRST_NODE);
 		setDefaultPageTitle(pagetitle);
 		setDialogSettings(JavaPlugin.getDefault().getDialogSettings());
 	}
 
-
-
 	@Override
-	protected void addUserInputPages(){
+	protected void addUserInputPages() {
 		addPage(new MakeStaticInputPage());
 	}
 }
