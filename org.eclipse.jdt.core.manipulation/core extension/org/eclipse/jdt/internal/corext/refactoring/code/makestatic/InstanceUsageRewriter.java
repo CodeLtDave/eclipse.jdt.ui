@@ -27,12 +27,36 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 
-public final class InstanceUsageRewriter extends ASTVisitor {
+/**
+ *
+ * The InstanceUsageRewriter class represents a utility class for the MakeStaticRefactoring class.
+ * It is used for rewriting instance usages within a method.
+ *
+ * <p>
+ * This class extends {@code ASTVisitor} and provides functionality to determine whether there is
+ * access to instance variables or instance methods within the body of the method being visited.
+ * </p>
+ *
+ * It also provides functionality to transform class instance creations.
+ *
+ * If an explicit super method invocation will be found by this visitor a status error will be
+ * thrown.
+ *
+ */
+final class InstanceUsageRewriter extends ASTVisitor {
 
+	/**
+	 * Indicates whether there is access to instance variables or instance methods within the body
+	 * of the method.
+	 */
 	public boolean fHasInstanceUsages;
 
-	public final RefactoringStatus fstatus;
+	private final RefactoringStatus fstatus;
 
+	/**
+	 * The name of the parameter that is used to access instance variables or instance methods after
+	 * refactoring. For example "this" and "super" will be transformed to the value of fParamName.
+	 */
 	private final String fParamName;
 
 	private final ASTRewrite fRewrite;
@@ -41,12 +65,22 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 
 	private final MethodDeclaration fTargetMethodDeclaration;
 
+
+    /**
+     * Constructs a new InstanceUsageRewriter with the specified parameters.
+     *
+     * @param paramName The name of the parameter used to access instance variables or instance methods.
+     * @param rewrite The ASTRewrite object used for rewriting the AST.
+     * @param ast The AST object representing the abstract syntax tree.
+     * @param status The RefactoringStatus object to track the status of the refactoring.
+     * @param methodDeclaration The MethodDeclaration object representing the target method being refactored.
+     */
 	public InstanceUsageRewriter(String paramName, ASTRewrite rewrite, AST ast, RefactoringStatus status, MethodDeclaration methodDeclaration) {
 		fParamName= paramName;
 		fRewrite= rewrite;
 		fAst= ast;
 		fstatus= status;
-		fTargetMethodDeclaration = methodDeclaration;
+		fTargetMethodDeclaration= methodDeclaration;
 	}
 
 	@Override
@@ -91,6 +125,12 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 			fHasInstanceUsages= true;
 			replaceClassInstanceCreation(node);
 		}
+		return super.visit(node);
+	}
+
+	@Override
+	public boolean visit(SuperMethodInvocation node) {
+		fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
 		return super.visit(node);
 	}
 
@@ -229,11 +269,5 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 			replacement.arguments().add(ASTNode.copySubtree(fAst, (Expression) arg));
 		}
 		fRewrite.replace(node, replacement, null);
-	}
-
-	@Override
-	public boolean visit(SuperMethodInvocation node) {
-		fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
-		return super.visit(node);
 	}
 }
