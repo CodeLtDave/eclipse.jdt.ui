@@ -80,6 +80,11 @@ import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManag
 
 /**
  *
+ * The {@code MakeStaticRefactoring} class represents a refactoring operation to convert a method
+ * into a static method. It provides the capability to transform an instance method into a static
+ * method by modifying the method declaration, updating method invocations, and handling related
+ * changes.
+ *
  * @since 3.29
  *
  */
@@ -103,16 +108,33 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private IMethodBinding fTargetMethodBinding;
 
+
+	/**
+	 * Constructs a new {@code MakeStaticRefactoring} object for a text selection.
+	 *
+	 * @param inputAsCompilationUnit The compilation unit containing the selected method.
+	 * @param offset                 The offset of the text selection.
+	 * @param length                 The length of the text selection.
+	 */
 	public MakeStaticRefactoring(ICompilationUnit inputAsCompilationUnit, int offset, int length) {
 		fSelectionStart= offset;
 		fSelectionLength= length;
 		fSelectionCompilationUnit= inputAsCompilationUnit;
 	}
 
+	/**
+	 * Constructs a new {@code MakeStaticRefactoring} object.
+	 * This constructor is called when performing the refactoring on a method in the outline menu.
+	 *
+	 * @param method The target method the refactoring should be performed on.
+	 */
 	public MakeStaticRefactoring(IMethod method) {
 		fTargetMethod= method;
 	}
 
+	/**
+	 * Returns the name of the refactoring.
+	 */
 	@Override
 	public String getName() {
 		return RefactoringCoreMessages.MakeStaticRefactoring_name;
@@ -125,10 +147,10 @@ public class MakeStaticRefactoring extends Refactoring {
 			RefactoringStatus status= new RefactoringStatus();
 
 			if (fTargetMethod == null) {
-				// (1) invoked on a text selection
+				// (1) Invoked on a text selection in editor.
 				status= checkInitialConditionsFromTextSelection();
 			} else {
-				// (2) invoked on an IMethod: Source may not be available
+				// (2) Invoked on a method in outline window.
 				status.merge(checkInitialConditionsFromMethod());
 			}
 
