@@ -316,7 +316,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		String paramName= generateUniqueParameterName(className, alreadyUsedParameters);
 
 		//Change instance Usages ("this" and "super") to paramName and set fHasInstanceUsage flag
-		ChangeInstanceUsagesInMethodBody visitor= new ChangeInstanceUsagesInMethodBody(paramName, rewrite, ast, status, fTargetMethodDeclaration);
+		InstanceUsageRewriter visitor= new InstanceUsageRewriter(paramName, rewrite, ast, status, fTargetMethodDeclaration);
 		fTargetMethodDeclaration.getBody().accept(visitor);
 		fHasInstanceUsages= visitor.fHasInstanceUsages;
 

@@ -27,7 +27,7 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 
-public final class ChangeInstanceUsagesInMethodBody extends ASTVisitor {
+public final class InstanceUsageRewriter extends ASTVisitor {
 
 	public boolean fHasInstanceUsages;
 
@@ -41,7 +41,7 @@ public final class ChangeInstanceUsagesInMethodBody extends ASTVisitor {
 
 	private final MethodDeclaration fTargetMethodDeclaration;
 
-	public ChangeInstanceUsagesInMethodBody(String paramName, ASTRewrite rewrite, AST ast, RefactoringStatus status, MethodDeclaration methodDeclaration) {
+	public InstanceUsageRewriter(String paramName, ASTRewrite rewrite, AST ast, RefactoringStatus status, MethodDeclaration methodDeclaration) {
 		fParamName= paramName;
 		fRewrite= rewrite;
 		fAst= ast;
