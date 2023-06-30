@@ -319,27 +319,10 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (Modifier.isStatic(flags)) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static);
 		}
-		if (isOverridden(fTargetMethod.getDeclaringType())) {
+		if (checkOverrideTargetMethod(false)) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype);
 		}
 		return null;
-	}
-
-	private boolean isOverridden(IType type) throws JavaModelException { //TODO duplicate isOverriding()?
-		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
-		IType[] subtypes= hierarchy.getAllSubtypes(type);
-		for (IType subtype : subtypes) {
-			IMethod[] methods= subtype.getMethods();
-			for (IMethod method : methods) {
-				if (method.isSimilar(fTargetMethod)) {
-					int flags= method.getFlags();
-					if (!Flags.isPrivate(flags) || (!Flags.isStatic(flags))) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
 	}
 
 	@Override
@@ -379,13 +362,13 @@ public class MakeStaticRefactoring extends Refactoring {
 		String paramName= generateUniqueParameterName(className, alreadyUsedParameters);
 
 		//Change instance Usages ("this" and "super") to paramName and set fHasInstanceUsage flag
-		InstanceUsageRewriter visitor= new InstanceUsageRewriter(paramName, rewrite, ast, status, fTargetMethodDeclaration);
-		fTargetMethodDeclaration.getBody().accept(visitor);
-		fHasInstanceUsages= visitor.fHasInstanceUsages;
+		InstanceUsageRewriter instanceUsageRewriter= new InstanceUsageRewriter(paramName, rewrite, ast, status, fTargetMethodDeclaration);
+		fTargetMethodDeclaration.getBody().accept(instanceUsageRewriter);
+		fHasInstanceUsages= instanceUsageRewriter.fHasInstanceUsages;
 
 
 		//Refactored method could unintentionally hide method of parent class
-		if (!fHasInstanceUsages && isOverriding(fTargetMethod.getDeclaringType())) {
+		if (!fHasInstanceUsages && checkOverrideTargetMethod(true)) {
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 			return;
 		}
@@ -435,14 +418,27 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	private boolean isOverriding(IType type) throws JavaModelException { //TODO duplicate isOverridden()?
+	private boolean checkOverrideTargetMethod(boolean goUpwards) throws JavaModelException { //TODO duplicate isOverridden()?
+		IType type= fTargetMethod.getDeclaringType();
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
-		IType[] supertypes= hierarchy.getAllSupertypes(type);
-		for (IType supertype : supertypes) {
-			if (!(supertype.getElementName().equals("Object"))) { //$NON-NLS-1$
-				IMethod[] method= supertype.findMethods(fTargetMethod);
-				if (method != null) {
-					return true;
+		IType[] foundTypes= null;
+		if (goUpwards) {
+			foundTypes= hierarchy.getAllSupertypes(type);
+		} else {
+			foundTypes= hierarchy.getAllSubtypes(type);
+		}
+		for (IType foundType : foundTypes) {
+			IMethod[] foundMethods= foundType.getMethods();
+			for (IMethod foundMethod : foundMethods) {
+				if (foundMethod.isSimilar(fTargetMethod)) {
+					if (goUpwards) {
+						return true;
+					} else {
+						int flags= foundMethod.getFlags();
+						if (!Flags.isPrivate(flags) || (!Flags.isStatic(flags))) {
+							return true;
+						}
+					}
 				}
 			}
 		}
@@ -462,15 +458,13 @@ public class MakeStaticRefactoring extends Refactoring {
 				parameterizedType.typeArguments().add(typeParameter);
 			}
 			newParam.setType(parameterizedType);
-
 		} else {
 			newParam.setType(ast.newSimpleType(ast.newName(className)));
 		}
 		newParam.setName(ast.newSimpleName(paramName));
 
-		//While refactoring, the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
-		int parameterAmount= alreadyUsedParameters.size() + 1;
-		checkDuplicateMethod(status, parameterAmount);
+		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
+		checkDuplicateMethod(status, alreadyUsedParameters);
 
 		//Add new parameter to method declaration arguments
 		ListRewrite lrw= rewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
@@ -487,7 +481,8 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	private void checkDuplicateMethod(RefactoringStatus status, int parameterAmount) throws JavaModelException {
+	private void checkDuplicateMethod(RefactoringStatus status, List<SingleVariableDeclaration> alreadyUsedParameters) throws JavaModelException {
+		int parameterAmount= alreadyUsedParameters.size() + 1;
 		String methodName= fTargetMethodDeclaration.getName().getIdentifier();
 		IMethodBinding methodBinding= fTargetMethodDeclaration.resolveBinding();
 		ITypeBinding typeBinding= methodBinding.getDeclaringClass();
