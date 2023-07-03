@@ -576,4 +576,18 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 		RefactoringStatus status= performRefactoringAndMatchFiles(new String[] { "p.Foo" }, 5, 17, 5, 20);
 		assertHasNoCommonErrors(status);
 	}
+
+	@Test
+	public void testJavaDoc() throws Exception {
+		//New input parameter needs to be added to JavaDoc
+		RefactoringStatus status= performRefactoringAndMatchFiles(new String[] { "p.Foo" }, 8, 17, 8, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testJavaDocWithGenerics() throws Exception {
+		//New TypeParameter needs to be added to JavaDoc
+		RefactoringStatus status= performRefactoringAndMatchFiles(new String[] { "p.Foo" }, 12, 25, 12, 28);
+		assertHasNoCommonErrors(status);
+	}
 }
