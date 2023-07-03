@@ -15,6 +15,12 @@ import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 
+/**
+ * This class calculates and provides context for a static method refactoring
+ * process. It processes the given input (SelectionFields), which can be an
+ * ICompilationUnit or an IMethod, and calculates the corresponding TargetFields,
+ * which are used in the actual refactoring process.
+ */
 class ContextCalculator {
 
 	private ICompilationUnit fTargetICompilationUnit;
@@ -36,25 +42,54 @@ class ContextCalculator {
 	private boolean fSelectionIsEditorTextNotIMethod;
 
 
+	/**
+     * Constructs a ContextCalculator using a CompilationUnit and a text Selection.
+     * These parameters serve as SelectionFields, from which the TargetFields will be calculated.
+     *
+     * @param inputAsCompilationUnit the CompilationUnit to be processed.
+     * @param targetSelection the Selection specifying the part of the CompilationUnit to be processed.
+     */
 	public ContextCalculator(ICompilationUnit inputAsCompilationUnit, Selection targetSelection) {
 		this.fSelectionEditorText= targetSelection;
 		this.fSelectionICompilationUnit= inputAsCompilationUnit;
 		this.fSelectionIsEditorTextNotIMethod= true;
 	}
 
+	/**
+     * Constructs a ContextCalculator using an IMethod.
+     * This parameter serves as a SelectionField, from which the TargetFields will be calculated.
+     *
+     * @param method the IMethod to be processed.
+     */
 	public ContextCalculator(IMethod method) {
 		this.fSelectionIMethod= method;
 		this.fSelectionIsEditorTextNotIMethod= false;
 	}
 
-	public ICompilationUnit getSelectionCompilationUnit() {
-		return this.fSelectionICompilationUnit;
+
+
+	public ICompilationUnit getTargetICompilationUnit() {
+		return fTargetICompilationUnit;
 	}
 
-	public MethodDeclaration getTargetMethod() {
-		return this.fTargetMethodDeclaration;
+	public CompilationUnit getTargetCompilationUnit() {
+		return fTargetCompilationUnit;
 	}
 
+	public IMethod getTargetIMethod() {
+		return fTargetIMethod;
+	}
+
+	public MethodDeclaration getTargetMethodDeclaration() {
+		return fTargetMethodDeclaration;
+	}
+
+	/**
+     * Calculates the complete context for the refactoring process. This includes determining
+     * the TargetFields: CompilationUnit, IMethod, and other related details from the SelectionFields.
+     *
+     * @throws JavaModelException if a problem occurs while resolving bindings or accessing elements.
+     */
 	public void calculateCompleteContext() throws JavaModelException {
 		IMethodBinding targetIMethodBinding;
 		if (fSelectionIsEditorTextNotIMethod) {
@@ -80,7 +115,14 @@ class ContextCalculator {
 		fTargetICompilationUnit= fTargetIMethod.getCompilationUnit();
 	}
 
-	public CompilationUnit convertICompilationUnitToCompilationUnit(ICompilationUnit compilationUnit) {
+	/**
+     * Converts an ICompilationUnit to a CompilationUnit.
+     * This method is used in the process of calculating TargetFields from the SelectionFields.
+     *
+     * @param compilationUnit the ICompilationUnit to convert.
+     * @return the converted CompilationUnit.
+     */
+	public static CompilationUnit convertICompilationUnitToCompilationUnit(ICompilationUnit compilationUnit) {
 		ASTParser parser= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(compilationUnit);
