@@ -140,6 +140,11 @@ public class MakeStaticRefactoring extends Refactoring {
 	private int fSelectionLength;
 
 	/**
+	 * Represents the status of a refactoring operation.
+	 */
+	private RefactoringStatus fStatus;
+
+	/**
 	 * The {@code IMethodBinding} object representing the binding of the refactored method.
 	 */
 	private IMethodBinding fTargetMethodBinding;
@@ -153,6 +158,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	 * @param length The length of the text selection.
 	 */
 	public MakeStaticRefactoring(ICompilationUnit inputAsCompilationUnit, int offset, int length) {
+		fStatus= new RefactoringStatus();
 		fSelectionStart= offset;
 		fSelectionLength= length;
 		fSelectionCompilationUnit= inputAsCompilationUnit;
@@ -165,6 +171,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	 * @param method The target method the refactoring should be performed on.
 	 */
 	public MakeStaticRefactoring(IMethod method) {
+		fStatus= new RefactoringStatus();
 		fTargetMethod= method;
 	}
 
@@ -327,28 +334,28 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
-		RefactoringStatus status= new RefactoringStatus();
+
 		fChangeManager= new TextEditBasedChangeManager();
 		fHasInstanceUsages= false;
 
 		//Modify MethodDeclaration
-		modifyMethodDeclaration(status);
+		modifyMethodDeclaration();
 
-		if (status.hasError()) {
-			return status;
+		if (fStatus.hasError()) {
+			return fStatus;
 		}
 
 		//Find and Modify MethodInvocations
 		fTargetProvider= TargetProvider.create(fTargetMethodDeclaration);
 		fTargetProvider.initialize();
 
-		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(status, new ReferencesInBinaryContext(""), progressMonitor); //$NON-NLS-1$
-		handleMethodInvocations(status, affectedCUs);
+		ICompilationUnit[] affectedCUs= fTargetProvider.getAffectedCompilationUnits(fStatus, new ReferencesInBinaryContext(""), progressMonitor); //$NON-NLS-1$
+		handleMethodInvocations(affectedCUs);
 
-		return status;
+		return fStatus;
 	}
 
-	private void modifyMethodDeclaration(RefactoringStatus status) throws JavaModelException {
+	private void modifyMethodDeclaration() throws JavaModelException {
 		AST ast= fTargetMethodDeclaration.getAST();
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 
@@ -362,14 +369,14 @@ public class MakeStaticRefactoring extends Refactoring {
 		String paramName= generateUniqueParameterName(className, alreadyUsedParameters);
 
 		//Change instance Usages ("this" and "super") to paramName and set fHasInstanceUsage flag
-		InstanceUsageRewriter instanceUsageRewriter= new InstanceUsageRewriter(paramName, rewrite, ast, status, fTargetMethodDeclaration);
+		InstanceUsageRewriter instanceUsageRewriter= new InstanceUsageRewriter(paramName, rewrite, ast, fStatus, fTargetMethodDeclaration);
 		fTargetMethodDeclaration.getBody().accept(instanceUsageRewriter);
 		fHasInstanceUsages= instanceUsageRewriter.fHasInstanceUsages;
 
 
 		//Refactored method could unintentionally hide method of parent class
 		if (!fHasInstanceUsages && checkOverrideTargetMethod(true)) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 			return;
 		}
 
@@ -378,11 +385,11 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		//Adding an instance parameter to the newly static method to ensure it can still access class-level state and behavior.
 		if (fHasInstanceUsages) {
-			addInstanceAsParamIfUsed(status, ast, rewrite, alreadyUsedParameters, className, paramName, classTypeParameters);
+			addInstanceAsParamIfUsed(ast, rewrite, alreadyUsedParameters, className, paramName, classTypeParameters);
 		}
 
 		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
-		updateMethodParameterTypes(status, ast, rewrite, classTypeParameters);
+		updateMethodTypeParamList(ast, rewrite, classTypeParameters);
 
 		//A static method can't have override annotations
 		deleteOverrideAnnotation(rewrite);
@@ -418,7 +425,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	private boolean checkOverrideTargetMethod(boolean goUpwards) throws JavaModelException { //TODO duplicate isOverridden()?
+	private boolean checkOverrideTargetMethod(boolean goUpwards) throws JavaModelException {
 		IType type= fTargetMethod.getDeclaringType();
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] foundTypes= null;
@@ -445,8 +452,33 @@ public class MakeStaticRefactoring extends Refactoring {
 		return false;
 	}
 
-	private void addInstanceAsParamIfUsed(RefactoringStatus status, AST ast, ASTRewrite rewrite, List<SingleVariableDeclaration> alreadyUsedParameters, String className, String paramName,
+	private void addInstanceAsParamIfUsed(AST ast, ASTRewrite rewrite, List<SingleVariableDeclaration> alreadyUsedParameters, String className, String paramName,
 			ITypeParameter[] classTypeParameters) throws JavaModelException {
+		SingleVariableDeclaration newParameter= generateNewParameter(ast, className, paramName, classTypeParameters);
+
+		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
+		checkDuplicateMethod(alreadyUsedParameters);
+
+		//Add new parameter to method declaration arguments
+		ListRewrite lrw= rewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
+		lrw.insertFirst(newParameter, null);
+
+		//Changes to fTargetMethodDeclaration's signature need to be adjusted in JavaDocs too
+		updateJavaDocs(ast, rewrite, paramName);
+	}
+
+	private void updateJavaDocs(AST ast, ASTRewrite rewrite, String paramName) {
+		Javadoc javadoc= fTargetMethodDeclaration.getJavadoc();
+		if (javadoc != null) {
+			TagElement newParameterTag= ast.newTagElement();
+			newParameterTag.setTagName(TagElement.TAG_PARAM);
+			newParameterTag.fragments().add(ast.newSimpleName(paramName));
+			ListRewrite tagsRewrite= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
+			tagsRewrite.insertFirst(newParameterTag, null);
+		}
+	}
+
+	private SingleVariableDeclaration generateNewParameter(AST ast, String className, String paramName, ITypeParameter[] classTypeParameters) {
 		SingleVariableDeclaration newParam= ast.newSingleVariableDeclaration();
 
 		//If generic TypeParameters exist in class the newParam type needs to be parameterized
@@ -462,26 +494,10 @@ public class MakeStaticRefactoring extends Refactoring {
 			newParam.setType(ast.newSimpleType(ast.newName(className)));
 		}
 		newParam.setName(ast.newSimpleName(paramName));
-
-		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
-		checkDuplicateMethod(status, alreadyUsedParameters);
-
-		//Add new parameter to method declaration arguments
-		ListRewrite lrw= rewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
-		lrw.insertFirst(newParam, null);
-
-		//Changes to fTargetMethodDeclaration's signature need to be adjusted in JavaDocs too
-		Javadoc javadoc= fTargetMethodDeclaration.getJavadoc();
-		if (javadoc != null) {
-			TagElement newParameterTag= ast.newTagElement();
-			newParameterTag.setTagName(TagElement.TAG_PARAM);
-			newParameterTag.fragments().add(ast.newSimpleName(paramName));
-			ListRewrite tagsRewrite= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
-			tagsRewrite.insertFirst(newParameterTag, null);
-		}
+		return newParam;
 	}
 
-	private void checkDuplicateMethod(RefactoringStatus status, List<SingleVariableDeclaration> alreadyUsedParameters) throws JavaModelException {
+	private void checkDuplicateMethod(List<SingleVariableDeclaration> alreadyUsedParameters) throws JavaModelException {
 		int parameterAmount= alreadyUsedParameters.size() + 1;
 		String methodName= fTargetMethodDeclaration.getName().getIdentifier();
 		IMethodBinding methodBinding= fTargetMethodDeclaration.resolveBinding();
@@ -514,19 +530,56 @@ public class MakeStaticRefactoring extends Refactoring {
 			}
 		}
 
-		status.merge(RefactoringStatus
+		fStatus.merge(RefactoringStatus
 				.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
 		return;
 	}
 
-	private void updateMethodParameterTypes(RefactoringStatus status, AST ast, ASTRewrite rewrite, ITypeParameter[] classTypeParameters) throws JavaModelException {
+	private RefactoringStatus updateMethodTypeParamList(AST ast, ASTRewrite rewrite, ITypeParameter[] classTypeParameters) throws JavaModelException {
 		ListRewrite typeParamsRewrite= rewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
 		Javadoc javadoc= fTargetMethodDeclaration.getJavadoc();
 
 		List<String> methodParameterTypes= getMethodParameterTypes();
 		List<String> methodTypeParametersNames= getTypeParameterNames();
 
-		addTypeParametersFromClass(status, ast, rewrite, classTypeParameters, typeParamsRewrite, javadoc, methodParameterTypes, methodTypeParametersNames);
+		if (classTypeParameters.length != 0) {
+			for (int i= 0; i < classTypeParameters.length; i++) {
+				TypeParameter typeParameter= generateTypeParameter(ast, classTypeParameters, i);
+
+				if (fStatus.hasError()) {
+					return fStatus;
+				}
+				//Check if method needs this TypeParameter (only if one or more methodParams are of this type OR method has instance usage OR an instance of parent class is used as methodParam)
+				String typeParamName= typeParameter.getName().getIdentifier();
+				String typeParamNameAsArray= typeParamName + "[]"; //$NON-NLS-1$
+				boolean paramIsNeeded= methodParameterTypes.contains(typeParamName) || methodParameterTypes.contains(typeParamNameAsArray);
+				if (fHasInstanceUsages || paramIsNeeded) {
+					//only insert if typeParam not already existing
+					if (!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier())) {
+						typeParamsRewrite.insertLast(typeParameter, null);
+						addNewTypeParamsToJavaDoc(ast, rewrite, javadoc, typeParameter);
+					}
+				}
+			}
+		}
+		return fStatus;
+	}
+
+	private TypeParameter generateTypeParameter(AST ast, ITypeParameter[] classTypeParameters, int i) throws JavaModelException {
+		String[] bounds= classTypeParameters[i].getBounds();
+		TypeParameter typeParameter= ast.newTypeParameter();
+		typeParameter.setName(ast.newSimpleName(classTypeParameters[i].getElementName()));
+		for (String bound : bounds) {
+			if (bound.contains("?")) { //$NON-NLS-1$
+				//WildCardTypes are not allowed as bounds
+				fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound));
+				return null;
+			} else {
+				SimpleType boundType= ast.newSimpleType(ast.newSimpleName(bound));
+				typeParameter.typeBounds().add(boundType);
+			}
+		}
+		return typeParameter;
 	}
 
 	private List<String> getMethodParameterTypes() {
@@ -557,38 +610,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		return methodTypeParametersNames;
 	}
 
-	private void addTypeParametersFromClass(RefactoringStatus status, AST ast, ASTRewrite rewrite, ITypeParameter[] classTypeParameters, ListRewrite typeParamsRewrite, Javadoc javadoc,
-			List<String> methodParameterTypes, List<String> methodTypeParametersNames) throws JavaModelException {
-		if (classTypeParameters.length != 0) {
-			for (int i= 0; i < classTypeParameters.length; i++) {
-				String[] bounds= classTypeParameters[i].getBounds();
-				TypeParameter typeParameter= ast.newTypeParameter();
-				typeParameter.setName(ast.newSimpleName(classTypeParameters[i].getElementName()));
-				for (String bound : bounds) {
-					if (bound.contains("?")) { //$NON-NLS-1$
-						//WildCardTypes are not allowed as bounds
-						status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound));
-						return;
-					} else {
-						SimpleType boundType= ast.newSimpleType(ast.newSimpleName(bound));
-						typeParameter.typeBounds().add(boundType);
-					}
-				}
-				//Check if method needs this TypeParameter (only if one or more methodParams are of this type OR method has instance usage OR an instance of parent class is used as methodParam)
-				String typeParamName= typeParameter.getName().getIdentifier();
-				String typeParamNameAsArray= typeParamName + "[]"; //$NON-NLS-1$
-				boolean paramIsNeeded= methodParameterTypes.contains(typeParamName) || methodParameterTypes.contains(typeParamNameAsArray);
-				if (fHasInstanceUsages || paramIsNeeded) {
-					//only insert if typeParam not already existing
-					if (!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier())) {
-						typeParamsRewrite.insertLast(typeParameter, null);
-						addNewTypeParamsToJavaDoc(ast, rewrite, javadoc, typeParameter);
-					}
-				}
-			}
-		}
-	}
-
 	private void addNewTypeParamsToJavaDoc(AST ast, ASTRewrite rewrite, Javadoc javadoc, TypeParameter typeParameter) {
 		if (javadoc != null) {
 			//add new type params to javaDoc
@@ -613,14 +634,14 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	private void handleMethodInvocations(RefactoringStatus status, ICompilationUnit[] affectedICompilationUnits) throws JavaModelException {
+	private void handleMethodInvocations(ICompilationUnit[] affectedICompilationUnits) throws JavaModelException {
 		for (ICompilationUnit affectedICompilationUnit : affectedICompilationUnits) {
 
 			//Check if MethodReferences use selected method -> cancel refactoring
 			CompilationUnit affectedCompilationUnit= convertICUtoCU(affectedICompilationUnit);
-			affectedCompilationUnit.accept(new MethodReferenceFinder(status, fTargetMethodBinding));
+			affectedCompilationUnit.accept(new MethodReferenceFinder(fStatus, fTargetMethodBinding));
 
-			if (status.hasFatalError()) {
+			if (fStatus.hasFatalError()) {
 				return;
 			}
 
@@ -634,7 +655,7 @@ public class MakeStaticRefactoring extends Refactoring {
 				}
 			}
 
-			if (status.hasFatalError()) {
+			if (fStatus.hasFatalError()) {
 				return;
 			}
 
