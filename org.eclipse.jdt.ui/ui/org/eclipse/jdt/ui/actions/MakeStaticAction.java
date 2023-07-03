@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 David Erdös and Michael Bangas.
+ * Copyright (c) 2023 Vector Informatik GmbH and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -9,10 +9,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
- *     David Erdös - initial API and implementation
- *     Michael Bangas - initial API and implementation
+ *     Vector Informatik GmbH - initial API and implementation
  *******************************************************************************/
-
 
 package org.eclipse.jdt.ui.actions;
 
