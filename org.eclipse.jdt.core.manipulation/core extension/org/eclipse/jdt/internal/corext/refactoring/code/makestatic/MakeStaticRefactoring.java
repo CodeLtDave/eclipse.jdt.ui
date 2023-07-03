@@ -682,34 +682,12 @@ public class MakeStaticRefactoring extends Refactoring {
 				newArg= ASTNode.copySubtree(ast, invocation.getExpression()); // copy the expression
 			} else {
 				// We need to find the class that this invocation is inside
-				ASTNode parent= invocation;
-				while ((!(parent instanceof AbstractTypeDeclaration)) && (!(parent instanceof AnonymousClassDeclaration))) {
-					parent= parent.getParent();
-				}
-
-				boolean isMember= false;
-				if (parent instanceof AbstractTypeDeclaration) {
-					AbstractTypeDeclaration currentClass= (AbstractTypeDeclaration) parent;
-					if (currentClass.isMemberTypeDeclaration()) {
-						isMember= true;
-					}
-				} else if (parent instanceof AnonymousClassDeclaration) {
-					isMember= true;
-				}
-
+				ASTNode parent= findParentClass(invocation);
+				boolean isMember= isMember(parent);
 
 				// If the current class is a member of another class, we need to qualify this
 				if (isMember) {
-					ThisExpression thisExpression= ast.newThisExpression();
-
-					// Find the outer class
-					IMethodBinding invocationBinding= invocation.resolveMethodBinding();
-					ITypeBinding outerClassBinding= invocationBinding.getDeclaringClass();
-					String outerClassName= outerClassBinding.getName();
-
-					// Qualify this with the name of the outer class
-					thisExpression.setQualifier(ast.newSimpleName(outerClassName));
-					newArg= thisExpression;
+					newArg= qualifyThisExpression(invocation, ast);
 				} else {
 					newArg= ast.newThisExpression();
 				}
@@ -723,6 +701,42 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		TextEdit methodInvocationEdit= rewrite.rewriteAST();
 		multiTextEdit.addChild(methodInvocationEdit);
+	}
+
+	private ASTNode qualifyThisExpression(MethodInvocation invocation, AST ast) {
+		ASTNode newArg;
+		ThisExpression thisExpression= ast.newThisExpression();
+
+		// Find the outer class
+		IMethodBinding invocationBinding= invocation.resolveMethodBinding();
+		ITypeBinding outerClassBinding= invocationBinding.getDeclaringClass();
+		String outerClassName= outerClassBinding.getName();
+
+		// Qualify this with the name of the outer class
+		thisExpression.setQualifier(ast.newSimpleName(outerClassName));
+		newArg= thisExpression;
+		return newArg;
+	}
+
+	private boolean isMember(ASTNode parent) {
+		boolean isMember= false;
+		if (parent instanceof AbstractTypeDeclaration) {
+			AbstractTypeDeclaration currentClass= (AbstractTypeDeclaration) parent;
+			if (currentClass.isMemberTypeDeclaration()) {
+				isMember= true;
+			}
+		} else if (parent instanceof AnonymousClassDeclaration) {
+			isMember= true;
+		}
+		return isMember;
+	}
+
+	private ASTNode findParentClass(MethodInvocation invocation) {
+		ASTNode parent= invocation;
+		while ((!(parent instanceof AbstractTypeDeclaration)) && (!(parent instanceof AnonymousClassDeclaration))) {
+			parent= parent.getParent();
+		}
+		return parent;
 	}
 
 	/**
