@@ -75,6 +75,7 @@ import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
 import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
+import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator.SelectionInputType;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
@@ -86,9 +87,9 @@ import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManag
  */
 public class MakeStaticRefactoring extends Refactoring {
 
-	private IMethod fTargetMethod;	//TODO remove
+	private IMethod fTargetMethod; //TODO remove
 
-	private ICompilationUnit fSelectionCompilationUnit;	//TODO remove
+	private ICompilationUnit fSelectionICompilationUnit; //TODO remove
 
 	private TextEditBasedChangeManager fChangeManager;
 
@@ -98,22 +99,23 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private boolean fHasInstanceUsages;
 
-	private Selection fTargetSelection;	//TODO remove
+	private Selection fTargetSelection; //TODO remove
 
 	private IMethodBinding fTargetMethodBinding;
 
 	private ContextCalculator fContextCalculator;
 
-	private InitialConditionsChecker fIntialConditionsChecker;
+	private InitialConditionsChecker fInitialConditionsChecker;
 
 	public MakeStaticRefactoring(ICompilationUnit inputAsCompilationUnit, int selectionStart, int selectionLength) {
 		fTargetSelection= Selection.createFromStartLength(selectionStart, selectionLength);
-		fSelectionCompilationUnit= inputAsCompilationUnit;
-		fContextCalculator = new ContextCalculator(fSelectionCompilationUnit, fTargetSelection);
+		fSelectionICompilationUnit= inputAsCompilationUnit;
+		fContextCalculator= new ContextCalculator(fSelectionICompilationUnit, fTargetSelection);
+		fInitialConditionsChecker= new InitialConditionsChecker();
 	}
 
 	public MakeStaticRefactoring(IMethod method) {
-		fContextCalculator = new ContextCalculator(method);
+		fContextCalculator= new ContextCalculator(method);
 	}
 
 	@Override
@@ -125,28 +127,42 @@ public class MakeStaticRefactoring extends Refactoring {
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		RefactoringStatus status= new RefactoringStatus();
 
-		try {
-			pm.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_activation, 1);
+		SelectionInputType selectionInputType= fContextCalculator.getSelectionInputType();
 
-			if (fTargetMethod == null) {
-				// (1) invoked on a text selection
-				status= checkInitialConditionsFromTextSelection();
-			} else {
-				// (2) invoked on an IMethod: Source may not be available
-				status.merge(checkInitialConditionsFromMethod());
+		if (selectionInputType == SelectionInputType.TEXT_SELECTION) {
+			status.merge(fInitialConditionsChecker.checkTextSelectionStart(fTargetSelection));
+			status.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
+			if (status.hasError()) {
+				return status;
 			}
 
-			fContextCalculator.calculateCompleteContext();
+			fContextCalculator.calculateSelectionMethodNode();
+			ASTNode selectionMethodNode= fContextCalculator.getSelectionMethodNode();
 
-			status.merge(checkGeneralInitialConditions());
-			return status;
+			status.merge(fInitialConditionsChecker.checkNodeIsValidMethod(selectionMethodNode));
+			if (status.hasError()) {
+				return status;
+			}
+
+			fContextCalculator.calculateMethodDeclarationFromSelectionMethodNode();
+		} else {
+			IMethod selectionIMethod= fContextCalculator.getSelectionIMethod();
+			status.merge(fInitialConditionsChecker.checkIMethodIsValid(selectionIMethod));
+			if (status.hasError()) {
+				return status;
+			}
+
+			fContextCalculator.calculateICompilationUnitFromIMethod();
+
+			status.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
+			if (status.hasError()) {
+				return status;
+			}
 		}
 
-		finally {
-			pm.done();
-		}
+		fContextCalculator.calculateTargetIMethod();
 
-
+		return status;
 	}
 
 	private RefactoringStatus checkInitialConditionsFromTextSelection() throws JavaModelException {
@@ -156,31 +172,30 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (fTargetSelection.getOffset() == 0)
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 
-		CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionCompilationUnit).getRoot();
-		ASTNode selectionNode= getSelectedNode(fSelectionCompilationUnit, selectionCURoot, fTargetSelection.getOffset(), fTargetSelection.getLength());
+		CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionICompilationUnit).getRoot();
+		ASTNode selectionNode= getSelectedNode(fSelectionICompilationUnit, selectionCURoot, fTargetSelection.getOffset(), fTargetSelection.getLength());
 
 		if (selectionNode == null) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 		}
 
-		IMethodBinding targetMethodBinding= getMethodBindingFromSelectionNode(selectionNode, status);
+		fTargetMethodBinding= getMethodBindingFromSelectionNode(selectionNode, status);
 
 		if (status.hasError()) {
 			return status;
 		}
 
-		if (targetMethodBinding != null) {
-			fTargetMethodBinding= targetMethodBinding.getMethodDeclaration(); // resolve generics
-			if (fTargetMethodBinding != null) {
-				fTargetMethod= (IMethod) fTargetMethodBinding.getJavaElement();
-				if (fTargetMethod.getCompilationUnit() == null) {
-					return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method);
-				}
-				CompilationUnit targetCU= convertICUtoCU(fTargetMethod.getCompilationUnit());
-				fTargetMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, targetCU);
+
+		if (fTargetMethodBinding != null) {
+			fTargetMethod= (IMethod) fTargetMethodBinding.getJavaElement();
+			if (fTargetMethod.getCompilationUnit() == null) {
+				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method);
 			}
+			CompilationUnit targetCU= convertICUtoCU(fTargetMethod.getCompilationUnit());
+			fTargetMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, targetCU);
 		}
-		if (targetMethodBinding == null || fTargetMethodBinding == null) {
+
+		if (fTargetMethodBinding == null) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 		}
 
@@ -238,12 +253,12 @@ public class MakeStaticRefactoring extends Refactoring {
 	private RefactoringStatus checkInitialConditionsFromMethod() throws JavaModelException {
 		RefactoringStatus status= new RefactoringStatus();
 
-		fSelectionCompilationUnit= fTargetMethod.getCompilationUnit();
+		fSelectionICompilationUnit= fTargetMethod.getCompilationUnit();
 		if (fTargetMethod.getDeclaringType().isAnnotation()) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
 		}
-		if (fSelectionCompilationUnit != null) { //TODO extract into findMethodDeclaration
-			CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionCompilationUnit).getRoot();
+		if (fSelectionICompilationUnit != null) { //TODO extract into findMethodDeclaration
+			CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionICompilationUnit).getRoot();
 			fTargetMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, selectionCURoot);
 			fTargetMethodBinding= fTargetMethodDeclaration.resolveBinding().getMethodDeclaration();
 		} else {
