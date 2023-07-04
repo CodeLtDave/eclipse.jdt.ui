@@ -27,21 +27,21 @@ class ContextCalculator {
 
 	private Selection fSelectionEditorText;
 
-	private ICompilationUnit fTargetICompilationUnit;
-
-	private CompilationUnit fTargetCompilationUnit;
-
-	private IMethod fTargetIMethod;
-
-	private IMethodBinding fTargetIMethodBinding;
-
-	private MethodDeclaration fTargetMethodDeclaration;
-
 	private ICompilationUnit fSelectionICompilationUnit;
 
 	private CompilationUnit fSelectionCompilationUnit;
 
-	private ASTNode fSelectionMethodNode;
+	private ASTNode fSelectionASTNode;
+
+	private IMethodBinding fTargetIMethodBinding;
+
+	private IMethod fTargetIMethod;
+
+	private ICompilationUnit fTargetICompilationUnit;
+
+	private CompilationUnit fTargetCompilationUnit;
+
+	private MethodDeclaration fTargetMethodDeclaration;
 
 	protected enum SelectionInputType {
 		IMETHOD, TEXT_SELECTION
@@ -73,20 +73,20 @@ class ContextCalculator {
 		this.fTargetIMethod= method;
 	}
 
-	public MethodDeclaration getTargetMethodDeclaration() {
-		return fTargetMethodDeclaration;
-	}
-
 	public SelectionInputType getSelectionInputType() {
 		return fSelectionInputType;
+	}
+
+	public Selection getSelectionEditorText() {
+		return fSelectionEditorText;
 	}
 
 	public ICompilationUnit getSelectionICompilationUnit() {
 		return fSelectionICompilationUnit;
 	}
 
-	public ASTNode getSelectionMethodNode() {
-		return fSelectionMethodNode;
+	public ASTNode getSelectionASTNode() {
+		return fSelectionASTNode;
 	}
 
 	public IMethodBinding getTargetIMethodBinding() {
@@ -97,51 +97,73 @@ class ContextCalculator {
 		return fTargetIMethod;
 	}
 
-	/**
-	 * This method calculates the selected Node. It finds the Node that is inside the
-	 * {@link #fSelectionICompilationUnit} CompilationUnit at the {@link #fSelectionEditorText}
-	 * Selection.
-	 */
-	public void calculateSelectionNode() {
-		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
-		fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
+	public MethodDeclaration getTargetMethodDeclaration() {
+		return fTargetMethodDeclaration;
+	}
 
-		if (fSelectionMethodNode == null) {
+	/**
+	 * This method calculates the selected ASTNode {@link #fSelectionASTNode}. It finds the Node
+	 * that is inside the {@link #fSelectionICompilationUnit} CompilationUnit at the
+	 * {@link #fSelectionEditorText} Selection.
+	 */
+	public void calculateSelectionASTNode() {
+		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
+		fSelectionASTNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
+
+		if (fSelectionASTNode == null) {
 			return;
 		}
 
-		if (fSelectionMethodNode.getNodeType() == ASTNode.SIMPLE_NAME) {
-			fSelectionMethodNode= fSelectionMethodNode.getParent();
-		} else if (fSelectionMethodNode.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
-			fSelectionMethodNode= ((ExpressionStatement) fSelectionMethodNode).getExpression();
+		if (fSelectionASTNode.getNodeType() == ASTNode.SIMPLE_NAME) {
+			fSelectionASTNode= fSelectionASTNode.getParent();
+		} else if (fSelectionASTNode.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
+			fSelectionASTNode= ((ExpressionStatement) fSelectionASTNode).getExpression();
 		}
 	}
 
 	/**
-	 * This method calculates the
+	 * This method calculates the {@link #fTargetIMethodBinding}. If the {@link #fSelectionASTNode}
+	 * is an instance of {@link MethodInvocation} or {@link MethodDeclaration}, it resolves the
+	 * corresponding {@link IMethodBinding} from that instance.
 	 */
 	public void calculateTargetIMethodBinding() {
-		if (fSelectionMethodNode instanceof MethodInvocation selectionMethodInvocation) {
+		if (fSelectionASTNode instanceof MethodInvocation selectionMethodInvocation) {
 			fTargetIMethodBinding= selectionMethodInvocation.resolveMethodBinding();
-		} else if (fSelectionMethodNode instanceof MethodDeclaration selectionMethodDeclaration) {
+		} else if (fSelectionASTNode instanceof MethodDeclaration selectionMethodDeclaration) {
 			fTargetIMethodBinding= selectionMethodDeclaration.resolveBinding();
 		}
 	}
 
+	/**
+	 * Calculates the target IMethod from the target IMethodBinding. This method retrieves the
+	 * IMethod represented by the {@link #fTargetIMethodBinding} and assigns it to
+	 * {@link #fTargetIMethod}
+	 */
 	public void calculateTargetIMethod() {
 		fTargetIMethod= (IMethod) fTargetIMethodBinding.getJavaElement();
 	}
 
+	/**
+	 * Calculates the target ICompilationUnit from the target IMethod. This method retrieves the
+	 * declaring type of the {@link #fTargetIMethod}, then gets its associated compilation unit, and
+	 * assigns it to {@link #fTargetICompilationUnit}.
+	 */
 	public void calculateTargetICompilationUnit() {
 		fTargetICompilationUnit= fTargetIMethod.getDeclaringType().getCompilationUnit();
 	}
 
+	/**
+	 * Converts the target {@link ICompilationUnit} to a {@link CompilationUnit} and assigns it to
+	 * {@link #fTargetCompilationUnit}.
+	 */
 	public void calculateTargetCompilationUnit() {
 		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetICompilationUnit);
 	}
 
+	/**
+	 * Resolves the method declaration and binding for the target method.
+	 */
 	public void calculateMethodDeclaration() {
-		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetICompilationUnit);
 		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
 		fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
 	}

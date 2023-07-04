@@ -38,19 +38,13 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkNodeIsValidMethod(ASTNode selectedNode) {
+	public RefactoringStatus checkASTNodeIsValidMethod(ASTNode selectedNode) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (selectedNode == null) {
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		} else if (selectedNode instanceof SuperMethodInvocation) {
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
 		}
-//		while (selectedNode != null) {
-//			if (!(selectedNode instanceof MethodDeclaration || selectedNode instanceof MethodInvocation)) {
-//				selectedNode= selectedNode.getParent();
-//				break;
-//			}
-//		}
 		if (!(selectedNode instanceof MethodDeclaration || selectedNode instanceof MethodInvocation)) {
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		}

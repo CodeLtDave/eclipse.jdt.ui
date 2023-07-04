@@ -45,14 +45,12 @@ import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ExpressionMethodReference;
-import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
-import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
@@ -75,8 +73,6 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
 import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator.SelectionInputType;
-import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
-import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 
 /**
@@ -129,16 +125,15 @@ public class MakeStaticRefactoring extends Refactoring {
 		SelectionInputType selectionInputType= fContextCalculator.getSelectionInputType();
 
 		if (selectionInputType == SelectionInputType.TEXT_SELECTION) {
-			status.merge(fInitialConditionsChecker.checkTextSelectionStart(fTargetSelection));
+			status.merge(fInitialConditionsChecker.checkTextSelectionStart(fContextCalculator.getSelectionEditorText()));
 			status.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
 			if (status.hasError()) {
 				return status;
 			}
 
-			fContextCalculator.calculateSelectionNode();
-			ASTNode selectionMethodNode= fContextCalculator.getSelectionMethodNode();
+			fContextCalculator.calculateSelectionASTNode();
 
-			status.merge(fInitialConditionsChecker.checkNodeIsValidMethod(selectionMethodNode));
+			status.merge(fInitialConditionsChecker.checkASTNodeIsValidMethod(fContextCalculator.getSelectionASTNode()));
 			if (status.hasError()) {
 				return status;
 			}
@@ -166,8 +161,6 @@ public class MakeStaticRefactoring extends Refactoring {
 			return status;
 		}
 
-		fContextCalculator.calculateTargetCompilationUnit();
-
 		status.merge(fInitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getTargetIMethod()));
 		if (status.hasError()) {
 			return status;
@@ -188,135 +181,15 @@ public class MakeStaticRefactoring extends Refactoring {
 			return status;
 		}
 
+		fContextCalculator.calculateTargetCompilationUnit();
 		fContextCalculator.calculateMethodDeclaration();
 
-		fTargetMethod = fContextCalculator.getTargetIMethod();						//TODO remove those which dont have to necessarily be fields
-		fTargetMethodDeclaration = fContextCalculator.getTargetMethodDeclaration();
-		fTargetMethodBinding = fContextCalculator.getTargetIMethodBinding();
+		fTargetMethod= fContextCalculator.getTargetIMethod(); //TODO remove those which dont have to necessarily be fields
+		fTargetMethodDeclaration= fContextCalculator.getTargetMethodDeclaration();
+		fTargetMethodBinding= fContextCalculator.getTargetIMethodBinding();
 
 		return status;
 	}
-
-	private RefactoringStatus checkInitialConditionsFromTextSelection() throws JavaModelException {
-
-		RefactoringStatus status= new RefactoringStatus();
-
-		if (fTargetSelection.getOffset() == 0)
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
-
-		CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionICompilationUnit).getRoot();
-		ASTNode selectionNode= getSelectedNode(fSelectionICompilationUnit, selectionCURoot, fTargetSelection.getOffset(), fTargetSelection.getLength());
-
-		if (selectionNode == null) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
-		}
-
-		fTargetMethodBinding= getMethodBindingFromSelectionNode(selectionNode, status);
-
-		if (status.hasError()) {
-			return status;
-		}
-
-		if (fTargetMethodBinding != null) {
-			fTargetMethod= (IMethod) fTargetMethodBinding.getJavaElement();
-			if (fTargetMethod.getCompilationUnit() == null) {
-				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method);
-			}
-			CompilationUnit targetCU= convertICUtoCU(fTargetMethod.getCompilationUnit());
-			fTargetMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, targetCU);
-		}
-
-		if (fTargetMethodBinding == null) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
-		}
-
-		return status;
-	}
-
-	private static ASTNode getSelectedNode(ICompilationUnit unit, CompilationUnit root, int offset, int length) throws JavaModelException { //TODO fix method structure, bad coding style
-		ASTNode node= null;
-		if (unit != null) {
-			node= checkNode(NodeFinder.perform(root, offset, length, unit));
-		} else {
-			node= checkNode(NodeFinder.perform(root, offset, length));
-		}
-		if (node != null) {
-			return node;
-		}
-		return checkNode(NodeFinder.perform(root, offset, length));
-	}
-
-	private static ASTNode checkNode(ASTNode node) { //TODO uninformative name
-		if (node == null) {
-			return null;
-		}
-
-		if (node.getNodeType() == ASTNode.SIMPLE_NAME) {
-			node= node.getParent();
-		} else if (node.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
-			node= ((ExpressionStatement) node).getExpression();
-		}
-
-		int nodeType= node.getNodeType();
-		if (nodeType == ASTNode.METHOD_INVOCATION || nodeType == ASTNode.METHOD_DECLARATION || nodeType == ASTNode.SUPER_METHOD_INVOCATION) {
-			return node;
-		}
-
-		return null;
-	}
-
-	private IMethodBinding getMethodBindingFromSelectionNode(ASTNode selectionNode, RefactoringStatus status) {
-
-		int nodeType= selectionNode.getNodeType();
-
-		if (nodeType == ASTNode.METHOD_INVOCATION) {
-			return ((MethodInvocation) selectionNode).resolveMethodBinding();
-		} else if (nodeType == ASTNode.METHOD_DECLARATION) {
-			return ((MethodDeclaration) selectionNode).resolveBinding();
-		} else if (nodeType == ASTNode.SUPER_METHOD_INVOCATION) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
-			return null;
-		}
-
-		return null;
-	}
-
-	private RefactoringStatus checkInitialConditionsFromMethod() throws JavaModelException {
-		RefactoringStatus status= new RefactoringStatus();
-
-		fSelectionICompilationUnit= fTargetMethod.getCompilationUnit();
-		if (fTargetMethod.getDeclaringType().isAnnotation()) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
-		}
-		if (fSelectionICompilationUnit != null) { //TODO extract into findMethodDeclaration
-			CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionICompilationUnit).getRoot();
-			fTargetMethodDeclaration= ASTNodeSearchUtil.getMethodDeclarationNode(fTargetMethod, selectionCURoot);
-			fTargetMethodBinding= fTargetMethodDeclaration.resolveBinding().getMethodDeclaration();
-		} else {
-			//TODO what if null
-		}
-
-		return status;
-	}
-
-	private RefactoringStatus checkGeneralInitialConditions() throws JavaModelException {
-		if (fTargetMethod == null || fTargetMethodBinding == null) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
-		}
-
-		if (fTargetMethod.getDeclaringType().isLocal() || fTargetMethod.getDeclaringType().isAnonymous()) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types);
-		}
-		if (fTargetMethod.isConstructor()) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors);
-		}
-		int flags= fTargetMethod.getFlags();
-		if (Modifier.isStatic(flags)) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static);
-		}
-		return null;
-	}
-
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
