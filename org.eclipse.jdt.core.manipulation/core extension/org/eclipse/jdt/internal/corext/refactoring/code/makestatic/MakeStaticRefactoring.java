@@ -29,6 +29,7 @@ import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -42,7 +43,6 @@ import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ExpressionMethodReference;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.Javadoc;
@@ -92,11 +92,6 @@ public class MakeStaticRefactoring extends Refactoring {
 
 
 	/**
-	 * The ICompilationUnit object representing the class that contains the refactored method.
-	 */
-	private ICompilationUnit fSelectionCompilationUnit;
-
-	/**
 	 * Manages all changes to the source code that will be performed at the end of the refactoring.
 	 */
 	private TextEditBasedChangeManager fChangeManager;
@@ -120,23 +115,6 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	private boolean fHasInstanceUsages;
 
-	private Selection fTargetSelection; //TODO remove
-	/**
-	 * The start of the selection in the editor when the refactoring is performed. This field is
-	 * used together with the field fSelectionLength to retrieve the IMethod object representing the
-	 * refactored method out of the user selection. In case the refactoring will be performed in the
-	 * outline window this field is not used.
-	 */
-	private int fSelectionStart;
-
-	/**
-	 * The length of the selection in the editor when the refactoring is performed. This field is
-	 * used together with the field fSelectionStart to retrieve the IMethod object representing the
-	 * refactored method out of the user selection. In case the refactoring will be performed in the
-	 * outline window this field is not used.
-	 */
-	private int fSelectionLength;
-
 	/**
 	 * Represents the status of a refactoring operation.
 	 */
@@ -151,10 +129,9 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private InitialConditionsChecker fInitialConditionsChecker;
 
-	public MakeStaticRefactoring(ICompilationUnit inputAsCompilationUnit, int selectionStart, int selectionLength) {
-		fTargetSelection= Selection.createFromStartLength(selectionStart, selectionLength);
-		fSelectionICompilationUnit= inputAsCompilationUnit;
-		fContextCalculator= new ContextCalculator(fSelectionICompilationUnit, fTargetSelection);
+	public MakeStaticRefactoring(ICompilationUnit inputAsICompilationUnit, int selectionStart, int selectionLength) {
+		Selection targetSelection= Selection.createFromStartLength(selectionStart, selectionLength);
+		fContextCalculator= new ContextCalculator(inputAsICompilationUnit, targetSelection);
 		fInitialConditionsChecker= new InitialConditionsChecker();
 	}
 
@@ -182,22 +159,22 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		RefactoringStatus status= new RefactoringStatus();
+		fStatus= new RefactoringStatus();
 
 		SelectionInputType selectionInputType= fContextCalculator.getSelectionInputType();
 
 		if (selectionInputType == SelectionInputType.TEXT_SELECTION) {
-			status.merge(fInitialConditionsChecker.checkTextSelectionStart(fContextCalculator.getSelectionEditorText()));
-			status.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
-			if (status.hasError()) {
-				return status;
+			fStatus.merge(fInitialConditionsChecker.checkTextSelectionStart(fContextCalculator.getSelectionEditorText()));
+			fStatus.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
+			if (fStatus.hasError()) {
+				return fStatus;
 			}
 
 			fContextCalculator.calculateSelectionASTNode();
 
-			status.merge(fInitialConditionsChecker.checkASTNodeIsValidMethod(fContextCalculator.getSelectionASTNode()));
-			if (status.hasError()) {
-				return status;
+			fStatus.merge(fInitialConditionsChecker.checkASTNodeIsValidMethod(fContextCalculator.getSelectionASTNode()));
+			if (fStatus.hasError()) {
+				return fStatus;
 			}
 
 			fContextCalculator.calculateTargetIMethodBinding();
@@ -206,41 +183,41 @@ public class MakeStaticRefactoring extends Refactoring {
 			fContextCalculator.calculateTargetIMethodBinding();
 		}
 
-		status.merge(fInitialConditionsChecker.checkSourceAvailable(fContextCalculator.getTargetIMethod()));
-		if (status.hasError()) {
-			return status;
+		fStatus.merge(fInitialConditionsChecker.checkSourceAvailable(fContextCalculator.getTargetIMethod()));
+		if (fStatus.hasError()) {
+			return fStatus;
 		}
 
-		status.merge(fInitialConditionsChecker.checkIMethodIsValid(fContextCalculator.getTargetIMethod()));
-		if (status.hasError()) {
-			return status;
+		fStatus.merge(fInitialConditionsChecker.checkIMethodIsValid(fContextCalculator.getTargetIMethod()));
+		if (fStatus.hasError()) {
+			return fStatus;
 		}
 
 		fContextCalculator.calculateTargetICompilationUnit();
 
-		status.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
-		if (status.hasError()) {
-			return status;
+		fStatus.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
+		if (fStatus.hasError()) {
+			return fStatus;
 		}
 
-		status.merge(fInitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getTargetIMethod()));
-		if (status.hasError()) {
-			return status;
+		fStatus.merge(fInitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getTargetIMethod()));
+		if (fStatus.hasError()) {
+			return fStatus;
 		}
 
-		status.merge(fInitialConditionsChecker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getTargetIMethod()));
-		if (status.hasError()) {
-			return status;
+		fStatus.merge(fInitialConditionsChecker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getTargetIMethod()));
+		if (fStatus.hasError()) {
+			return fStatus;
 		}
 
-		status.merge(fInitialConditionsChecker.checkMethodNotStatic(fContextCalculator.getTargetIMethod()));
-		if (status.hasError()) {
-			return status;
+		fStatus.merge(fInitialConditionsChecker.checkMethodNotStatic(fContextCalculator.getTargetIMethod()));
+		if (fStatus.hasError()) {
+			return fStatus;
 		}
 
-		status.merge(fInitialConditionsChecker.checkMethodOverridden(fContextCalculator.getTargetIMethod()));
-		if (status.hasError()) {
-			return status;
+		fStatus.merge(fInitialConditionsChecker.checkMethodOverridden(fContextCalculator.getTargetIMethod()));
+		if (fStatus.hasError()) {
+			return fStatus;
 		}
 
 		fContextCalculator.calculateTargetCompilationUnit();
@@ -250,7 +227,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		fTargetMethodDeclaration= fContextCalculator.getTargetMethodDeclaration();
 		fTargetMethodBinding= fContextCalculator.getTargetIMethodBinding();
 
-		return status;
+		return fStatus;
 	}
 
 	@Override
