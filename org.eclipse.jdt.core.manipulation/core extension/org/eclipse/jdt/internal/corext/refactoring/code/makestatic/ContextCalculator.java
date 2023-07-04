@@ -6,6 +6,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -106,7 +107,18 @@ class ContextCalculator {
 
 	public void calculateSelectionMethodNode() throws JavaModelException {
 		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
-		fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength(), fSelectionICompilationUnit);
+//		fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength(), fSelectionICompilationUnit);
+		if (fSelectionICompilationUnit != null) {
+			fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength(), fSelectionICompilationUnit);
+		} else {
+			fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
+		}
+		
+		if (fSelectionMethodNode.getNodeType() == ASTNode.SIMPLE_NAME) {
+			fSelectionMethodNode= fSelectionMethodNode.getParent();
+		} else if (fSelectionMethodNode.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
+			fSelectionMethodNode= ((ExpressionStatement) fSelectionMethodNode).getExpression();
+		}
 	}
 
 	public void calculateMethodDeclarationFromSelectionMethodNode() {
@@ -153,8 +165,8 @@ class ContextCalculator {
 			return ASTNodeSearchUtil.getMethodDeclarationNode(iMethod, compilationUnit);
 		} catch (JavaModelException e) {
 			System.err.println("Failed to get the source range of the method: " + iMethod.getElementName()); //$NON-NLS-1$
-            System.err.println("Status: " + e.getJavaModelStatus()); //$NON-NLS-1$
-            e.printStackTrace();
+			System.err.println("Status: " + e.getJavaModelStatus()); //$NON-NLS-1$
+			e.printStackTrace();
 		}
 		return null;
 	}

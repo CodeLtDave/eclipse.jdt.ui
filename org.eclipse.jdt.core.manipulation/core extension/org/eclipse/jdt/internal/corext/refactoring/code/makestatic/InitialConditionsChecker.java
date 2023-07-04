@@ -51,12 +51,12 @@ class InitialConditionsChecker {
 		} else if (selectedNode instanceof SuperMethodInvocation) {
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
 		}
-		while (selectedNode != null) {
-			if (!(selectedNode instanceof MethodDeclaration || selectedNode instanceof MethodInvocation)) {
-				selectedNode= selectedNode.getParent();
-				break;
-			}
-		}
+//		while (selectedNode != null) {
+//			if (!(selectedNode instanceof MethodDeclaration || selectedNode instanceof MethodInvocation)) {
+//				selectedNode= selectedNode.getParent();
+//				break;
+//			}
+//		}
 		if (!(selectedNode instanceof MethodDeclaration || selectedNode instanceof MethodInvocation)) {
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		}
