@@ -30,7 +30,6 @@ import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -145,13 +144,13 @@ public class MakeStaticRefactoring extends Refactoring {
 			}
 
 			fContextCalculator.calculateMethodDeclarationFromSelectionMethodNode();
+
 		} else {
 			IMethod selectionIMethod= fContextCalculator.getSelectionIMethod();
 			status.merge(fInitialConditionsChecker.checkIMethodIsValid(selectionIMethod));
 			if (status.hasError()) {
 				return status;
 			}
-
 			fContextCalculator.calculateICompilationUnitFromIMethod();
 
 			status.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
@@ -161,7 +160,29 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 
 		fContextCalculator.calculateTargetIMethod();
+		fTargetMethod = fContextCalculator.getTargetIMethod();
+		fTargetMethodDeclaration = fContextCalculator.getTargetMethodDeclaration();
+		fTargetMethodBinding = fContextCalculator.getTargetIMethodBinding();
 
+		status.merge(fInitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getTargetIMethod()));
+		if (status.hasError()) {
+			return status;
+		}
+
+		status.merge(fInitialConditionsChecker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getTargetIMethod()));
+		if (status.hasError()) {
+			return status;
+		}
+
+		status.merge(fInitialConditionsChecker.checkMethodNotStatic(fContextCalculator.getTargetIMethod()));
+		if (status.hasError()) {
+			return status;
+		}
+
+		status.merge(fInitialConditionsChecker.checkMethodOverridden(fContextCalculator.getTargetIMethod()));
+		if (status.hasError()) {
+			return status;
+		}
 		return status;
 	}
 
@@ -283,28 +304,9 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (Modifier.isStatic(flags)) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static);
 		}
-		if (isOverridden(fTargetMethod.getDeclaringType())) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype);
-		}
 		return null;
 	}
 
-	private boolean isOverridden(IType type) throws JavaModelException { //TODO duplicate isOverriding()?
-		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
-		IType[] subtypes= hierarchy.getAllSubtypes(type);
-		for (IType subtype : subtypes) {
-			IMethod[] methods= subtype.getMethods();
-			for (IMethod method : methods) {
-				if (method.isSimilar(fTargetMethod)) {
-					int flags= method.getFlags();
-					if (!Flags.isPrivate(flags) || (!Flags.isStatic(flags))) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {

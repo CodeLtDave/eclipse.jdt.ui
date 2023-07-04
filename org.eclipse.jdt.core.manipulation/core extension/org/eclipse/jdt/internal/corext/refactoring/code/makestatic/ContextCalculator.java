@@ -73,8 +73,6 @@ class ContextCalculator {
 		this.fSelectionInputType= SelectionInputType.IMETHOD;
 	}
 
-
-
 	public CompilationUnit getTargetCompilationUnit() {
 		return fTargetCompilationUnit;
 	}
@@ -103,17 +101,22 @@ class ContextCalculator {
 		return fSelectionMethodNode;
 	}
 
-
+	public IMethodBinding getTargetIMethodBinding() {
+		return fTargetIMethodBinding;
+	}
 
 	public void calculateSelectionMethodNode() throws JavaModelException {
 		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
-//		fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength(), fSelectionICompilationUnit);
+
 		if (fSelectionICompilationUnit != null) {
 			fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength(), fSelectionICompilationUnit);
 		} else {
 			fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
 		}
-		
+
+		if(fSelectionMethodNode == null) {
+			return;
+		}
 		if (fSelectionMethodNode.getNodeType() == ASTNode.SIMPLE_NAME) {
 			fSelectionMethodNode= fSelectionMethodNode.getParent();
 		} else if (fSelectionMethodNode.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
