@@ -44,14 +44,24 @@ import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.MakeStaticRef
 
 import org.eclipse.jdt.ui.tests.refactoring.infra.TextRangeUtil;
 import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;
-
+/*******************************************************************************
+ * Copyright (c) 2023 Vector Informatik GmbH and others.
+ *
+ * This program and the accompanying materials are made available under the terms of the Eclipse
+ * Public License 2.0 which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors: Vector Informatik GmbH - initial API and implementation
+ *******************************************************************************/
 
 public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 
 	private static final String REFACTORING_PATH= "MakeStatic/";
 
 	public MakeStaticRefactoringTests() {
-		rts= new RefactoringTestSetup();
+		this(new RefactoringTestSetup());
 	}
 
 	protected MakeStaticRefactoringTests(RefactoringTestSetup rts) {
@@ -67,7 +77,6 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 			throws Exception, JavaModelException, CoreException, IOException {
 
 		List<ICompilationUnit> compilationUnits= new ArrayList<>();
-		//ICompilationUnit[] compilationUnits= new ICompilationUnit[qualifiedClassNames.length];
 		for (String qualifiedClassName : qualifiedClassNames) {
 			String packageName= qualifiedClassName.substring(0, qualifiedClassName.indexOf('.'));
 			String className= qualifiedClassName.substring(qualifiedClassName.indexOf('.') + 1);
@@ -96,7 +105,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	}
 
 	private void matchFiles(String[] qualifiedClassNames, List<ICompilationUnit> compilationUnits) throws IOException, JavaModelException {
-		for (int fileIndex = 0; fileIndex < qualifiedClassNames.length; fileIndex++) {
+		for (int fileIndex= 0; fileIndex < qualifiedClassNames.length; fileIndex++) {
 			String className= qualifiedClassNames[fileIndex].substring(qualifiedClassNames[fileIndex].indexOf('.') + 1);
 			assertEqualLines("invalid output.", getFileContents(getOutputTestFileName(className)), compilationUnits.get(fileIndex).getSource()); //$NON-NLS-1$
 		}
@@ -564,6 +573,20 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	public void testInstanceAccessInInnerClass() throws Exception {
 		//Instance method is called in Inner class and instance parameter is added to selected method
 		RefactoringStatus status= performRefactoringAndMatchFiles(new String[] { "p.Foo" }, 5, 17, 5, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testJavaDoc() throws Exception {
+		//New input parameter needs to be added to JavaDoc
+		RefactoringStatus status= performRefactoringAndMatchFiles(new String[] { "p.Foo" }, 8, 17, 8, 20);
+		assertHasNoCommonErrors(status);
+	}
+
+	@Test
+	public void testJavaDocWithGenerics() throws Exception {
+		//New TypeParameter needs to be added to JavaDoc
+		RefactoringStatus status= performRefactoringAndMatchFiles(new String[] { "p.Foo" }, 12, 25, 12, 28);
 		assertHasNoCommonErrors(status);
 	}
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 David Erdös and Michael Bangas.
+ * Copyright (c) 2023 Vector Informatik GmbH and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -9,10 +9,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
- *     David Erdös - initial API and implementation
- *     Michael Bangas - initial API and implementation
+ *     Vector Informatik GmbH - initial API and implementation
  *******************************************************************************/
-
 
 package org.eclipse.jdt.ui.actions;
 
@@ -98,8 +96,9 @@ public final class MakeStaticAction extends SelectionDispatchAction {
 		try {
 			setEnabled(RefactoringAvailabilityTester.isMakeStaticAvailable(selection));
 		} catch (JavaModelException e) {
-			if (JavaModelUtil.isExceptionToBeLogged(e))
+			if (JavaModelUtil.isExceptionToBeLogged(e)) {
 				JavaPlugin.log(e);
+			}
 		}
 	}
 
@@ -121,11 +120,13 @@ public final class MakeStaticAction extends SelectionDispatchAction {
 
 	@Override
 	public void run(ITextSelection selection) {
-		if (!ActionUtil.isProcessable(fEditor))
+		if (!ActionUtil.isProcessable(fEditor)) {
 			return;
+		}
 		ITypeRoot editorInput= SelectionConverter.getInput(fEditor);
-		if (!ActionUtil.isEditable(getShell(), editorInput))
+		if (!ActionUtil.isEditable(getShell(), editorInput)) {
 			return;
+		}
 		run(selection.getOffset(), selection.getLength(), (ICompilationUnit) editorInput);
 	}
 
@@ -135,8 +136,9 @@ public final class MakeStaticAction extends SelectionDispatchAction {
 			Assert.isTrue(RefactoringAvailabilityTester.isMakeStaticAvailable(selection));
 			Object first= selection.getFirstElement();
 			Assert.isTrue(first instanceof IMethod);
-			if (!ActionUtil.isEditable(getShell(), (IMethod) first))
+			if (!ActionUtil.isEditable(getShell(), (IMethod) first)) {
 				return;
+			}
 			run((IMethod) first);
 		} catch (CoreException e) {
 			ExceptionHandler.handle(e, RefactoringMessages.MakeStaticAction_dialog_title, RefactoringMessages.MakeStaticAction_unknown_exception);
