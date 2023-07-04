@@ -105,7 +105,7 @@ class ContextCalculator {
 		return fTargetIMethodBinding;
 	}
 
-	public void calculateSelectionMethodNode() throws JavaModelException {
+	public void calculateSelectionMethodNode() {
 		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
 		fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
 
