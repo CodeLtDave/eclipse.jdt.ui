@@ -135,7 +135,7 @@ public class MakeStaticRefactoring extends Refactoring {
 				return status;
 			}
 
-			fContextCalculator.calculateSelectionMethodNode();
+			fContextCalculator.calculateSelectionNode();
 			ASTNode selectionMethodNode= fContextCalculator.getSelectionMethodNode();
 
 			status.merge(fInitialConditionsChecker.checkNodeIsValidMethod(selectionMethodNode));

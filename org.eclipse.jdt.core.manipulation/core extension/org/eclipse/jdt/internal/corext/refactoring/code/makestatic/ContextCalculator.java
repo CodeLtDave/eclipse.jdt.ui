@@ -105,7 +105,12 @@ class ContextCalculator {
 		return fTargetIMethodBinding;
 	}
 
-	public void calculateSelectionMethodNode() {
+	/**
+	 * This method calculates the selected Node. It finds the Node that is inside the
+	 * {@link #fSelectionICompilationUnit} CompilationUnit at the {@link #fSelectionEditorText}
+	 * Selection.
+	 */
+	public void calculateSelectionNode() {
 		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
 		fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
 
@@ -120,19 +125,27 @@ class ContextCalculator {
 		}
 	}
 
+	/**
+	 * This method calculates the
+	 */
 	public void calculateTargetIMethodBinding() {
 		if (fSelectionMethodNode instanceof MethodInvocation selectionMethodInvocation) {
 			fTargetIMethodBinding= selectionMethodInvocation.resolveMethodBinding();
-		} else {
-			fTargetMethodDeclaration= (MethodDeclaration) fSelectionMethodNode;
-			fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
+		} else if (fSelectionMethodNode instanceof MethodDeclaration selectionMethodDeclaration) {
+			fTargetIMethodBinding= selectionMethodDeclaration.resolveBinding();
 		}
+	}
+
+	public void calculateTargetIMethod() {
+		fTargetIMethod= (IMethod) fTargetIMethodBinding.getJavaElement();
 	}
 
 	public void calculateMethodDeclarationFromSelectionMethodNode() {
 		if (fSelectionMethodNode instanceof MethodInvocation selectionMethodInvocation) {
 			fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetIMethod.getDeclaringType().getCompilationUnit());
 			fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
+		} else if (fSelectionMethodNode instanceof MethodDeclaration selectionMethodDeclaration) {
+			fTargetMethodDeclaration= selectionMethodDeclaration;
 		}
 	}
 
@@ -146,9 +159,7 @@ class ContextCalculator {
 		fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
 	}
 
-	public void calculateTargetIMethod() {
-		fTargetIMethod= (IMethod) fTargetIMethodBinding.getJavaElement();
-	}
+
 
 	/**
 	 * Converts an ICompilationUnit to a CompilationUnit. This method is used in the process of
