@@ -107,16 +107,12 @@ class ContextCalculator {
 
 	public void calculateSelectionMethodNode() throws JavaModelException {
 		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
+		fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
 
-		if (fSelectionICompilationUnit != null) {
-			fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength(), fSelectionICompilationUnit);
-		} else {
-			fSelectionMethodNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
-		}
-
-		if(fSelectionMethodNode == null) {
+		if (fSelectionMethodNode == null) {
 			return;
 		}
+
 		if (fSelectionMethodNode.getNodeType() == ASTNode.SIMPLE_NAME) {
 			fSelectionMethodNode= fSelectionMethodNode.getParent();
 		} else if (fSelectionMethodNode.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
