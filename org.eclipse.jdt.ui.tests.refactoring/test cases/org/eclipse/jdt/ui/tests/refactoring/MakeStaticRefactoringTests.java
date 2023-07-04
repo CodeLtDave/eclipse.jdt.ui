@@ -61,7 +61,7 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 	private static final String REFACTORING_PATH= "MakeStatic/";
 
 	public MakeStaticRefactoringTests() {
-		rts= new RefactoringTestSetup();
+		this(new RefactoringTestSetup());
 	}
 
 	protected MakeStaticRefactoringTests(RefactoringTestSetup rts) {
@@ -77,7 +77,6 @@ public class MakeStaticRefactoringTests extends GenericRefactoringTest {
 			throws Exception, JavaModelException, CoreException, IOException {
 
 		List<ICompilationUnit> compilationUnits= new ArrayList<>();
-		//ICompilationUnit[] compilationUnits= new ICompilationUnit[qualifiedClassNames.length];
 		for (String qualifiedClassName : qualifiedClassNames) {
 			String packageName= qualifiedClassName.substring(0, qualifiedClassName.indexOf('.'));
 			String className= qualifiedClassName.substring(qualifiedClassName.indexOf('.') + 1);

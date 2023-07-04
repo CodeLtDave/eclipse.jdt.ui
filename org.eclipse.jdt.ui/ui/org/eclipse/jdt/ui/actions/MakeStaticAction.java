@@ -96,8 +96,9 @@ public final class MakeStaticAction extends SelectionDispatchAction {
 		try {
 			setEnabled(RefactoringAvailabilityTester.isMakeStaticAvailable(selection));
 		} catch (JavaModelException e) {
-			if (JavaModelUtil.isExceptionToBeLogged(e))
+			if (JavaModelUtil.isExceptionToBeLogged(e)) {
 				JavaPlugin.log(e);
+			}
 		}
 	}
 
@@ -119,11 +120,13 @@ public final class MakeStaticAction extends SelectionDispatchAction {
 
 	@Override
 	public void run(ITextSelection selection) {
-		if (!ActionUtil.isProcessable(fEditor))
+		if (!ActionUtil.isProcessable(fEditor)) {
 			return;
+		}
 		ITypeRoot editorInput= SelectionConverter.getInput(fEditor);
-		if (!ActionUtil.isEditable(getShell(), editorInput))
+		if (!ActionUtil.isEditable(getShell(), editorInput)) {
 			return;
+		}
 		run(selection.getOffset(), selection.getLength(), (ICompilationUnit) editorInput);
 	}
 
@@ -133,8 +136,9 @@ public final class MakeStaticAction extends SelectionDispatchAction {
 			Assert.isTrue(RefactoringAvailabilityTester.isMakeStaticAvailable(selection));
 			Object first= selection.getFirstElement();
 			Assert.isTrue(first instanceof IMethod);
-			if (!ActionUtil.isEditable(getShell(), (IMethod) first))
+			if (!ActionUtil.isEditable(getShell(), (IMethod) first)) {
 				return;
+			}
 			run((IMethod) first);
 		} catch (CoreException e) {
 			ExceptionHandler.handle(e, RefactoringMessages.MakeStaticAction_dialog_title, RefactoringMessages.MakeStaticAction_unknown_exception);

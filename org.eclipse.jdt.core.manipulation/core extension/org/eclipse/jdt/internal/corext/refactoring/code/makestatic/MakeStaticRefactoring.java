@@ -211,8 +211,9 @@ public class MakeStaticRefactoring extends Refactoring {
 	private RefactoringStatus checkInitialConditionsFromTextSelection() throws JavaModelException {
 		RefactoringStatus status= new RefactoringStatus();
 
-		if (fSelectionStart == 0)
+		if (fSelectionStart == 0) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+		}
 
 		CompilationUnit selectionCURoot= new CompilationUnitRewrite(fSelectionCompilationUnit).getRoot();
 		ASTNode selectionNode= getSelectedNode(fSelectionCompilationUnit, selectionCURoot, fSelectionStart, fSelectionLength);
@@ -306,7 +307,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		} else {
 			//TODO what if null
 		}
-
 		return status;
 	}
 
@@ -314,7 +314,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (fTargetMethod == null || fTargetMethodBinding == null) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 		}
-
 		if (fTargetMethod.getDeclaringType().isLocal() || fTargetMethod.getDeclaringType().isAnonymous()) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types);
 		}
