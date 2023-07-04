@@ -145,35 +145,28 @@ public class MakeStaticRefactoring extends Refactoring {
 
 			fContextCalculator.calculateTargetIMethodBinding();
 			fContextCalculator.calculateTargetIMethod();
-
-			status.merge(fInitialConditionsChecker.checkSourceAvailable(fContextCalculator.getTargetIMethod()));
-			if (status.hasError()) {
-				return status;
-			}
-
-
-			fContextCalculator.calculateMethodDeclarationFromSelectionMethodNode();
-
 		} else {
-			IMethod selectionIMethod= fContextCalculator.getSelectionIMethod();
-			status.merge(fInitialConditionsChecker.checkIMethodIsValid(selectionIMethod));
-			if (status.hasError()) {
-				return status;
-			}
-			fContextCalculator.calculateICompilationUnitFromIMethod();
-
-			status.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
-			if (status.hasError()) {
-				return status;
-			}
-			fContextCalculator.calculateTargetIMethod();
+			fContextCalculator.calculateTargetIMethodBinding();
 		}
 
-		fTargetMethod = fContextCalculator.getTargetIMethod();
-		fTargetMethodDeclaration = fContextCalculator.getTargetMethodDeclaration();
-		fTargetMethodBinding = fContextCalculator.getTargetIMethodBinding();
+		status.merge(fInitialConditionsChecker.checkSourceAvailable(fContextCalculator.getTargetIMethod()));
+		if (status.hasError()) {
+			return status;
+		}
 
-		System.out.println(fContextCalculator.getSelectionIMethod() == fContextCalculator.getTargetIMethod());
+		status.merge(fInitialConditionsChecker.checkIMethodIsValid(fContextCalculator.getTargetIMethod()));
+		if (status.hasError()) {
+			return status;
+		}
+
+		fContextCalculator.calculateTargetICompilationUnit();
+
+		status.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
+		if (status.hasError()) {
+			return status;
+		}
+
+		fContextCalculator.calculateTargetCompilationUnit();
 
 		status.merge(fInitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getTargetIMethod()));
 		if (status.hasError()) {
@@ -194,6 +187,12 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (status.hasError()) {
 			return status;
 		}
+
+		fContextCalculator.calculateMethodDeclaration();
+
+		fTargetMethod = fContextCalculator.getTargetIMethod();						//TODO remove those which dont have to necessarily be fields
+		fTargetMethodDeclaration = fContextCalculator.getTargetMethodDeclaration();
+		fTargetMethodBinding = fContextCalculator.getTargetIMethodBinding();
 
 		return status;
 	}

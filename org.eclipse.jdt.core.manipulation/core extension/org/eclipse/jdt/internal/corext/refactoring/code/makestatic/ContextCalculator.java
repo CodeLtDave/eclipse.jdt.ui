@@ -23,6 +23,12 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
  */
 class ContextCalculator {
 
+	private SelectionInputType fSelectionInputType;
+
+	private Selection fSelectionEditorText;
+
+	private ICompilationUnit fTargetICompilationUnit;
+
 	private CompilationUnit fTargetCompilationUnit;
 
 	private IMethod fTargetIMethod;
@@ -35,13 +41,7 @@ class ContextCalculator {
 
 	private CompilationUnit fSelectionCompilationUnit;
 
-	private Selection fSelectionEditorText;
-
 	private ASTNode fSelectionMethodNode;
-
-	private IMethod fSelectionIMethod;
-
-	private SelectionInputType fSelectionInputType;
 
 	protected enum SelectionInputType {
 		IMETHOD, TEXT_SELECTION
@@ -57,9 +57,9 @@ class ContextCalculator {
 	 *            processed.
 	 */
 	public ContextCalculator(ICompilationUnit inputAsICompilationUnit, Selection targetSelection) {
+		this.fSelectionInputType= SelectionInputType.TEXT_SELECTION;
 		this.fSelectionEditorText= targetSelection;
 		this.fSelectionICompilationUnit= inputAsICompilationUnit;
-		this.fSelectionInputType= SelectionInputType.TEXT_SELECTION;
 	}
 
 	/**
@@ -69,16 +69,8 @@ class ContextCalculator {
 	 * @param method the IMethod to be processed.
 	 */
 	public ContextCalculator(IMethod method) {
-		this.fSelectionIMethod= method;
 		this.fSelectionInputType= SelectionInputType.IMETHOD;
-	}
-
-	public CompilationUnit getTargetCompilationUnit() {
-		return fTargetCompilationUnit;
-	}
-
-	public IMethod getTargetIMethod() {
-		return fTargetIMethod;
+		this.fTargetIMethod= method;
 	}
 
 	public MethodDeclaration getTargetMethodDeclaration() {
@@ -93,16 +85,16 @@ class ContextCalculator {
 		return fSelectionICompilationUnit;
 	}
 
-	public IMethod getSelectionIMethod() {
-		return fSelectionIMethod;
-	}
-
 	public ASTNode getSelectionMethodNode() {
 		return fSelectionMethodNode;
 	}
 
 	public IMethodBinding getTargetIMethodBinding() {
 		return fTargetIMethodBinding;
+	}
+
+	public IMethod getTargetIMethod() {
+		return fTargetIMethod;
 	}
 
 	/**
@@ -140,22 +132,17 @@ class ContextCalculator {
 		fTargetIMethod= (IMethod) fTargetIMethodBinding.getJavaElement();
 	}
 
-	public void calculateMethodDeclarationFromSelectionMethodNode() {
-		if (fSelectionMethodNode instanceof MethodInvocation selectionMethodInvocation) {
-			fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetIMethod.getDeclaringType().getCompilationUnit());
-			fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
-		} else if (fSelectionMethodNode instanceof MethodDeclaration selectionMethodDeclaration) {
-			fTargetMethodDeclaration= selectionMethodDeclaration;
-		}
+	public void calculateTargetICompilationUnit() {
+		fTargetICompilationUnit= fTargetIMethod.getDeclaringType().getCompilationUnit();
 	}
 
-	public void calculateICompilationUnitFromIMethod() {
-		fSelectionICompilationUnit= fSelectionIMethod.getCompilationUnit();
+	public void calculateTargetCompilationUnit() {
+		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetICompilationUnit);
 	}
 
-	public void calculateMethodDeclarationFromIMethod() {
-		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
-		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fSelectionIMethod, fSelectionCompilationUnit);
+	public void calculateMethodDeclaration() {
+		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetICompilationUnit);
+		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
 		fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
 	}
 
