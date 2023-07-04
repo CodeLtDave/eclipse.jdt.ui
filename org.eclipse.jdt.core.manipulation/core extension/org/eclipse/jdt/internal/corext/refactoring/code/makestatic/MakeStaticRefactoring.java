@@ -143,6 +143,15 @@ public class MakeStaticRefactoring extends Refactoring {
 				return status;
 			}
 
+			fContextCalculator.calculateTargetIMethodBinding();
+			fContextCalculator.calculateTargetIMethod();
+
+			status.merge(fInitialConditionsChecker.checkSourceAvailable(fContextCalculator.getTargetIMethod()));
+			if (status.hasError()) {
+				return status;
+			}
+
+
 			fContextCalculator.calculateMethodDeclarationFromSelectionMethodNode();
 
 		} else {
@@ -157,12 +166,14 @@ public class MakeStaticRefactoring extends Refactoring {
 			if (status.hasError()) {
 				return status;
 			}
+			fContextCalculator.calculateTargetIMethod();
 		}
 
-		fContextCalculator.calculateTargetIMethod();
 		fTargetMethod = fContextCalculator.getTargetIMethod();
 		fTargetMethodDeclaration = fContextCalculator.getTargetMethodDeclaration();
 		fTargetMethodBinding = fContextCalculator.getTargetIMethodBinding();
+
+		System.out.println(fContextCalculator.getSelectionIMethod() == fContextCalculator.getTargetIMethod());
 
 		status.merge(fInitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getTargetIMethod()));
 		if (status.hasError()) {
@@ -183,6 +194,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (status.hasError()) {
 			return status;
 		}
+
 		return status;
 	}
 
@@ -205,7 +217,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		if (status.hasError()) {
 			return status;
 		}
-
 
 		if (fTargetMethodBinding != null) {
 			fTargetMethod= (IMethod) fTargetMethodBinding.getJavaElement();

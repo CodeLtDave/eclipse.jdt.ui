@@ -120,15 +120,19 @@ class ContextCalculator {
 		}
 	}
 
-	public void calculateMethodDeclarationFromSelectionMethodNode() {
+	public void calculateTargetIMethodBinding() {
 		if (fSelectionMethodNode instanceof MethodInvocation selectionMethodInvocation) {
 			fTargetIMethodBinding= selectionMethodInvocation.resolveMethodBinding();
-			fTargetIMethod= (IMethod) fTargetIMethodBinding.getJavaElement();
-			fTargetCompilationUnit =  convertICompilationUnitToCompilationUnit(fTargetIMethod.getDeclaringType().getCompilationUnit());
-			fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
 		} else {
 			fTargetMethodDeclaration= (MethodDeclaration) fSelectionMethodNode;
 			fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
+		}
+	}
+
+	public void calculateMethodDeclarationFromSelectionMethodNode() {
+		if (fSelectionMethodNode instanceof MethodInvocation selectionMethodInvocation) {
+			fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetIMethod.getDeclaringType().getCompilationUnit());
+			fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
 		}
 	}
 

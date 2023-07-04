@@ -9,7 +9,6 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -19,15 +18,6 @@ import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 
 class InitialConditionsChecker {
-	private ICompilationUnit fSelectionICompilationUnit;
-
-	private CompilationUnit fSelectionCompilationUnit;
-
-	private Selection fSelectionEditorText;
-
-	private IMethod fSelectionIMethod;
-
-	private boolean fSelectionIsEditorTextNotIMethod;
 
 	public InitialConditionsChecker() {
 	}
@@ -137,6 +127,14 @@ class InitialConditionsChecker {
 		return status;
 	}
 
+	public RefactoringStatus checkSourceAvailable(IMethod iMethod) {
+		RefactoringStatus status= new RefactoringStatus();
+		if (iMethod.getCompilationUnit() == null) {
+			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method);
+		}
+		return status;
+	}
+
 	public static boolean isOverridden(IType type, IMethod iMethod) throws JavaModelException { //TODO duplicate isOverriding()?
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] subtypes= hierarchy.getAllSubtypes(type);
@@ -153,8 +151,6 @@ class InitialConditionsChecker {
 		}
 		return false;
 	}
-
-
 
 
 
