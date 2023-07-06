@@ -29,7 +29,6 @@ import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -180,6 +179,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			fContextCalculator.calculateTargetIMethodBinding();
 			fContextCalculator.calculateTargetIMethod();
 		} else {
+			//SelectionInputType is IMethod (for example when performing the refactoring form the outline menu)
 			fContextCalculator.calculateTargetIMethodBinding();
 		}
 
@@ -215,7 +215,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			return fStatus;
 		}
 
-		fStatus.merge(fInitialConditionsChecker.checkMethodOverridden(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(fInitialConditionsChecker.checkMethodNotOverridden(fContextCalculator.getTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
@@ -273,7 +273,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 
 		//Refactored method could unintentionally hide method of parent class
-		if (!fHasInstanceUsages && checkOverrideTargetMethod(true)) {
+		if (!fHasInstanceUsages && isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod)) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 			return;
 		}
@@ -323,27 +323,14 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 	}
 
-	private boolean checkOverrideTargetMethod(boolean goUpwards) throws JavaModelException {
-		IType type= fTargetMethod.getDeclaringType();
+	private boolean isOverriding(IType type, IMethod iMethod) throws JavaModelException { //TODO duplicate isOverriding()?
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
-		IType[] foundTypes= null;
-		if (goUpwards) {
-			foundTypes= hierarchy.getAllSupertypes(type);
-		} else {
-			foundTypes= hierarchy.getAllSubtypes(type);
-		}
-		for (IType foundType : foundTypes) {
-			IMethod[] foundMethods= foundType.getMethods();
-			for (IMethod foundMethod : foundMethods) {
-				if (foundMethod.isSimilar(fTargetMethod)) {
-					if (goUpwards) {
-						return true;
-					} else {
-						int flags= foundMethod.getFlags();
-						if (!Flags.isPrivate(flags) || (!Flags.isStatic(flags))) {
-							return true;
-						}
-					}
+		IType[] supertypes= hierarchy.getAllSupertypes(type);
+		for (IType supertype : supertypes) {
+			IMethod[] methods= supertype.getMethods();
+			for (IMethod method : methods) {
+				if (method.isSimilar(iMethod)) {
+					return true;
 				}
 			}
 		}

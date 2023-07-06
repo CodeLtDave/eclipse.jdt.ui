@@ -108,7 +108,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkMethodOverridden(IMethod iMethod) {
+	public RefactoringStatus checkMethodNotOverridden(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		try {
 			if (isOverridden(iMethod.getDeclaringType(), iMethod)) {
@@ -145,7 +145,4 @@ class InitialConditionsChecker {
 		}
 		return false;
 	}
-
-
-
 }
