@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2023 Vector Informatik GmbH and others.
+ *
+ * This program and the accompanying materials are made available under the terms of the Eclipse
+ * Public License 2.0 which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors: Vector Informatik GmbH - initial API and implementation
+ *******************************************************************************/
+
 package org.eclipse.jdt.internal.corext.refactoring.code.makestatic;
 
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
@@ -66,15 +78,17 @@ final class InstanceUsageRewriter extends ASTVisitor {
 	private final MethodDeclaration fTargetMethodDeclaration;
 
 
-    /**
-     * Constructs a new InstanceUsageRewriter with the specified parameters.
-     *
-     * @param paramName The name of the parameter used to access instance variables or instance methods.
-     * @param rewrite The ASTRewrite object used for rewriting the AST.
-     * @param ast The AST object representing the abstract syntax tree.
-     * @param status The RefactoringStatus object to track the status of the refactoring.
-     * @param methodDeclaration The MethodDeclaration object representing the target method being refactored.
-     */
+	/**
+	 * Constructs a new InstanceUsageRewriter with the specified parameters.
+	 *
+	 * @param paramName The name of the parameter used to access instance variables or instance
+	 *            methods.
+	 * @param rewrite The ASTRewrite object used for rewriting the AST.
+	 * @param ast The AST object representing the abstract syntax tree.
+	 * @param status The RefactoringStatus object to track the status of the refactoring.
+	 * @param methodDeclaration The MethodDeclaration object representing the target method being
+	 *            refactored.
+	 */
 	public InstanceUsageRewriter(String paramName, ASTRewrite rewrite, AST ast, RefactoringStatus status, MethodDeclaration methodDeclaration) {
 		fParamName= paramName;
 		fRewrite= rewrite;
