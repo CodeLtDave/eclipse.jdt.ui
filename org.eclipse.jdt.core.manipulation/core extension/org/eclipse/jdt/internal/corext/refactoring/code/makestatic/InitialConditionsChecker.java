@@ -17,8 +17,20 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 
+/**
+ * The InitialConditionsChecker class provides static methods to check various initial conditions
+ * for a refactoring.
+ */
 class InitialConditionsChecker {
 
+	/**
+	 * Checks if the start position of a text selection is valid. A Selection is valid if the offset
+	 * and lengt are greater zero.
+	 *
+	 * @param selection the text selection to be checked
+	 *
+	 * @return the refactoring status indicating the validity of the selection
+	 */
 	public static RefactoringStatus checkTextSelectionStart(Selection selection) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (selection.getOffset() < 0 || selection.getLength() < 0) {
@@ -27,6 +39,12 @@ class InitialConditionsChecker {
 		return status;
 	}
 
+	/**
+	 * Checks the validity of an ICompilationUnit. The ICompilationUnit is valid if it not null.
+	 *
+	 * @param iCompilationUnit the ICompilationUnit to be checked
+	 * @return the refactoring status indicating the validity of the ICompilationUnit
+	 */
 	public static RefactoringStatus checkValidICompilationUnit(ICompilationUnit iCompilationUnit) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (iCompilationUnit == null) {
@@ -35,6 +53,16 @@ class InitialConditionsChecker {
 		return status;
 	}
 
+
+	/**
+	 * Checks the validity of an ASTNode as a method. The check fails if the AStNode is not an
+	 * instance of MethodDeclaration or MethodInvocation. It also fails if the ASTNode is null or
+	 * instance of SuperMethodInvocation.
+	 *
+	 * @param selectedNode the ASTNode to be checked
+	 *
+	 * @return the refactoring status indicating the validity of the selectedNode
+	 */
 	public static RefactoringStatus checkASTNodeIsValidMethod(ASTNode selectedNode) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (selectedNode == null) {
@@ -48,6 +76,15 @@ class InitialConditionsChecker {
 		return status;
 	}
 
+
+	/**
+	 * Checks the validity of an IMethod. The IMethod is valid if it is not null and if its
+	 * declaring type is not an annotation.
+	 *
+	 * @param iMethod the IMethod to be checked
+	 *
+	 * @return the refactoring status indicating the validity of the IMethod
+	 */
 	public static RefactoringStatus checkIMethodIsValid(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (iMethod == null) {
@@ -65,6 +102,12 @@ class InitialConditionsChecker {
 		return status;
 	}
 
+	/**
+	 * Checks if the method is not declared in a local or anonymous class.
+	 *
+	 * @param iMethod the IMethod to be checked
+	 * @return the refactoring status indicating the validity of the method's declaring type
+	 */
 	public static RefactoringStatus checkMethodNotInLocalOrAnonymousClass(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		try {
@@ -78,6 +121,12 @@ class InitialConditionsChecker {
 		return status;
 	}
 
+	/**
+	 * Checks if the method is not a constructor.
+	 *
+	 * @param iMethod the IMethod to be checked
+	 * @return the refactoring status indicating the validity of the method
+	 */
 	public static RefactoringStatus checkMethodIsNotConstructor(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		try {
@@ -91,6 +140,12 @@ class InitialConditionsChecker {
 		return status;
 	}
 
+	/**
+	 * Checks if the method is not already static.
+	 *
+	 * @param iMethod the IMethod to be checked
+	 * @return the refactoring status indicating the validity of the method
+	 */
 	public static RefactoringStatus checkMethodNotStatic(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		try {
@@ -105,6 +160,12 @@ class InitialConditionsChecker {
 		return status;
 	}
 
+	/**
+	 * Checks if the method is not overridden in any subtype.
+	 *
+	 * @param iMethod the IMethod to be checked
+	 * @return the refactoring status indicating the validity of the method's override status
+	 */
 	public static RefactoringStatus checkMethodNotOverridden(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		try {
@@ -118,6 +179,12 @@ class InitialConditionsChecker {
 		return status;
 	}
 
+	/**
+	 * Checks if the source code is available for the selected method.
+	 *
+	 * @param iMethod the IMethod to be checked
+	 * @return the refactoring status indicating the availability of the source code
+	 */
 	public static RefactoringStatus checkSourceAvailable(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (iMethod.getCompilationUnit() == null) {
@@ -126,7 +193,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public static boolean isOverridden(IType type, IMethod iMethod) throws JavaModelException { //TODO duplicate isOverriding()?
+	private static boolean isOverridden(IType type, IMethod iMethod) throws JavaModelException { //TODO duplicate isOverriding()?
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] subtypes= hierarchy.getAllSubtypes(type);
 		for (IType subtype : subtypes) {
