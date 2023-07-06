@@ -19,9 +19,6 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 
 class InitialConditionsChecker {
 
-	public InitialConditionsChecker() {
-	}
-
 	public RefactoringStatus checkTextSelectionStart(Selection selection) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (selection.getOffset() < 0 || selection.getLength() < 0) {

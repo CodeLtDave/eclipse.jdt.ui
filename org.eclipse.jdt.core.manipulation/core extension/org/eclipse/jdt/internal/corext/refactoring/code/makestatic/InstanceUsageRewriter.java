@@ -49,7 +49,7 @@ final class InstanceUsageRewriter extends ASTVisitor {
 	 * Indicates whether there is access to instance variables or instance methods within the body
 	 * of the method.
 	 */
-	public boolean fHasInstanceUsages;
+	public boolean fTargetMethodhasInstanceUsage;
 
 	private final RefactoringStatus fstatus;
 
@@ -122,7 +122,7 @@ final class InstanceUsageRewriter extends ASTVisitor {
 	public boolean visit(ClassInstanceCreation node) {
 		ITypeBinding typeBinding= node.getType().resolveBinding();
 		if (typeBinding != null && typeBinding.isMember() && !Modifier.isStatic(typeBinding.getModifiers())) {
-			fHasInstanceUsages= true;
+			fTargetMethodhasInstanceUsage= true;
 			replaceClassInstanceCreation(node);
 		}
 		return super.visit(node);
@@ -153,7 +153,7 @@ final class InstanceUsageRewriter extends ASTVisitor {
 
 			replaceFieldAccess(node, parent);
 
-			fHasInstanceUsages= true;
+			fTargetMethodhasInstanceUsage= true;
 		}
 	}
 
@@ -166,7 +166,7 @@ final class InstanceUsageRewriter extends ASTVisitor {
 		}
 
 		if (!Modifier.isStatic(methodBinding.getModifiers())) {
-			fHasInstanceUsages= true;
+			fTargetMethodhasInstanceUsage= true;
 
 			//check if method is recursive
 			if (isRecursive(node)) {
@@ -256,7 +256,7 @@ final class InstanceUsageRewriter extends ASTVisitor {
 	}
 
 	private void replaceThisExpression(ThisExpression node) {
-		fHasInstanceUsages= true;
+		fTargetMethodhasInstanceUsage= true;
 		SimpleName replacement= fAst.newSimpleName(fParamName);
 		fRewrite.replace(node, replacement, null);
 	}

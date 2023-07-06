@@ -112,7 +112,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	 * Indicates whether there is access to instance variables or instance methods within the body
 	 * of the method.
 	 */
-	private boolean fHasInstanceUsages;
+	private boolean fTargetMethodhasInstanceUsage;
 
 	/**
 	 * Represents the status of a refactoring operation.
@@ -132,6 +132,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		Selection targetSelection= Selection.createFromStartLength(selectionStart, selectionLength);
 		fContextCalculator= new ContextCalculator(inputAsICompilationUnit, targetSelection);
 		fInitialConditionsChecker= new InitialConditionsChecker();
+		fChangeManager = new TextEditBasedChangeManager();
 	}
 
 	/**
@@ -142,6 +143,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	public MakeStaticRefactoring(IMethod method) {
 		fContextCalculator= new ContextCalculator(method);
+		fChangeManager = new TextEditBasedChangeManager();
 	}
 
 	/**
@@ -232,11 +234,6 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
-
-		fChangeManager= new TextEditBasedChangeManager();
-		fHasInstanceUsages= false;
-
-		//Modify MethodDeclaration
 		modifyMethodDeclaration();
 
 		if (fStatus.hasError()) {
@@ -269,11 +266,11 @@ public class MakeStaticRefactoring extends Refactoring {
 		//Change instance Usages ("this" and "super") to paramName and set fHasInstanceUsage flag
 		InstanceUsageRewriter instanceUsageRewriter= new InstanceUsageRewriter(paramName, rewrite, ast, fStatus, fTargetMethodDeclaration);
 		fTargetMethodDeclaration.getBody().accept(instanceUsageRewriter);
-		fHasInstanceUsages= instanceUsageRewriter.fHasInstanceUsages;
+		fTargetMethodhasInstanceUsage= instanceUsageRewriter.fTargetMethodhasInstanceUsage;
 
 
 		//Refactored method could unintentionally hide method of parent class
-		if (!fHasInstanceUsages && isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod)) {
+		if (!fTargetMethodhasInstanceUsage && isOverriding(fTargetMethod.getDeclaringType(), fTargetMethod)) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 			return;
 		}
@@ -282,7 +279,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		ITypeParameter[] classTypeParameters= parentType.getTypeParameters();
 
 		//Adding an instance parameter to the newly static method to ensure it can still access class-level state and behavior.
-		if (fHasInstanceUsages) {
+		if (fTargetMethodhasInstanceUsage) {
 			addInstanceAsParamIfUsed(ast, rewrite, alreadyUsedParameters, className, paramName, classTypeParameters);
 		}
 
@@ -438,7 +435,7 @@ public class MakeStaticRefactoring extends Refactoring {
 				String typeParamName= typeParameter.getName().getIdentifier();
 				String typeParamNameAsArray= typeParamName + "[]"; //$NON-NLS-1$
 				boolean paramIsNeeded= methodParameterTypes.contains(typeParamName) || methodParameterTypes.contains(typeParamNameAsArray);
-				if (fHasInstanceUsages || paramIsNeeded) {
+				if (fTargetMethodhasInstanceUsage || paramIsNeeded) {
 					//only insert if typeParam not already existing
 					if (!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier())) {
 						typeParamsRewrite.insertLast(typeParameter, null);
@@ -562,7 +559,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		AST ast= invocation.getAST();
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 
-		if (fHasInstanceUsages) {
+		if (fTargetMethodhasInstanceUsage) {
 			ASTNode newArg;
 			if (invocation.getExpression() != null) {
 				newArg= ASTNode.copySubtree(ast, invocation.getExpression()); // copy the expression
