@@ -19,7 +19,7 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 
 class InitialConditionsChecker {
 
-	public RefactoringStatus checkTextSelectionStart(Selection selection) {
+	public static RefactoringStatus checkTextSelectionStart(Selection selection) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (selection.getOffset() < 0 || selection.getLength() < 0) {
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
@@ -27,7 +27,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkValidICompilationUnit(ICompilationUnit iCompilationUnit) {
+	public static RefactoringStatus checkValidICompilationUnit(ICompilationUnit iCompilationUnit) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (iCompilationUnit == null) {
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
@@ -35,7 +35,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkASTNodeIsValidMethod(ASTNode selectedNode) {
+	public static RefactoringStatus checkASTNodeIsValidMethod(ASTNode selectedNode) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (selectedNode == null) {
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
@@ -48,7 +48,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkIMethodIsValid(IMethod iMethod) {
+	public static RefactoringStatus checkIMethodIsValid(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (iMethod == null) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
@@ -65,7 +65,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkMethodNotInLocalOrAnonymousClass(IMethod iMethod) {
+	public static RefactoringStatus checkMethodNotInLocalOrAnonymousClass(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		try {
 			if (iMethod.getDeclaringType().isLocal() || iMethod.getDeclaringType().isAnonymous()) {
@@ -78,7 +78,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkMethodIsNotConstructor(IMethod iMethod) {
+	public static RefactoringStatus checkMethodIsNotConstructor(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		try {
 			if (iMethod.isConstructor()) {
@@ -91,7 +91,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkMethodNotStatic(IMethod iMethod) {
+	public static RefactoringStatus checkMethodNotStatic(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		try {
 			int flags= iMethod.getFlags();
@@ -105,7 +105,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkMethodNotOverridden(IMethod iMethod) {
+	public static RefactoringStatus checkMethodNotOverridden(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		try {
 			if (isOverridden(iMethod.getDeclaringType(), iMethod)) {
@@ -118,7 +118,7 @@ class InitialConditionsChecker {
 		return status;
 	}
 
-	public RefactoringStatus checkSourceAvailable(IMethod iMethod) {
+	public static RefactoringStatus checkSourceAvailable(IMethod iMethod) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (iMethod.getCompilationUnit() == null) {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method);

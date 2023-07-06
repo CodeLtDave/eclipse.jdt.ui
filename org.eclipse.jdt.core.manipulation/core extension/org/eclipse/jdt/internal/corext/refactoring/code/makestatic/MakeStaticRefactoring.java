@@ -125,12 +125,9 @@ public class MakeStaticRefactoring extends Refactoring {
 
 	private ContextCalculator fContextCalculator;
 
-	private InitialConditionsChecker fInitialConditionsChecker;
-
 	public MakeStaticRefactoring(ICompilationUnit inputAsICompilationUnit, int selectionStart, int selectionLength) {
 		Selection targetSelection= Selection.createFromStartLength(selectionStart, selectionLength);
 		fContextCalculator= new ContextCalculator(inputAsICompilationUnit, targetSelection);
-		fInitialConditionsChecker= new InitialConditionsChecker();
 		fChangeManager= new TextEditBasedChangeManager();
 	}
 
@@ -164,15 +161,15 @@ public class MakeStaticRefactoring extends Refactoring {
 		SelectionInputType selectionInputType= fContextCalculator.getSelectionInputType();
 
 		if (selectionInputType == SelectionInputType.TEXT_SELECTION) {
-			fStatus.merge(fInitialConditionsChecker.checkTextSelectionStart(fContextCalculator.getSelectionEditorText()));
-			fStatus.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
+			fStatus.merge(InitialConditionsChecker.checkTextSelectionStart(fContextCalculator.getSelectionEditorText()));
+			fStatus.merge(InitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
 			if (fStatus.hasError()) {
 				return fStatus;
 			}
 
 			fContextCalculator.calculateSelectionASTNode();
 
-			fStatus.merge(fInitialConditionsChecker.checkASTNodeIsValidMethod(fContextCalculator.getSelectionASTNode()));
+			fStatus.merge(InitialConditionsChecker.checkASTNodeIsValidMethod(fContextCalculator.getSelectionASTNode()));
 			if (fStatus.hasError()) {
 				return fStatus;
 			}
@@ -184,39 +181,39 @@ public class MakeStaticRefactoring extends Refactoring {
 			fContextCalculator.calculateTargetIMethodBinding();
 		}
 
-		fStatus.merge(fInitialConditionsChecker.checkSourceAvailable(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkSourceAvailable(fContextCalculator.getTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(fInitialConditionsChecker.checkIMethodIsValid(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkIMethodIsValid(fContextCalculator.getTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
 		fContextCalculator.calculateTargetICompilationUnit();
 
-		fStatus.merge(fInitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
+		fStatus.merge(InitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(fInitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(fInitialConditionsChecker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(fInitialConditionsChecker.checkMethodNotStatic(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkMethodNotStatic(fContextCalculator.getTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(fInitialConditionsChecker.checkMethodNotOverridden(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkMethodNotOverridden(fContextCalculator.getTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
