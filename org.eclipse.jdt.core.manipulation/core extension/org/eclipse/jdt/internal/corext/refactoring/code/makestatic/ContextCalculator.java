@@ -1,5 +1,7 @@
 package org.eclipse.jdt.internal.corext.refactoring.code.makestatic;
 
+import java.util.List;
+
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
@@ -11,6 +13,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NodeFinder;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.Selection;
@@ -99,6 +102,10 @@ class ContextCalculator {
 
 	public MethodDeclaration getTargetMethodDeclaration() {
 		return fTargetMethodDeclaration;
+	}
+
+	public List<SingleVariableDeclaration> getTargetMethodInputParameters() {
+		return fTargetMethodDeclaration.parameters();
 	}
 
 	/**
