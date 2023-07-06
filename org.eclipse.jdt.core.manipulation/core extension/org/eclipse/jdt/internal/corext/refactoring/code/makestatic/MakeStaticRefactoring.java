@@ -262,7 +262,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 
 		//check if method would unintentionally hide method of parent class
-		fStatus.merge(FinalConditionsChecker.checkWouldHideMethodOfParentType(fTargetMethodhasInstanceUsage, fTargetMethod));
+		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(fTargetMethodhasInstanceUsage, fTargetMethod));
 
 		IType parentType= fTargetMethod.getDeclaringType();
 		ITypeParameter[] classTypeParameters= parentType.getTypeParameters();
@@ -319,7 +319,7 @@ public class MakeStaticRefactoring extends Refactoring {
 			ITypeParameter[] classTypeParameters) throws JavaModelException {
 		SingleVariableDeclaration newParameter= generateNewParameter(ast, className, paramName, classTypeParameters);
 		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
-		fStatus.merge(FinalConditionsChecker.checkDuplicateMethod(fTargetMethodDeclaration, fTargetMethod));
+		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod));
 
 		//Add new parameter to method declaration arguments
 		ListRewrite lrw= rewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
@@ -395,7 +395,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		typeParameter.setName(ast.newSimpleName(classTypeParameters[i].getElementName()));
 		for (String bound : bounds) {
 			//WildCardTypes are not allowed as bounds
-			fStatus.merge(FinalConditionsChecker.checkBoundContainsWildCardType(bound));
+			fStatus.merge(FinalConditionsChecker.checkBoundNotContainingWildCardType(bound));
 			if (!fStatus.hasError()) {
 				SimpleType boundType= ast.newSimpleType(ast.newSimpleName(bound));
 				typeParameter.typeBounds().add(boundType);

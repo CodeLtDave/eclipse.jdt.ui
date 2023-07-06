@@ -21,7 +21,7 @@ final class MethodReferenceFinder extends ASTVisitor {
 	public boolean visit(ExpressionMethodReference node) {
 		// Check if the method reference refers to the selected method
 		if (!fstatus.hasFatalError()) {
-			fstatus.merge(FinalConditionsChecker.checkMethodReferenceRefersToMethod(node, fTargetMethodBinding));
+			fstatus.merge(FinalConditionsChecker.checkMethodReferenceNotReferingToMethod(node, fTargetMethodBinding));
 		}
 		return super.visit(node);
 	}
@@ -30,7 +30,7 @@ final class MethodReferenceFinder extends ASTVisitor {
 	public boolean visit(SuperMethodReference node) {
 		// Check if the method reference refers to the selected method
 		if (!fstatus.hasFatalError()) {
-			fstatus.merge(FinalConditionsChecker.checkMethodReferenceRefersToMethod(node, fTargetMethodBinding));
+			fstatus.merge(FinalConditionsChecker.checkMethodReferenceNotReferingToMethod(node, fTargetMethodBinding));
 		}
 		return super.visit(node);
 	}
