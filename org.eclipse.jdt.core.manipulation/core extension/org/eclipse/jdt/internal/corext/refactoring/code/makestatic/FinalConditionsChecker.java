@@ -9,6 +9,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodReference;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
@@ -69,6 +70,17 @@ class FinalConditionsChecker {
 		RefactoringStatus status= new RefactoringStatus();
 		if (bound.contains("?")) { //$NON-NLS-1$
 			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound));
+		}
+		return status;
+	}
+
+	public static RefactoringStatus checkMethodReferenceRefersToMethod(MethodReference methodReference, IMethodBinding iMethodBinding) {
+		RefactoringStatus status= new RefactoringStatus();
+		IMethodBinding methodReferenceBinding= methodReference.resolveMethodBinding();
+		ITypeBinding typeBindingOfMethodReference= methodReferenceBinding.getDeclaringClass();
+		ITypeBinding typeBindingOfTargetMethod= iMethodBinding.getDeclaringClass();
+		if (iMethodBinding.isEqualTo(methodReferenceBinding) && typeBindingOfMethodReference.isEqualTo(typeBindingOfTargetMethod)) {
+			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
 		}
 		return status;
 	}
