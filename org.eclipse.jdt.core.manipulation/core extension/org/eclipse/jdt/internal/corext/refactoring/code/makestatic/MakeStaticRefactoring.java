@@ -25,6 +25,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
@@ -161,6 +162,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		fTargetMethod= fContextCalculator.getOrComputeTargetIMethod(); //TODO remove those which dont have to necessarily be fields
 		fTargetMethodBinding= fContextCalculator.getOrComputeTargetIMethodBinding();
+
 		try {
 			fTargetMethodDeclaration= fContextCalculator.getOrComputeTargetMethodDeclaration();
 		} catch (JavaModelException e) {
