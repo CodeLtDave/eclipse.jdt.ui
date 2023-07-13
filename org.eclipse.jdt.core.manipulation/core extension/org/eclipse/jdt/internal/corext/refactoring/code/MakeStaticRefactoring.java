@@ -12,7 +12,7 @@
  *     Vector Informatik GmbH - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.jdt.internal.corext.refactoring.code.makestatic;
+package org.eclipse.jdt.internal.corext.refactoring.code;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -31,7 +31,10 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
-import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
+import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ChangeCalculator;
+import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator;
+import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.FinalConditionsChecker;
+import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.InitialConditionsChecker;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator.SelectionInputType;
 
 /**
@@ -173,7 +176,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	@Override
-	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
+	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
 		fTargetProvider= TargetProvider.create(fTargetMethodDeclaration);
 		fTargetProvider.initialize();
 		fChangeCalculator= new ChangeCalculator(fTargetMethodDeclaration, fTargetMethod, fTargetProvider, fTargetMethodBinding);

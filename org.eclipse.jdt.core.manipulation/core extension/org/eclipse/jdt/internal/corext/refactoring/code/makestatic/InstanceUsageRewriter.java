@@ -55,7 +55,7 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
  * thrown.
  *
  */
-final class InstanceUsageRewriter extends ASTVisitor {
+public final class InstanceUsageRewriter extends ASTVisitor {
 
 	/**
 	 * Indicates whether there is access to instance variables or instance methods within the body

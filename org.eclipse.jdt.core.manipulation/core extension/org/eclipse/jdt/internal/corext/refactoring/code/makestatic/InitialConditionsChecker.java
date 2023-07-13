@@ -33,7 +33,7 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
  * The InitialConditionsChecker class provides static methods to check various initial conditions
  * for a refactoring.
  */
-class InitialConditionsChecker {
+public class InitialConditionsChecker {
 
 	/**
 	 * Checks if the start position of a text selection is valid. A Selection is valid if the offset

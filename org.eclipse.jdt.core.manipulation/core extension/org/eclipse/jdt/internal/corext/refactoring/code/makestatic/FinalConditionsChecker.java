@@ -32,7 +32,7 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
  * The FinalConditionsChecker class provides static methods to check various final conditions for a
  * refactoring.
  */
-class FinalConditionsChecker {
+public class FinalConditionsChecker {
 	/**
 	 * Checks if a duplicate method with the same signature as the refactored method exists. The
 	 * MakeStaticRefactoring introduces a new parameter if fields or instance methods are used in

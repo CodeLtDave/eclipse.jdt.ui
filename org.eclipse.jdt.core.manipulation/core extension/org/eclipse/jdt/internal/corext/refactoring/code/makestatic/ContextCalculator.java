@@ -33,7 +33,7 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
  * the given input (SelectionFields), which can be an ICompilationUnit or an IMethod, and calculates
  * the corresponding TargetFields, which are used in the actual refactoring process.
  */
-class ContextCalculator {
+public class ContextCalculator {
 
 	private SelectionInputType fSelectionInputType;
 
@@ -55,7 +55,7 @@ class ContextCalculator {
 
 	private MethodDeclaration fTargetMethodDeclaration;
 
-	protected enum SelectionInputType {
+	public enum SelectionInputType {
 		IMETHOD, TEXT_SELECTION
 	}
 
