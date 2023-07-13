@@ -221,8 +221,13 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	@Override
-	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
-		modifyMethodDeclaration();
+	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) {
+		try {
+			modifyMethodDeclaration();
+		} catch (JavaModelException e) {
+			fStatus.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+			return fStatus;
+		}
 
 		if (fStatus.hasError()) {
 			return fStatus;
@@ -232,7 +237,12 @@ public class MakeStaticRefactoring extends Refactoring {
 		fTargetProvider= TargetProvider.create(fTargetMethodDeclaration);
 		fTargetProvider.initialize();
 
-		handleMethodInvocations(progressMonitor);
+		try {
+			handleMethodInvocations(progressMonitor);
+		} catch (CoreException e) {
+			fStatus.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+			return fStatus;
+		}
 
 		return fStatus;
 	}
@@ -254,6 +264,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 
 		//check if method would unintentionally hide method of parent class
+
 		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(fTargetMethodhasInstanceUsage, fTargetMethod));
 
 		IType parentType= fTargetMethod.getDeclaringType();

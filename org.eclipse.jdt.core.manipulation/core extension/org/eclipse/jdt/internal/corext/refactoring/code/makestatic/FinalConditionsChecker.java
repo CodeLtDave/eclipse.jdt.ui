@@ -91,16 +91,12 @@ class FinalConditionsChecker {
 	 * @param methodhasInstanceUsage indicates if the method has any instance usage
 	 * @param iMethod the IMethod to be checked
 	 * @return the refactoring status indicating the if the method would hide its parent method
+	 * @throws JavaModelException
 	 */
-	public static RefactoringStatus checkMethodWouldHideParentMethod(boolean methodhasInstanceUsage, IMethod iMethod) {
+	public static RefactoringStatus checkMethodWouldHideParentMethod(boolean methodhasInstanceUsage, IMethod iMethod) throws JavaModelException {
 		RefactoringStatus status= new RefactoringStatus();
-		try {
-			if (!methodhasInstanceUsage && isOverriding(iMethod.getDeclaringType(), iMethod)) {
-				status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
-			}
-		} catch (JavaModelException e) {
-			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
-			e.printStackTrace();
+		if (!methodhasInstanceUsage && isOverriding(iMethod.getDeclaringType(), iMethod)) {
+			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 		}
 		return status;
 	}
