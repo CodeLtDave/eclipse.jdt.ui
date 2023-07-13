@@ -155,7 +155,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	@Override
-	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) {
 		fStatus= new RefactoringStatus();
 
 		SelectionInputType selectionInputType= fContextCalculator.getSelectionInputType();
@@ -210,8 +210,12 @@ public class MakeStaticRefactoring extends Refactoring {
 
 
 		fTargetMethod= fContextCalculator.getOrComputeTargetIMethod(); //TODO remove those which dont have to necessarily be fields
-		fTargetMethodDeclaration= fContextCalculator.getOrComputeTargetMethodDeclaration();
 		fTargetMethodBinding= fContextCalculator.getOrComputeTargetIMethodBinding();
+		try {
+			fTargetMethodDeclaration= fContextCalculator.getOrComputeTargetMethodDeclaration();
+		} catch (JavaModelException e) {
+			fStatus.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+		}
 
 		return fStatus;
 	}

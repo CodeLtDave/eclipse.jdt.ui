@@ -125,7 +125,7 @@ class ContextCalculator {
 		return fTargetICompilationUnit;
 	}
 
-	public MethodDeclaration getOrComputeTargetMethodDeclaration() {
+	public MethodDeclaration getOrComputeTargetMethodDeclaration() throws JavaModelException {
 		if (fTargetMethodDeclaration==null) {
 			calculateMethodDeclaration();
 		}
@@ -193,8 +193,9 @@ class ContextCalculator {
 
 	/**
 	 * Resolves the method declaration and binding for the target method.
+	 * @throws JavaModelException
 	 */
-	private void calculateMethodDeclaration() {
+	private void calculateMethodDeclaration() throws JavaModelException {
 		calculateTargetCompilationUnit();
 		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
 		fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
@@ -217,14 +218,7 @@ class ContextCalculator {
 		return (CompilationUnit) parser.createAST(null);
 	}
 
-	private MethodDeclaration getMethodDeclarationFromIMethod(IMethod iMethod, CompilationUnit compilationUnit) {
-		try {
-			return ASTNodeSearchUtil.getMethodDeclarationNode(iMethod, compilationUnit);
-		} catch (JavaModelException e) {
-			System.err.println("Failed to get the source range of the method: " + iMethod.getElementName()); //$NON-NLS-1$
-			System.err.println("Status: " + e.getJavaModelStatus()); //$NON-NLS-1$
-			e.printStackTrace();
-		}
-		return null;
+	private MethodDeclaration getMethodDeclarationFromIMethod(IMethod iMethod, CompilationUnit compilationUnit) throws JavaModelException {
+		return ASTNodeSearchUtil.getMethodDeclarationNode(iMethod, compilationUnit);
 	}
 }
