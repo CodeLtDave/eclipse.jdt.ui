@@ -99,14 +99,10 @@ public class ChangeCalculator {
 		return fTargetMethodhasInstanceUsage;
 	}
 
-	public RefactoringStatus modifyMethodDeclaration() throws JavaModelException {
-
-
+	public void computeMethodDeclarationEdit() throws JavaModelException {
 		//Changes can't be applied to directly to AST, edits are saved in fChangeManager
 		TextEdit methodDeclarationEdit= fTargetMethodDeclarationASTRewrite.rewriteAST();
 		addEditToChangeManager(methodDeclarationEdit, fTargetMethod.getCompilationUnit());
-
-		return fStatus;
 	}
 
 	public void rewriteInstanceUsages() {

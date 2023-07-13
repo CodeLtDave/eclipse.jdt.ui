@@ -33,9 +33,9 @@ import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ChangeCalculator;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator;
+import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator.SelectionInputType;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.FinalConditionsChecker;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.InitialConditionsChecker;
-import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator.SelectionInputType;
 
 /**
  *
@@ -200,8 +200,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		//A static method can't have override annotations
 		fChangeCalculator.deleteOverrideAnnotation();
-
-		fStatus.merge(fChangeCalculator.modifyMethodDeclaration());
+		fChangeCalculator.computeMethodDeclarationEdit();
 
 		//Find and Modify MethodInvocations
 		fStatus.merge(fChangeCalculator.handleMethodInvocations(progressMonitor));
