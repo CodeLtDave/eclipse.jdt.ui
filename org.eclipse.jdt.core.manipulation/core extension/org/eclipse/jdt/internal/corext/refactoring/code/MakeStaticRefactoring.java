@@ -185,15 +185,16 @@ public class MakeStaticRefactoring extends Refactoring {
 		fChangeCalculator.rewriteInstanceUsages();
 
 		boolean targetMethodhasInstanceUsage= fChangeCalculator.getTargetMethodhasInstanceUsage();
-		//check if method would unintentionally hide method of parent class
-		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(targetMethodhasInstanceUsage, fTargetMethod));
-		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
-		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod));
 
 		if (targetMethodhasInstanceUsage) {
 			//Adding an instance parameter to the newly static method to ensure it can still access class-level state and behavior.
 			fChangeCalculator.addInstanceAsParamIfUsed();
 		}
+
+		//check if method would unintentionally hide method of parent class
+		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(targetMethodhasInstanceUsage, fTargetMethod));
+		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
+		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod));
 
 		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
 		fStatus.merge(fChangeCalculator.updateMethodTypeParamList());
