@@ -167,63 +167,51 @@ public class MakeStaticRefactoring extends Refactoring {
 				return fStatus;
 			}
 
-			fContextCalculator.calculateSelectionASTNode();
-
-			fStatus.merge(InitialConditionsChecker.checkASTNodeIsValidMethod(fContextCalculator.getSelectionASTNode()));
+			fStatus.merge(InitialConditionsChecker.checkASTNodeIsValidMethod(fContextCalculator.getOrComputeSelectionASTNode()));
 			if (fStatus.hasError()) {
 				return fStatus;
 			}
-
-			fContextCalculator.calculateTargetIMethodBinding();
-			fContextCalculator.calculateTargetIMethod();
-		} else {
-			//SelectionInputType is IMethod (for example when performing the refactoring form the outline menu)
-			fContextCalculator.calculateTargetIMethodBinding();
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkSourceAvailable(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkSourceAvailable(fContextCalculator.getOrComputeTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkIMethodIsValid(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkIMethodIsValid(fContextCalculator.getOrComputeTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fContextCalculator.calculateTargetICompilationUnit();
-
-		fStatus.merge(InitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
+		fStatus.merge(InitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getOrComputeTargetICompilationUnit()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getOrComputeTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getOrComputeTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkMethodNotStatic(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkMethodNotStatic(fContextCalculator.getOrComputeTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkMethodNotOverridden(fContextCalculator.getTargetIMethod()));
+		fStatus.merge(InitialConditionsChecker.checkMethodNotOverridden(fContextCalculator.getOrComputeTargetIMethod()));
 		if (fStatus.hasError()) {
 			return fStatus;
 		}
 
-		fContextCalculator.calculateTargetCompilationUnit();
-		fContextCalculator.calculateMethodDeclaration();
 
-		fTargetMethod= fContextCalculator.getTargetIMethod(); //TODO remove those which dont have to necessarily be fields
-		fTargetMethodDeclaration= fContextCalculator.getTargetMethodDeclaration();
-		fTargetMethodBinding= fContextCalculator.getTargetIMethodBinding();
+		fTargetMethod= fContextCalculator.getOrComputeTargetIMethod(); //TODO remove those which dont have to necessarily be fields
+		fTargetMethodDeclaration= fContextCalculator.getOrComputeTargetMethodDeclaration();
+		fTargetMethodBinding= fContextCalculator.getOrComputeTargetIMethodBinding();
 
 		return fStatus;
 	}
@@ -289,7 +277,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	}
 
 	private String generateUniqueParameterName(String className) {
-		List<SingleVariableDeclaration> parameters= fContextCalculator.getTargetMethodInputParameters();
+		List<SingleVariableDeclaration> parameters= fTargetMethodDeclaration.parameters();
 		String classNameFirstLowerCase= Character.toLowerCase(className.charAt(0)) + className.substring(1); //makes first char lower to match name conventions
 		if (parameters == null || parameters.isEmpty()) {
 			return classNameFirstLowerCase;

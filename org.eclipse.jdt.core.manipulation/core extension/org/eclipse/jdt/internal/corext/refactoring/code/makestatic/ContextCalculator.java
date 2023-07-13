@@ -12,8 +12,6 @@
 
 package org.eclipse.jdt.internal.corext.refactoring.code.makestatic;
 
-import java.util.List;
-
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
@@ -25,7 +23,6 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NodeFinder;
-import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.Selection;
@@ -100,24 +97,39 @@ class ContextCalculator {
 		return fSelectionICompilationUnit;
 	}
 
-	public ASTNode getSelectionASTNode() {
+	public ASTNode getOrComputeSelectionASTNode() {
+		if (fSelectionASTNode==null) {
+			calculateSelectionASTNode();
+		}
 		return fSelectionASTNode;
 	}
 
-	public IMethodBinding getTargetIMethodBinding() {
+	public IMethodBinding getOrComputeTargetIMethodBinding() {
+		if(fTargetIMethodBinding==null) {
+			calculateTargetIMethodBinding();
+		}
 		return fTargetIMethodBinding;
 	}
 
-	public IMethod getTargetIMethod() {
+	public IMethod getOrComputeTargetIMethod() {
+		if(fTargetIMethod==null) {
+			calculateTargetIMethod();
+		}
 		return fTargetIMethod;
 	}
 
-	public MethodDeclaration getTargetMethodDeclaration() {
-		return fTargetMethodDeclaration;
+	public ICompilationUnit getOrComputeTargetICompilationUnit() {
+		if(fTargetICompilationUnit==null) {
+			calculateTargetICompilationUnit();
+		}
+		return fTargetICompilationUnit;
 	}
 
-	public List<SingleVariableDeclaration> getTargetMethodInputParameters() {
-		return fTargetMethodDeclaration.parameters();
+	public MethodDeclaration getOrComputeTargetMethodDeclaration() {
+		if (fTargetMethodDeclaration==null) {
+			calculateMethodDeclaration();
+		}
+		return fTargetMethodDeclaration;
 	}
 
 	/**
@@ -125,7 +137,7 @@ class ContextCalculator {
 	 * that is inside the {@link #fSelectionICompilationUnit} CompilationUnit at the
 	 * {@link #fSelectionEditorText} Selection.
 	 */
-	public void calculateSelectionASTNode() {
+	private void calculateSelectionASTNode() {
 		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
 		fSelectionASTNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
 
@@ -145,8 +157,8 @@ class ContextCalculator {
 	 * is an instance of {@link MethodInvocation} or {@link MethodDeclaration}, it resolves the
 	 * corresponding {@link IMethodBinding} from that instance.
 	 */
-	public void calculateTargetIMethodBinding() {
-		if (fSelectionASTNode instanceof MethodInvocation selectionMethodInvocation) {
+	private void calculateTargetIMethodBinding() {
+		if (getOrComputeSelectionASTNode() instanceof MethodInvocation selectionMethodInvocation) {
 			fTargetIMethodBinding= selectionMethodInvocation.resolveMethodBinding();
 		} else if (fSelectionASTNode instanceof MethodDeclaration selectionMethodDeclaration) {
 			fTargetIMethodBinding= selectionMethodDeclaration.resolveBinding();
@@ -158,8 +170,8 @@ class ContextCalculator {
 	 * IMethod represented by the {@link #fTargetIMethodBinding} and assigns it to
 	 * {@link #fTargetIMethod}
 	 */
-	public void calculateTargetIMethod() {
-		fTargetIMethod= (IMethod) fTargetIMethodBinding.getJavaElement();
+	private void calculateTargetIMethod() {
+		fTargetIMethod= (IMethod) getOrComputeTargetIMethodBinding().getJavaElement();
 	}
 
 	/**
@@ -167,22 +179,23 @@ class ContextCalculator {
 	 * declaring type of the {@link #fTargetIMethod}, then gets its associated compilation unit, and
 	 * assigns it to {@link #fTargetICompilationUnit}.
 	 */
-	public void calculateTargetICompilationUnit() {
-		fTargetICompilationUnit= fTargetIMethod.getDeclaringType().getCompilationUnit();
+	private void calculateTargetICompilationUnit() {
+		fTargetICompilationUnit= getOrComputeTargetIMethod().getDeclaringType().getCompilationUnit();
 	}
 
 	/**
 	 * Converts the target {@link ICompilationUnit} to a {@link CompilationUnit} and assigns it to
 	 * {@link #fTargetCompilationUnit}.
 	 */
-	public void calculateTargetCompilationUnit() {
-		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetICompilationUnit);
+	private void calculateTargetCompilationUnit() {
+		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(getOrComputeTargetICompilationUnit());
 	}
 
 	/**
 	 * Resolves the method declaration and binding for the target method.
 	 */
-	public void calculateMethodDeclaration() {
+	private void calculateMethodDeclaration() {
+		calculateTargetCompilationUnit();
 		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
 		fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
 	}
