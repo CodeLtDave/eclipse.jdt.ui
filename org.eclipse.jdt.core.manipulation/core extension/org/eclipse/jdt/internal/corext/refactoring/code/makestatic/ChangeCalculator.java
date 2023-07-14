@@ -50,6 +50,12 @@ import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContex
 import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 
+/**
+ * The ChangeCalculator class is responsible for calculating and managing the changes to be made
+ * during the refactoring process. It analyzes and modifies the target method's declaration, handles
+ * instance usages, adds static modifiers, updates type parameters, deletes override annotations,
+ * and modifies method invocations.
+ */
 public class ChangeCalculator {
 
 	/**
@@ -58,10 +64,22 @@ public class ChangeCalculator {
 	 */
 	private boolean fTargetMethodhasInstanceUsage;
 
+	/**
+	 * Represents the status for the calculation of changes in a refactoring operation.
+	 */
 	private RefactoringStatus fStatus;
 
+	/**
+	 * The {@code MethodDeclaration} object representing the selected method on which the
+	 * refactoring should be performed. This field is used to analyze and modify the method's
+	 * declaration during the refactoring process.
+	 */
 	private MethodDeclaration fTargetMethodDeclaration;
 
+	/**
+	 * The {@code IMethod} object representing the selected method on which the refactoring should
+	 * be performed.
+	 */
 	private IMethod fTargetMethod;
 
 	/**
@@ -69,49 +87,86 @@ public class ChangeCalculator {
 	 */
 	private TextEditBasedChangeManager fChangeManager;
 
-	private TargetProvider fTargetProvider;
-
-	private IMethodBinding fTargetMethodBinding;
-
+	/**
+	 * This AST represents the abstract syntax tree of the target method declaration used in the
+	 * refactoring process.
+	 */
 	private AST fTargetMethodDeclarationAST;
 
+	/**
+	 * This ASTRewrite object is used to modify the AST (Abstract Syntax Tree) of the target method
+	 * declaration during the refactoring process.
+	 */
 	private ASTRewrite fTargetMethodDeclarationASTRewrite;
 
-	private String fparameterName;
+	/**
+	 * The unique name of the parameter used to access instance variables or instance methods.
+	 */
+	private String fParameterName;
 
-	public ChangeCalculator(MethodDeclaration targetMethodDeclaration, IMethod targetMethod, TargetProvider targetprovider, IMethodBinding targetMethodBinding) {
+	/**
+	 * Constructs a new ChangeCalculator with the given parameters.
+	 *
+	 * @param targetMethodDeclaration The method declaration of the target method.
+	 * @param targetMethod The target method.
+	 */
+	public ChangeCalculator(MethodDeclaration targetMethodDeclaration, IMethod targetMethod) {
 		fTargetMethodDeclaration= targetMethodDeclaration;
 		fTargetMethod= targetMethod;
-		fTargetProvider= targetprovider;
-		fTargetMethodBinding= targetMethodBinding;
 		fTargetMethodDeclarationAST= fTargetMethodDeclaration.getAST();
 		fTargetMethodDeclarationASTRewrite= ASTRewrite.create(fTargetMethodDeclarationAST);
-		fparameterName= generateUniqueParameterName();
+		fParameterName= generateUniqueParameterName();
 		fChangeManager= new TextEditBasedChangeManager();
 		fStatus= new RefactoringStatus();
 	}
 
+	/**
+	 * Retrieves an array of TextEditBasedChange objects representing the changes made by the
+	 * ChangeCalculator.
+	 *
+	 * @return An array of TextEditBasedChange objects containing the changes made by the
+	 *         ChangeCalculator.
+	 */
 	public TextEditBasedChange[] getChanges() {
 		return fChangeManager.getAllChanges();
 	}
 
+	/**
+	 * Retrieves the flag indicating whether the target method has instance usage.
+	 *
+	 * @return {@code true} if the target method has instance usage, {@code false} otherwise.
+	 */
 	public boolean getTargetMethodhasInstanceUsage() {
 		return fTargetMethodhasInstanceUsage;
 	}
 
+	/**
+	 * Computes the edit for the target method declaration and adds it to the change manager.
+	 *
+	 * @throws JavaModelException is thrown when the underlying compilation units buffer could not
+	 *             be accessed.
+	 */
 	public void computeMethodDeclarationEdit() throws JavaModelException {
 		//Changes can't be applied to directly to AST, edits are saved in fChangeManager
 		TextEdit methodDeclarationEdit= fTargetMethodDeclarationASTRewrite.rewriteAST();
 		addEditToChangeManager(methodDeclarationEdit, fTargetMethod.getCompilationUnit());
 	}
 
+	/**
+	 * This method uses an InstanceUsageRewriter to rewrite the instance usages in the target method
+	 * declaration. The rewritten AST is updated in the fTargetMethodDeclarationASTRewrite. The
+	 * fTargetMethodhasInstanceUsage flag is also updated based on the instance usage rewriting.
+	 */
 	public void rewriteInstanceUsages() {
-		//Change instance Usages ("this" and "super") to paramName and set fTargetMethodhasInstanceUsage flag
-		InstanceUsageRewriter instanceUsageRewriter= new InstanceUsageRewriter(fparameterName, fTargetMethodDeclarationASTRewrite, fTargetMethodDeclarationAST, fStatus, fTargetMethodDeclaration);
+		InstanceUsageRewriter instanceUsageRewriter= new InstanceUsageRewriter(fParameterName, fTargetMethodDeclarationASTRewrite, fTargetMethodDeclarationAST, fStatus, fTargetMethodDeclaration);
 		fTargetMethodDeclaration.getBody().accept(instanceUsageRewriter);
 		fTargetMethodhasInstanceUsage= instanceUsageRewriter.fTargetMethodhasInstanceUsage;
 	}
 
+	/**
+	 * This method uses a ModifierRewrite to add the static modifier to the target method
+	 * declaration. The fTargetMethodDeclarationASTRewrite is updated with the modified AST.
+	 */
 	public void addStaticModifierToTargetMethod() {
 		ModifierRewrite modRewrite= ModifierRewrite.create(fTargetMethodDeclarationASTRewrite, fTargetMethodDeclaration);
 		modRewrite.setModifiers(fTargetMethodDeclaration.getModifiers() | Modifier.STATIC, null);
@@ -145,8 +200,16 @@ public class ChangeCalculator {
 		}
 	}
 
-	public void addInstanceAsParamIfUsed() throws JavaModelException {
-		//Add new parameter to method declaration arguments
+	/**
+	 * Adds an instance parameter to the target method declaration to ensure the access of fields or
+	 * instance methods. The new parameter is inserted at the first position in the list of
+	 * parameters. After adding the parameter, the JavaDocs associated with the target method
+	 * declaration are updated to reflect the changes.
+	 *
+	 * @throws JavaModelException is thrown when the underlying compilation units buffer could not
+	 *             be accessed.
+	 */
+	public void addInstanceAsParameterIfUsed() throws JavaModelException {
 		ListRewrite lrw= fTargetMethodDeclarationASTRewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
 		lrw.insertFirst(generateNewParameter(), null);
 		//Changes to fTargetMethodDeclaration's signature need to be adjusted in JavaDocs too
@@ -158,7 +221,7 @@ public class ChangeCalculator {
 		if (javadoc != null) {
 			TagElement newParameterTag= fTargetMethodDeclarationAST.newTagElement();
 			newParameterTag.setTagName(TagElement.TAG_PARAM);
-			newParameterTag.fragments().add(fTargetMethodDeclarationAST.newSimpleName(fparameterName));
+			newParameterTag.fragments().add(fTargetMethodDeclarationAST.newSimpleName(fParameterName));
 			ListRewrite tagsRewrite= fTargetMethodDeclarationASTRewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
 			tagsRewrite.insertFirst(newParameterTag, null);
 		}
@@ -182,11 +245,22 @@ public class ChangeCalculator {
 		} else {
 			newParam.setType(fTargetMethodDeclarationAST.newSimpleType(fTargetMethodDeclarationAST.newName(className)));
 		}
-		newParam.setName(fTargetMethodDeclarationAST.newSimpleName(fparameterName));
+		newParam.setName(fTargetMethodDeclarationAST.newSimpleName(fParameterName));
 		return newParam;
 	}
 
-	public RefactoringStatus updateMethodTypeParamList() throws JavaModelException {
+	/**
+	 * This method updates the type parameter list of the target method declaration based on the
+	 * class type parameters. If the method requires a type parameter (either because it has method
+	 * parameters of that type, or it has instance usage), and the type parameter is not already
+	 * present in the method's type parameter list, it is inserted. Additionally, the JavaDocs
+	 * associated with the target method declaration are updated to reflect the changes.
+	 *
+	 * @return The refactoring status indicating the result of the type parameter list update.
+	 * @throws JavaModelException if the type parameters of the parentType do not exist or if an
+	 *             exception occurs while accessing its corresponding resource.
+	 */
+	public RefactoringStatus updateTargetMethodTypeParamList() throws JavaModelException {
 		IType parentType= fTargetMethod.getDeclaringType();
 		ITypeParameter[] classTypeParameters= parentType.getTypeParameters();
 		ListRewrite typeParamsRewrite= fTargetMethodDeclarationASTRewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
@@ -273,6 +347,10 @@ public class ChangeCalculator {
 		}
 	}
 
+	/**
+	 * This method removes the override annotation from the modifiers of the target method
+	 * declaration. The fTargetMethodDeclarationASTRewrite is updated with the modified AST.
+	 */
 	public void deleteOverrideAnnotation() {
 		ListRewrite listRewrite= fTargetMethodDeclarationASTRewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.MODIFIERS2_PROPERTY);
 		for (Object obj : fTargetMethodDeclaration.modifiers()) {
@@ -300,22 +378,37 @@ public class ChangeCalculator {
 		fChangeManager.manage(iCompilationUnit, newCompilationUnitChange);
 	}
 
-	public RefactoringStatus handleMethodInvocations(IProgressMonitor progressMonitor) throws CoreException {
-		ICompilationUnit[] affectedICompilationUnits= fTargetProvider.getAffectedCompilationUnits(fStatus, new ReferencesInBinaryContext(""), progressMonitor); //$NON-NLS-1$
+	/**
+	 * This method retrieves all invocations of the refactored method in the affected compilation
+	 * units. It checks if there are method references to the selected method, cancels the
+	 * refactoring if found. It modifies the method invocations by applying necessary edits to the
+	 * AST. The edits are added to the change manager for each affected compilation unit.
+	 *
+	 * @param progressMonitor The progress monitor to report the progress of the operation.
+	 * @param targetMethodBinding The method binding of the target method.
+	 * @return The refactoring status indicating error messages to the user when handling method
+	 *         invocations.
+	 * @throws CoreException if an error occurs during handling method invocations.
+	 */
+	public RefactoringStatus handleMethodInvocations(IProgressMonitor progressMonitor, IMethodBinding targetMethodBinding) throws CoreException {
+		//Provides all invocations of the refactored method in the workspace.
+		TargetProvider targetProvider= TargetProvider.create(fTargetMethodDeclaration);
+		targetProvider.initialize();
+		ICompilationUnit[] affectedICompilationUnits= targetProvider.getAffectedCompilationUnits(fStatus, new ReferencesInBinaryContext(""), progressMonitor); //$NON-NLS-1$
 		for (ICompilationUnit affectedICompilationUnit : affectedICompilationUnits) {
 
 			//Check if MethodReferences use selected method -> cancel refactoring
 			CompilationUnit affectedCompilationUnit= convertICUtoCU(affectedICompilationUnit);
-			affectedCompilationUnit.accept(new MethodReferenceFinder(fStatus, fTargetMethodBinding));
+			affectedCompilationUnit.accept(new MethodReferenceFinder(fStatus, targetMethodBinding));
 
 			if (fStatus.hasFatalError()) {
 				return fStatus;
 			}
 
-			BodyDeclaration[] bodies= fTargetProvider.getAffectedBodyDeclarations(affectedICompilationUnit, null);
+			BodyDeclaration[] bodies= targetProvider.getAffectedBodyDeclarations(affectedICompilationUnit, null);
 			MultiTextEdit multiTextEdit= new MultiTextEdit();
 			for (BodyDeclaration body : bodies) {
-				ASTNode[] invocations= fTargetProvider.getInvocations(body, null);
+				ASTNode[] invocations= targetProvider.getInvocations(body, null);
 				for (ASTNode invocationASTNode : invocations) {
 					MethodInvocation invocation= (MethodInvocation) invocationASTNode;
 					modifyMethodInvocation(multiTextEdit, invocation);
@@ -331,7 +424,6 @@ public class ChangeCalculator {
 		return fStatus;
 	}
 
-	//Convert ICompialtionUnit to CompilationUnit
 	private CompilationUnit convertICUtoCU(ICompilationUnit compilationUnit) {
 		ASTParser parser= ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);

@@ -56,11 +56,6 @@ public class MakeStaticRefactoring extends Refactoring {
 	private IMethod fTargetMethod;
 
 	/**
-	 * Provides all invocations of the refactored method in the workspace.
-	 */
-	private TargetProvider fTargetProvider;
-
-	/**
 	 * The {@code MethodDeclaration} object representing the selected method on which the
 	 * refactoring should be performed. This field is used to analyze and modify the method's
 	 * declaration during the refactoring process.
@@ -202,9 +197,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
-		fTargetProvider= TargetProvider.create(fTargetMethodDeclaration);
-		fTargetProvider.initialize();
-		fChangeCalculator= new ChangeCalculator(fTargetMethodDeclaration, fTargetMethod, fTargetProvider, fTargetMethodBinding);
+		fChangeCalculator= new ChangeCalculator(fTargetMethodDeclaration, fTargetMethod);
 
 		fChangeCalculator.addStaticModifierToTargetMethod();
 
@@ -215,7 +208,7 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		if (targetMethodhasInstanceUsage) {
 			//Adding an instance parameter to the newly static method to ensure it can still access class-level state and behavior.
-			fChangeCalculator.addInstanceAsParamIfUsed();
+			fChangeCalculator.addInstanceAsParameterIfUsed();
 		}
 
 		//check if method would unintentionally hide method of parent class
@@ -224,19 +217,17 @@ public class MakeStaticRefactoring extends Refactoring {
 		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod));
 
 		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
-		fStatus.merge(fChangeCalculator.updateMethodTypeParamList());
+		fStatus.merge(fChangeCalculator.updateTargetMethodTypeParamList());
 
 		//A static method can't have override annotations
 		fChangeCalculator.deleteOverrideAnnotation();
 		fChangeCalculator.computeMethodDeclarationEdit();
 
 		//Find and modify MethodInvocations
-		fStatus.merge(fChangeCalculator.handleMethodInvocations(progressMonitor));
+		fStatus.merge(fChangeCalculator.handleMethodInvocations(progressMonitor, fTargetMethodBinding));
 
 		return fStatus;
 	}
-
-
 
 	/**
 	 * {@inheritDoc}
