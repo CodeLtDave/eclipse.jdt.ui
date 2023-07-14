@@ -185,10 +185,8 @@ public class ChangeCalculator {
 		while (true) {
 			for (SingleVariableDeclaration param : parameters) {
 				String paramString= param.getName().getIdentifier();
-				if (!(combinedName.equals(paramString))) {
-					duplicateExists= false;
-				} else {
-					duplicateExists= true;
+				duplicateExists= combinedName.equals(paramString);
+				if (duplicateExists) {
 					break;
 				}
 			}
