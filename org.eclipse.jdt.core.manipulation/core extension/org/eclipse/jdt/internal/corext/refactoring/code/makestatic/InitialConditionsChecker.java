@@ -35,6 +35,12 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
  */
 public class InitialConditionsChecker {
 
+	private RefactoringStatus fStatus;
+
+	public InitialConditionsChecker(RefactoringStatus status) {
+		fStatus= status;
+	}
+
 	/**
 	 * Checks if the start position of a text selection is valid. A Selection is valid if the offset
 	 * and lengt are greater zero.
@@ -43,12 +49,11 @@ public class InitialConditionsChecker {
 	 *
 	 * @return the refactoring status indicating the validity of the selection
 	 */
-	public static RefactoringStatus checkTextSelectionStart(Selection selection) {
-		RefactoringStatus status= new RefactoringStatus();
+	public boolean checkValidTextSelectionStart(Selection selection) {
 		if (selection.getOffset() < 0 || selection.getLength() < 0) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		}
-		return status;
+		return fStatus.hasError() ? true : false;
 	}
 
 	/**
@@ -57,12 +62,11 @@ public class InitialConditionsChecker {
 	 * @param iCompilationUnit the ICompilationUnit to be checked
 	 * @return the refactoring status indicating the validity of the ICompilationUnit
 	 */
-	public static RefactoringStatus checkValidICompilationUnit(ICompilationUnit iCompilationUnit) {
-		RefactoringStatus status= new RefactoringStatus();
+	public boolean checkValidICompilationUnit(ICompilationUnit iCompilationUnit) {
 		if (iCompilationUnit == null) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		}
-		return status;
+		return fStatus.hasError() ? true : false;
 	}
 
 
@@ -75,17 +79,16 @@ public class InitialConditionsChecker {
 	 *
 	 * @return the refactoring status indicating the validity of the selectedNode
 	 */
-	public static RefactoringStatus checkASTNodeIsValidMethod(ASTNode selectedNode) {
-		RefactoringStatus status= new RefactoringStatus();
+	public boolean checkASTNodeIsValidMethod(ASTNode selectedNode) {
 		if (selectedNode == null) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		} else if (selectedNode instanceof SuperMethodInvocation) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_super_method_invocations));
 		}
 		if (!(selectedNode instanceof MethodDeclaration || selectedNode instanceof MethodInvocation)) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		}
-		return status;
+		return fStatus.hasError() ? true : false;
 	}
 
 
@@ -97,21 +100,20 @@ public class InitialConditionsChecker {
 	 *
 	 * @return the refactoring status indicating the validity of the IMethod
 	 */
-	public static RefactoringStatus checkIMethodIsValid(IMethod iMethod) {
-		RefactoringStatus status= new RefactoringStatus();
+	public boolean checkValidIMethod(IMethod iMethod) {
 		if (iMethod == null) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		}
 
 		try {
 			if (iMethod.getDeclaringType().isAnnotation()) {
-				status.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
+				fStatus.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
 			}
 		} catch (JavaModelException e) {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return status;
+		return fStatus.hasError() ? true : false;
 	}
 
 	/**
@@ -120,17 +122,16 @@ public class InitialConditionsChecker {
 	 * @param iMethod the IMethod to be checked
 	 * @return the refactoring status indicating the validity of the method's declaring type
 	 */
-	public static RefactoringStatus checkMethodNotInLocalOrAnonymousClass(IMethod iMethod) {
-		RefactoringStatus status= new RefactoringStatus();
+	public boolean checkMethodNotInLocalOrAnonymousClass(IMethod iMethod) {
 		try {
 			if (iMethod.getDeclaringType().isLocal() || iMethod.getDeclaringType().isAnonymous()) {
-				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types);
+				fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types));
 			}
 		} catch (JavaModelException e) {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return status;
+		return fStatus.hasError() ? true : false;
 	}
 
 	/**
@@ -139,17 +140,16 @@ public class InitialConditionsChecker {
 	 * @param iMethod the IMethod to be checked
 	 * @return the refactoring status indicating the validity of the method
 	 */
-	public static RefactoringStatus checkMethodIsNotConstructor(IMethod iMethod) {
-		RefactoringStatus status= new RefactoringStatus();
+	public boolean checkMethodIsNotConstructor(IMethod iMethod) {
 		try {
 			if (iMethod.isConstructor()) {
-				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors);
+				fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors));
 			}
 		} catch (JavaModelException e) {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return status;
+		return fStatus.hasError() ? true : false;
 	}
 
 	/**
@@ -158,18 +158,17 @@ public class InitialConditionsChecker {
 	 * @param iMethod the IMethod to be checked
 	 * @return the refactoring status indicating the validity of the method
 	 */
-	public static RefactoringStatus checkMethodNotStatic(IMethod iMethod) {
-		RefactoringStatus status= new RefactoringStatus();
+	public boolean checkMethodNotStatic(IMethod iMethod) {
 		try {
 			int flags= iMethod.getFlags();
 			if (Modifier.isStatic(flags)) {
-				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static);
+				fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static));
 			}
 		} catch (JavaModelException e) {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return status;
+		return fStatus.hasError() ? true : false;
 	}
 
 	/**
@@ -178,17 +177,16 @@ public class InitialConditionsChecker {
 	 * @param iMethod the IMethod to be checked
 	 * @return the refactoring status indicating the validity of the method's override status
 	 */
-	public static RefactoringStatus checkMethodNotOverridden(IMethod iMethod) {
-		RefactoringStatus status= new RefactoringStatus();
+	public boolean checkMethodNotOverridden(IMethod iMethod) {
 		try {
 			if (isOverridden(iMethod.getDeclaringType(), iMethod)) {
-				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype);
+				fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype));
 			}
 		} catch (JavaModelException e) {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return status;
+		return fStatus.hasError() ? true : false;
 	}
 
 	/**
@@ -197,15 +195,14 @@ public class InitialConditionsChecker {
 	 * @param iMethod the IMethod to be checked
 	 * @return the refactoring status indicating the availability of the source code
 	 */
-	public static RefactoringStatus checkSourceAvailable(IMethod iMethod) {
-		RefactoringStatus status= new RefactoringStatus();
+	public boolean checkSourceAvailable(IMethod iMethod) {
 		if (iMethod.getCompilationUnit() == null) {
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method);
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method));
 		}
-		return status;
+		return fStatus.hasError() ? true : false;
 	}
 
-	private static boolean isOverridden(IType type, IMethod iMethod) throws JavaModelException { //TODO duplicate isOverriding()?
+	private boolean isOverridden(IType type, IMethod iMethod) throws JavaModelException {
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] subtypes= hierarchy.getAllSubtypes(type);
 		for (IType subtype : subtypes) {

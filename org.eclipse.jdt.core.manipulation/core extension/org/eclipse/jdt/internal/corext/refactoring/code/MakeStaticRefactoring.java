@@ -126,55 +126,47 @@ public class MakeStaticRefactoring extends Refactoring {
 		fStatus= new RefactoringStatus();
 
 		SelectionInputType selectionInputType= fContextCalculator.getSelectionInputType();
+		InitialConditionsChecker checker= new InitialConditionsChecker(fStatus);
 
 		if (selectionInputType == SelectionInputType.TEXT_SELECTION) {
-			fStatus.merge(InitialConditionsChecker.checkTextSelectionStart(fContextCalculator.getSelectionEditorText()));
-			fStatus.merge(InitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit()));
-			if (fStatus.hasError()) {
+			if (!checker.checkValidTextSelectionStart(fContextCalculator.getSelectionEditorText())) {
 				return fStatus;
 			}
-
-			fStatus.merge(InitialConditionsChecker.checkASTNodeIsValidMethod(fContextCalculator.getOrComputeSelectionASTNode()));
-			if (fStatus.hasError()) {
+			if (!checker.checkValidICompilationUnit(fContextCalculator.getSelectionICompilationUnit())) {
+				return fStatus;
+			}
+			if (!checker.checkASTNodeIsValidMethod(fContextCalculator.getOrComputeSelectionASTNode())) {
 				return fStatus;
 			}
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkSourceAvailable(fContextCalculator.getOrComputeTargetIMethod()));
-		if (fStatus.hasError()) {
+		if (!checker.checkSourceAvailable(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkIMethodIsValid(fContextCalculator.getOrComputeTargetIMethod()));
-		if (fStatus.hasError()) {
+		if (!checker.checkValidIMethod(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkValidICompilationUnit(fContextCalculator.getOrComputeTargetICompilationUnit()));
-		if (fStatus.hasError()) {
+		if (!checker.checkValidICompilationUnit(fContextCalculator.getOrComputeTargetICompilationUnit())) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkMethodIsNotConstructor(fContextCalculator.getOrComputeTargetIMethod()));
-		if (fStatus.hasError()) {
+		if (!checker.checkMethodIsNotConstructor(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getOrComputeTargetIMethod()));
-		if (fStatus.hasError()) {
+		if (!checker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkMethodNotStatic(fContextCalculator.getOrComputeTargetIMethod()));
-		if (fStatus.hasError()) {
+		if (!checker.checkMethodNotStatic(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
 
-		fStatus.merge(InitialConditionsChecker.checkMethodNotOverridden(fContextCalculator.getOrComputeTargetIMethod()));
-		if (fStatus.hasError()) {
+		if (!checker.checkMethodNotOverridden(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-
 
 		fTargetMethod= fContextCalculator.getOrComputeTargetIMethod(); //TODO remove those which dont have to necessarily be fields
 		fTargetMethodBinding= fContextCalculator.getOrComputeTargetIMethodBinding();
