@@ -181,7 +181,7 @@ public class ChangeCalculator {
 		}
 		boolean duplicateExists= false;
 		String combinedName= classNameFirstLowerCase;
-		int counter= 2;
+		int incrementingSuffix= 2;
 		do {
 			for (SingleVariableDeclaration param : parameters) {
 				String paramString= param.getName().getIdentifier();
@@ -190,7 +190,7 @@ public class ChangeCalculator {
 			if (!duplicateExists) {
 				return combinedName;
 			} else {
-				combinedName= classNameFirstLowerCase + counter++;
+				combinedName= classNameFirstLowerCase + incrementingSuffix++;
 			}
 		} while (duplicateExists);
 		return combinedName;
