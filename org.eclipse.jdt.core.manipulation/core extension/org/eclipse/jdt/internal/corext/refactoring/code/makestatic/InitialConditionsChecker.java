@@ -47,26 +47,26 @@ public class InitialConditionsChecker {
 	 *
 	 * @param selection the text selection to be checked
 	 *
-	 * @return the refactoring status indicating the validity of the selection
+	 * @return {@code true} if the selection is valid, {@code false} otherwise.
 	 */
 	public boolean checkValidTextSelectionStart(Selection selection) {
 		if (selection.getOffset() < 0 || selection.getLength() < 0) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		}
-		return fStatus.hasError() ? true : false;
+		return !fStatus.hasError();
 	}
 
 	/**
 	 * Checks the validity of an ICompilationUnit. The ICompilationUnit is valid if it not null.
 	 *
 	 * @param iCompilationUnit the ICompilationUnit to be checked
-	 * @return the refactoring status indicating the validity of the ICompilationUnit
+	 * @return {@code true} if the ICompilationUnit is valid, {@code false} otherwise.
 	 */
 	public boolean checkValidICompilationUnit(ICompilationUnit iCompilationUnit) {
 		if (iCompilationUnit == null) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		}
-		return fStatus.hasError() ? true : false;
+		return !fStatus.hasError();
 	}
 
 
@@ -77,7 +77,7 @@ public class InitialConditionsChecker {
 	 *
 	 * @param selectedNode the ASTNode to be checked
 	 *
-	 * @return the refactoring status indicating the validity of the selectedNode
+	 * @return {@code true} if the ASTNode is a valid method, {@code false} otherwise.
 	 */
 	public boolean checkASTNodeIsValidMethod(ASTNode selectedNode) {
 		if (selectedNode == null) {
@@ -88,7 +88,7 @@ public class InitialConditionsChecker {
 		if (!(selectedNode instanceof MethodDeclaration || selectedNode instanceof MethodInvocation)) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
 		}
-		return fStatus.hasError() ? true : false;
+		return !fStatus.hasError();
 	}
 
 
@@ -98,7 +98,7 @@ public class InitialConditionsChecker {
 	 *
 	 * @param iMethod the IMethod to be checked
 	 *
-	 * @return the refactoring status indicating the validity of the IMethod
+	 * @return {@code true} if the IMethod is valid, {@code false} otherwise.
 	 */
 	public boolean checkValidIMethod(IMethod iMethod) {
 		if (iMethod == null) {
@@ -113,14 +113,15 @@ public class InitialConditionsChecker {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return fStatus.hasError() ? true : false;
+		return !fStatus.hasError();
 	}
 
 	/**
 	 * Checks if the method is not declared in a local or anonymous class.
 	 *
 	 * @param iMethod the IMethod to be checked
-	 * @return the refactoring status indicating the validity of the method's declaring type
+	 * @return {@code true} if the Method is not in a local or anonymous class, {@code false}
+	 *         otherwise.
 	 */
 	public boolean checkMethodNotInLocalOrAnonymousClass(IMethod iMethod) {
 		try {
@@ -131,14 +132,14 @@ public class InitialConditionsChecker {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return fStatus.hasError() ? true : false;
+		return !fStatus.hasError();
 	}
 
 	/**
 	 * Checks if the method is not a constructor.
 	 *
 	 * @param iMethod the IMethod to be checked
-	 * @return the refactoring status indicating the validity of the method
+	 * @return {@code true} if the method is not a constructor, {@code false} otherwise.
 	 */
 	public boolean checkMethodIsNotConstructor(IMethod iMethod) {
 		try {
@@ -149,14 +150,14 @@ public class InitialConditionsChecker {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return fStatus.hasError() ? true : false;
+		return !fStatus.hasError();
 	}
 
 	/**
 	 * Checks if the method is not already static.
 	 *
 	 * @param iMethod the IMethod to be checked
-	 * @return the refactoring status indicating the validity of the method
+	 * @return {@code true} if the method is not static, {@code false} otherwise.
 	 */
 	public boolean checkMethodNotStatic(IMethod iMethod) {
 		try {
@@ -168,14 +169,14 @@ public class InitialConditionsChecker {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return fStatus.hasError() ? true : false;
+		return !fStatus.hasError();
 	}
 
 	/**
 	 * Checks if the method is not overridden in any subtype.
 	 *
 	 * @param iMethod the IMethod to be checked
-	 * @return the refactoring status indicating the validity of the method's override status
+	 * @return {@code true} if the method is not overridden, {@code false} otherwise.
 	 */
 	public boolean checkMethodNotOverridden(IMethod iMethod) {
 		try {
@@ -186,20 +187,20 @@ public class InitialConditionsChecker {
 			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
 			e.printStackTrace();
 		}
-		return fStatus.hasError() ? true : false;
+		return !fStatus.hasError();
 	}
 
 	/**
 	 * Checks if the source code is available for the selected method.
 	 *
 	 * @param iMethod the IMethod to be checked
-	 * @return the refactoring status indicating the availability of the source code
+	 * @return {@code true} if the source is available, {@code false} otherwise.
 	 */
 	public boolean checkSourceAvailable(IMethod iMethod) {
 		if (iMethod.getCompilationUnit() == null) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method));
 		}
-		return fStatus.hasError() ? true : false;
+		return !fStatus.hasError();
 	}
 
 	private boolean isOverridden(IType type, IMethod iMethod) throws JavaModelException {
