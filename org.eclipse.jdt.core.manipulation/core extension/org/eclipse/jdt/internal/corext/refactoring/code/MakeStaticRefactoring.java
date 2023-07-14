@@ -99,8 +99,6 @@ public class MakeStaticRefactoring extends Refactoring {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * Returns the name of the refactoring operation.
-	 *
 	 * @return The name of the refactoring operation.
 	 */
 	@Override
