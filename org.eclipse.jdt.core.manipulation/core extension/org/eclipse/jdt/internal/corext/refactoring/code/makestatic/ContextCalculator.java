@@ -193,7 +193,7 @@ public class ContextCalculator {
 
 	/**
 	 * Resolves the method declaration and binding for the target method.
-	 * @throws JavaModelException
+	 * @throws JavaModelException if the target method or the target compilationUnit is invalid.
 	 */
 	private void calculateMethodDeclaration() throws JavaModelException {
 		calculateTargetCompilationUnit();
