@@ -77,10 +77,24 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	private IMethodBinding fTargetMethodBinding;
 
+	/**
+	 * The context calculator is used to calculate the necessary context for the initial conditions
+	 * check of the refactoring operation.
+	 */
 	private ContextCalculator fContextCalculator;
 
+	/**
+	 * This calculator calculates the changes that are made during the refactoring process.
+	 */
 	private ChangeCalculator fChangeCalculator;
 
+	/**
+	 * Constructs a new {@code MakeStaticRefactoring} object with the given parameters.
+	 *
+	 * @param inputAsICompilationUnit The input ICompilationUnit for the refactoring.
+	 * @param selectionStart The starting position of the target selection.
+	 * @param selectionLength The length of the target selection.
+	 */
 	public MakeStaticRefactoring(ICompilationUnit inputAsICompilationUnit, int selectionStart, int selectionLength) {
 		Selection targetSelection= Selection.createFromStartLength(selectionStart, selectionLength);
 		fContextCalculator= new ContextCalculator(inputAsICompilationUnit, targetSelection);
@@ -106,6 +120,12 @@ public class MakeStaticRefactoring extends Refactoring {
 		return RefactoringCoreMessages.MakeStaticRefactoring_name;
 	}
 
+	/**
+	 * Checks the initial conditions required for the refactoring process.
+	 *
+	 * @param pm The progress monitor to report the progress of the operation.
+	 * @return The refactoring status indicating the result of the initial conditions check.
+	 */
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) {
 		fStatus= new RefactoringStatus();
@@ -173,6 +193,13 @@ public class MakeStaticRefactoring extends Refactoring {
 		return fStatus;
 	}
 
+	/**
+	 * Checks the final conditions required for the refactoring process.
+	 *
+	 * @param progressMonitor The progress monitor to report the progress of the operation.
+	 * @return The refactoring status indicating the result of the final conditions check.
+	 * @throws CoreException if an error occurs during the final conditions check.
+	 */
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
 		fTargetProvider= TargetProvider.create(fTargetMethodDeclaration);
@@ -180,6 +207,8 @@ public class MakeStaticRefactoring extends Refactoring {
 		fChangeCalculator= new ChangeCalculator(fTargetMethodDeclaration, fTargetMethod, fTargetProvider, fTargetMethodBinding);
 
 		fChangeCalculator.addStaticModifierToTargetMethod();
+
+		//Change instance Usages ("this" and "super") to paramName and set fTargetMethodhasInstanceUsage flag
 		fChangeCalculator.rewriteInstanceUsages();
 
 		boolean targetMethodhasInstanceUsage= fChangeCalculator.getTargetMethodhasInstanceUsage();
@@ -201,7 +230,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		fChangeCalculator.deleteOverrideAnnotation();
 		fChangeCalculator.computeMethodDeclarationEdit();
 
-		//Find and Modify MethodInvocations
+		//Find and modify MethodInvocations
 		fStatus.merge(fChangeCalculator.handleMethodInvocations(progressMonitor));
 
 		return fStatus;
