@@ -182,20 +182,18 @@ public class ChangeCalculator {
 		boolean duplicateExists= false;
 		String combinedName= classNameFirstLowerCase;
 		int counter= 2;
-		while (true) {
+		do {
 			for (SingleVariableDeclaration param : parameters) {
 				String paramString= param.getName().getIdentifier();
 				duplicateExists= combinedName.equals(paramString);
-				if (duplicateExists) {
-					break;
-				}
 			}
-			if (duplicateExists) {
-				combinedName= classNameFirstLowerCase + counter++;
-			} else {
+			if (!duplicateExists) {
 				return combinedName;
+			} else {
+				combinedName= classNameFirstLowerCase + counter++;
 			}
-		}
+		} while (duplicateExists);
+		return combinedName;
 	}
 
 	/**
