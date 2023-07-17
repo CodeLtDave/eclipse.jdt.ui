@@ -26,7 +26,6 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 import org.eclipse.jdt.internal.corext.dom.Selection;
@@ -50,12 +49,6 @@ import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.InitialCondit
 public class MakeStaticRefactoring extends Refactoring {
 
 	/**
-	 * The {@code IMethod} object representing the selected method on which the refactoring should
-	 * be performed.
-	 */
-	private IMethod fTargetMethod;
-
-	/**
 	 * The {@code MethodDeclaration} object representing the selected method on which the
 	 * refactoring should be performed. This field is used to analyze and modify the method's
 	 * declaration during the refactoring process.
@@ -66,11 +59,6 @@ public class MakeStaticRefactoring extends Refactoring {
 	 * Represents the status of a refactoring operation.
 	 */
 	private RefactoringStatus fStatus;
-
-	/**
-	 * The {@code IMethodBinding} object representing the binding of the refactored method.
-	 */
-	private IMethodBinding fTargetMethodBinding;
 
 	/**
 	 * The context calculator is used to calculate the necessary context for the initial conditions
@@ -168,9 +156,6 @@ public class MakeStaticRefactoring extends Refactoring {
 			return fStatus;
 		}
 
-		fTargetMethod= fContextCalculator.getOrComputeTargetIMethod(); //TODO remove those which dont have to necessarily be fields
-		fTargetMethodBinding= fContextCalculator.getOrComputeTargetIMethodBinding();
-
 		try {
 			fTargetMethodDeclaration= fContextCalculator.getOrComputeTargetMethodDeclaration();
 		} catch (JavaModelException e) {
@@ -189,7 +174,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
-		fChangeCalculator= new ChangeCalculator(fTargetMethodDeclaration, fTargetMethod);
+		fChangeCalculator= new ChangeCalculator(fTargetMethodDeclaration, fContextCalculator.getOrComputeTargetIMethod());
 
 		fChangeCalculator.addStaticModifierToTargetMethod();
 
@@ -204,9 +189,9 @@ public class MakeStaticRefactoring extends Refactoring {
 		}
 
 		//check if method would unintentionally hide method of parent class
-		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(targetMethodhasInstanceUsage, fTargetMethod));
+		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(targetMethodhasInstanceUsage, fContextCalculator.getOrComputeTargetIMethod()));
 		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
-		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod));
+		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fContextCalculator.getOrComputeTargetIMethod()));
 
 		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
 		fStatus.merge(fChangeCalculator.updateTargetMethodTypeParamList());
@@ -216,7 +201,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		fChangeCalculator.computeMethodDeclarationEdit();
 
 		//Find and modify MethodInvocations
-		fStatus.merge(fChangeCalculator.handleMethodInvocations(progressMonitor, fTargetMethodBinding));
+		fStatus.merge(fChangeCalculator.handleMethodInvocations(progressMonitor, fContextCalculator.getOrComputeTargetIMethodBinding()));
 
 		return fStatus;
 	}

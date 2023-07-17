@@ -45,8 +45,15 @@ public class ContextCalculator {
 
 	private ASTNode fSelectionASTNode;
 
+	/**
+	 * The {@code IMethodBinding} object representing the binding of the refactored method.
+	 */
 	private IMethodBinding fTargetIMethodBinding;
 
+	/**
+	 * The {@code IMethod} object representing the selected method on which the refactoring should
+	 * be performed.
+	 */
 	private IMethod fTargetIMethod;
 
 	private ICompilationUnit fTargetICompilationUnit;
@@ -98,35 +105,35 @@ public class ContextCalculator {
 	}
 
 	public ASTNode getOrComputeSelectionASTNode() {
-		if (fSelectionASTNode==null) {
+		if (fSelectionASTNode == null) {
 			calculateSelectionASTNode();
 		}
 		return fSelectionASTNode;
 	}
 
 	public IMethodBinding getOrComputeTargetIMethodBinding() {
-		if(fTargetIMethodBinding==null) {
+		if (fTargetIMethodBinding == null) {
 			calculateTargetIMethodBinding();
 		}
 		return fTargetIMethodBinding;
 	}
 
 	public IMethod getOrComputeTargetIMethod() {
-		if(fTargetIMethod==null) {
+		if (fTargetIMethod == null) {
 			calculateTargetIMethod();
 		}
 		return fTargetIMethod;
 	}
 
 	public ICompilationUnit getOrComputeTargetICompilationUnit() {
-		if(fTargetICompilationUnit==null) {
+		if (fTargetICompilationUnit == null) {
 			calculateTargetICompilationUnit();
 		}
 		return fTargetICompilationUnit;
 	}
 
 	public MethodDeclaration getOrComputeTargetMethodDeclaration() throws JavaModelException {
-		if (fTargetMethodDeclaration==null) {
+		if (fTargetMethodDeclaration == null) {
 			calculateMethodDeclaration();
 		}
 		return fTargetMethodDeclaration;
@@ -193,6 +200,7 @@ public class ContextCalculator {
 
 	/**
 	 * Resolves the method declaration and binding for the target method.
+	 *
 	 * @throws JavaModelException if the target method or the target compilationUnit is invalid.
 	 */
 	private void calculateMethodDeclaration() throws JavaModelException {
