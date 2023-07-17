@@ -26,7 +26,6 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
@@ -46,13 +45,6 @@ import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.InitialCondit
  *
  */
 public class MakeStaticRefactoring extends Refactoring {
-
-	/**
-	 * The {@code MethodDeclaration} object representing the selected method on which the
-	 * refactoring should be performed. This field is used to analyze and modify the method's
-	 * declaration during the refactoring process.
-	 */
-	private MethodDeclaration fTargetMethodDeclaration;
 
 	/**
 	 * Represents the status of a refactoring operation.
@@ -168,7 +160,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
-		fChangeCalculator= new ChangeCalculator(fTargetMethodDeclaration, fContextCalculator.getOrComputeTargetIMethod());
+		fChangeCalculator= new ChangeCalculator(fContextCalculator.getOrComputeTargetMethodDeclaration(), fContextCalculator.getOrComputeTargetIMethod());
 
 		fChangeCalculator.addStaticModifierToTargetMethod();
 
