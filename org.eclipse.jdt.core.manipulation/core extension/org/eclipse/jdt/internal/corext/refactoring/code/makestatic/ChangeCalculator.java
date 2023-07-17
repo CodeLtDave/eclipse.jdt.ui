@@ -59,12 +59,6 @@ import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManag
 public class ChangeCalculator {
 
 	/**
-	 * Indicates whether there is access to instance variables or instance methods within the body
-	 * of the method.
-	 */
-	private boolean fTargetMethodhasInstanceUsage;
-
-	/**
 	 * Represents the status for the calculation of changes in a refactoring operation.
 	 */
 	private RefactoringStatus fStatus;
@@ -104,6 +98,8 @@ public class ChangeCalculator {
 	 */
 	private String fParameterName;
 
+	private InstanceUsageRewriter fInstanceUsageRewriter;
+
 	/**
 	 * Constructs a new ChangeCalculator with the given parameters.
 	 *
@@ -132,21 +128,12 @@ public class ChangeCalculator {
 	}
 
 	/**
-	 * Retrieves the flag indicating whether the target method has instance usage.
-	 *
-	 * @return {@code true} if the target method has instance usage, {@code false} otherwise.
-	 */
-	public boolean getTargetMethodhasInstanceUsage() {
-		return fTargetMethodhasInstanceUsage;
-	}
-
-	/**
 	 * Computes the edit for the target method declaration and adds it to the change manager.
 	 *
 	 * @throws JavaModelException is thrown when the underlying compilation units buffer could not
 	 *             be accessed.
 	 */
-	public void computeMethodDeclarationEdit() throws JavaModelException {
+	private void computeMethodDeclarationEdit() throws JavaModelException {
 		//Changes can't be applied to directly to AST, edits are saved in fChangeManager
 		TextEdit methodDeclarationEdit= fTargetMethodDeclarationASTRewrite.rewriteAST();
 		addEditToChangeManager(methodDeclarationEdit, fTargetMethod.getCompilationUnit());
@@ -159,22 +146,40 @@ public class ChangeCalculator {
 	 *
 	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public void rewriteInstanceUsages() throws JavaModelException {
-		InstanceUsageRewriter instanceUsageRewriter= new InstanceUsageRewriter(fParameterName, fTargetMethodDeclarationASTRewrite, fTargetMethodDeclarationAST, fStatus, fTargetMethodDeclaration);
-		fTargetMethodDeclaration.getBody().accept(instanceUsageRewriter);
-		fTargetMethodhasInstanceUsage= instanceUsageRewriter.fTargetMethodhasInstanceUsage;
+	private void rewriteInstanceUsages() throws JavaModelException {
+		fInstanceUsageRewriter= new InstanceUsageRewriter(fParameterName, fTargetMethodDeclarationASTRewrite, fTargetMethodDeclarationAST, fStatus, fTargetMethodDeclaration);
+		fTargetMethodDeclaration.getBody().accept(fInstanceUsageRewriter);
 
 		//check if method would unintentionally hide method of parent class
-		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(fTargetMethodhasInstanceUsage, fTargetMethod));
+		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(fInstanceUsageRewriter.getTargetMethodhasInstanceUsage(), fTargetMethod));
 		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
 		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod));
+	}
+
+	public void modifyMethodDeclaration() throws JavaModelException {
+		addStaticModifierToTargetMethod();
+
+		//Change instance Usages ("this" and "super") to paramName and set fTargetMethodhasInstanceUsage flag
+		rewriteInstanceUsages();
+
+		if (fInstanceUsageRewriter.getTargetMethodhasInstanceUsage()) {
+			//Adding an instance parameter to the newly static method to ensure it can still access class-level state and behavior.
+			addInstanceAsParameterIfUsed();
+		}
+
+		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
+		fStatus.merge(updateTargetMethodTypeParamList());
+
+		//A static method can't have override annotations
+		deleteOverrideAnnotation();
+		computeMethodDeclarationEdit();
 	}
 
 	/**
 	 * This method uses a ModifierRewrite to add the static modifier to the target method
 	 * declaration. The fTargetMethodDeclarationASTRewrite is updated with the modified AST.
 	 */
-	public void addStaticModifierToTargetMethod() {
+	private void addStaticModifierToTargetMethod() {
 		ModifierRewrite modRewrite= ModifierRewrite.create(fTargetMethodDeclarationASTRewrite, fTargetMethodDeclaration);
 		modRewrite.setModifiers(fTargetMethodDeclaration.getModifiers() | Modifier.STATIC, null);
 	}
@@ -212,7 +217,7 @@ public class ChangeCalculator {
 	 * @throws JavaModelException is thrown when the underlying compilation units buffer could not
 	 *             be accessed.
 	 */
-	public void addInstanceAsParameterIfUsed() throws JavaModelException {
+	private void addInstanceAsParameterIfUsed() throws JavaModelException {
 		ListRewrite lrw= fTargetMethodDeclarationASTRewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.PARAMETERS_PROPERTY);
 		lrw.insertFirst(generateNewParameter(), null);
 		//Changes to fTargetMethodDeclaration's signature need to be adjusted in JavaDocs too
@@ -263,7 +268,7 @@ public class ChangeCalculator {
 	 * @throws JavaModelException if the type parameters of the parentType do not exist or if an
 	 *             exception occurs while accessing its corresponding resource.
 	 */
-	public RefactoringStatus updateTargetMethodTypeParamList() throws JavaModelException {
+	private RefactoringStatus updateTargetMethodTypeParamList() throws JavaModelException {
 		IType parentType= fTargetMethod.getDeclaringType();
 		ITypeParameter[] classTypeParameters= parentType.getTypeParameters();
 		ListRewrite typeParamsRewrite= fTargetMethodDeclarationASTRewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
@@ -282,7 +287,7 @@ public class ChangeCalculator {
 				String typeParamName= typeParameter.getName().getIdentifier();
 				String typeParamNameAsArray= typeParamName + "[]"; //$NON-NLS-1$
 				boolean paramIsNeeded= methodParameterTypes.contains(typeParamName) || methodParameterTypes.contains(typeParamNameAsArray);
-				if (fTargetMethodhasInstanceUsage || paramIsNeeded) {
+				if (fInstanceUsageRewriter.getTargetMethodhasInstanceUsage() || paramIsNeeded) {
 					//only insert if typeParam not already existing
 					if (!methodTypeParametersNames.contains(typeParameter.getName().getIdentifier())) {
 						typeParamsRewrite.insertLast(typeParameter, null);
@@ -354,7 +359,7 @@ public class ChangeCalculator {
 	 * This method removes the override annotation from the modifiers of the target method
 	 * declaration. The fTargetMethodDeclarationASTRewrite is updated with the modified AST.
 	 */
-	public void deleteOverrideAnnotation() {
+	private void deleteOverrideAnnotation() {
 		ListRewrite listRewrite= fTargetMethodDeclarationASTRewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.MODIFIERS2_PROPERTY);
 		for (Object obj : fTargetMethodDeclaration.modifiers()) {
 			if (obj instanceof org.eclipse.jdt.core.dom.MarkerAnnotation markerAnnotation) {
@@ -440,7 +445,7 @@ public class ChangeCalculator {
 		AST ast= invocation.getAST();
 		ASTRewrite rewrite= ASTRewrite.create(ast);
 
-		if (fTargetMethodhasInstanceUsage) {
+		if (fInstanceUsageRewriter.getTargetMethodhasInstanceUsage()) {
 			ASTNode newArg;
 			if (invocation.getExpression() != null) {
 				newArg= ASTNode.copySubtree(ast, invocation.getExpression()); // copy the expression
