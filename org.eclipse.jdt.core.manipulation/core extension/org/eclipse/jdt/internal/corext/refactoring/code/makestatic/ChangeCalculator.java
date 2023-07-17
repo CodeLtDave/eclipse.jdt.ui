@@ -156,21 +156,39 @@ public class ChangeCalculator {
 		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod));
 	}
 
+	/**
+	 * Modifies the method declaration by performing a series of transformations and updates. This
+	 * method is used to convert an instance method to a static method. The following steps are
+	 * executed in order:
+	 *
+	 * 1. Add the 'static' modifier to the target method.
+	 *
+	 * 2. Change instance usages ("this" and "super") within the method body to a specified
+	 * parameter name. Also, set the 'fTargetMethodhasInstanceUsage' flag if there were instance
+	 * usages found.
+	 *
+	 * 3. If the 'fTargetMethodhasInstanceUsage' flag is set (i.e., the method had instance usages):
+	 * Add an instance parameter to the newly static method to ensure it can still access
+	 * class-level state and behavior.
+	 *
+	 * 4. Update the type parameter list of the method declaration and insert new type parameters to
+	 * the JavaDoc. The method uses 'fStatus' to merge any updates or error messages.
+	 *
+	 * 5. Remove any 'override' annotations, as a static method cannot have an 'override'
+	 * annotation.
+	 *
+	 * 6. Compute the necessary edits for the modified method declaration.
+	 *
+	 * @throws JavaModelException if there is an issue with the Java model while modifying the
+	 *             method declaration.
+	 */
 	public void modifyMethodDeclaration() throws JavaModelException {
 		addStaticModifierToTargetMethod();
-
-		//Change instance Usages ("this" and "super") to paramName and set fTargetMethodhasInstanceUsage flag
 		rewriteInstanceUsages();
-
 		if (fInstanceUsageRewriter.getTargetMethodhasInstanceUsage()) {
-			//Adding an instance parameter to the newly static method to ensure it can still access class-level state and behavior.
 			addInstanceAsParameterIfUsed();
 		}
-
-		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
 		fStatus.merge(updateTargetMethodTypeParamList());
-
-		//A static method can't have override annotations
 		deleteOverrideAnnotation();
 		computeMethodDeclarationEdit();
 	}
