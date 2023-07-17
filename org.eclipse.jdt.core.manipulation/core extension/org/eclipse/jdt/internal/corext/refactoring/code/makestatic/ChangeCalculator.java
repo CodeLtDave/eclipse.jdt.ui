@@ -132,12 +132,17 @@ public class ChangeCalculator {
 
 	/**
 	 * Retrieves an array of TextEditBasedChange objects representing the changes made by the
-	 * ChangeCalculator.
+	 * ChangeCalculator. Changes are computed if they are not executed yet.
 	 *
 	 * @return An array of TextEditBasedChange objects containing the changes made by the
 	 *         ChangeCalculator.
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public TextEditBasedChange[] getChanges() {
+	public TextEditBasedChange[] getOrComputeChanges() throws JavaModelException {
+		if (fChangeManager.getAllChanges().length != 0) {
+			return fChangeManager.getAllChanges();
+		}
+		modifyMethodDeclaration();
 		return fChangeManager.getAllChanges();
 	}
 
