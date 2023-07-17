@@ -1,3 +1,17 @@
+/*******************************************************************************
+ * Copyright (c) 2023 Vector Informatik GmbH and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *s
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Vector Informatik GmbH - initial API and implementation
+ *******************************************************************************/
+
 package org.eclipse.jdt.internal.corext.refactoring.code.makestatic;
 
 import java.util.ArrayList;
@@ -203,28 +217,28 @@ public class ChangeCalculator {
 	}
 
 	private String generateUniqueParameterName() {
-	    String className = ((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().toString();
-	    List<SingleVariableDeclaration> parameters = fTargetMethodDeclaration.parameters();
+		String className= ((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().toString();
+		List<SingleVariableDeclaration> parameters= fTargetMethodDeclaration.parameters();
 
-	    String baseParameterName = Character.toLowerCase(className.charAt(0)) + className.substring(1);
-	    int duplicateCount = 1;
-	    String uniqueParameterName = baseParameterName;
+		String baseParameterName= Character.toLowerCase(className.charAt(0)) + className.substring(1);
+		int duplicateCount= 1;
+		String uniqueParameterName= baseParameterName;
 
-	    while (parameterNameExists(uniqueParameterName, parameters)) {
-	        duplicateCount++;
-	        uniqueParameterName = baseParameterName + duplicateCount;
-	    }
+		while (parameterNameExists(uniqueParameterName, parameters)) {
+			duplicateCount++;
+			uniqueParameterName= baseParameterName + duplicateCount;
+		}
 
-	    return uniqueParameterName;
+		return uniqueParameterName;
 	}
 
 	private boolean parameterNameExists(String parameterName, List<SingleVariableDeclaration> parameters) {
-	    for (SingleVariableDeclaration param : parameters) {
-	        if (param.getName().getIdentifier().equals(parameterName)) {
-	            return true;
-	        }
-	    }
-	    return false;
+		for (SingleVariableDeclaration param : parameters) {
+			if (param.getName().getIdentifier().equals(parameterName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 
