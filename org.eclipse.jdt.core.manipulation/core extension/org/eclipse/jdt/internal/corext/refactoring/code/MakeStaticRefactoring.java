@@ -32,7 +32,6 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ChangeCalculator;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator.SelectionInputType;
-import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.FinalConditionsChecker;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.InitialConditionsChecker;
 
 /**
@@ -180,11 +179,6 @@ public class MakeStaticRefactoring extends Refactoring {
 			//Adding an instance parameter to the newly static method to ensure it can still access class-level state and behavior.
 			fChangeCalculator.addInstanceAsParameterIfUsed();
 		}
-
-		//check if method would unintentionally hide method of parent class
-		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(targetMethodhasInstanceUsage, fContextCalculator.getOrComputeTargetIMethod()));
-		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
-		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fContextCalculator.getOrComputeTargetIMethod()));
 
 		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
 		fStatus.merge(fChangeCalculator.updateTargetMethodTypeParamList());
