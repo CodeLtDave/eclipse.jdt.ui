@@ -25,7 +25,6 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 import org.eclipse.jdt.internal.corext.dom.Selection;
@@ -154,12 +153,6 @@ public class MakeStaticRefactoring extends Refactoring {
 
 		if (!checker.checkMethodNotOverridden(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
-		}
-
-		try {
-			fTargetMethodDeclaration= fContextCalculator.getOrComputeTargetMethodDeclaration();
-		} catch (JavaModelException e) {
-			fStatus.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection);
 		}
 
 		return fStatus;
