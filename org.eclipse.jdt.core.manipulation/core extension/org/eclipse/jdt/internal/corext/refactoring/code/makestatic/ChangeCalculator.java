@@ -122,8 +122,13 @@ public class ChangeCalculator {
 	 *
 	 * @return An array of TextEditBasedChange objects containing the changes made by the
 	 *         ChangeCalculator.
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public TextEditBasedChange[] getChanges() {
+	public TextEditBasedChange[] getOrComputeChanges() throws JavaModelException {
+		if (fChangeManager.getAllChanges().length != 0) {
+			return fChangeManager.getAllChanges();
+		}
+		modifyMethodDeclaration();
 		return fChangeManager.getAllChanges();
 	}
 
@@ -203,28 +208,28 @@ public class ChangeCalculator {
 	}
 
 	private String generateUniqueParameterName() {
-	    String className = ((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().toString();
-	    List<SingleVariableDeclaration> parameters = fTargetMethodDeclaration.parameters();
+		String className= ((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().toString();
+		List<SingleVariableDeclaration> parameters= fTargetMethodDeclaration.parameters();
 
-	    String baseParameterName = Character.toLowerCase(className.charAt(0)) + className.substring(1);
-	    int duplicateCount = 1;
-	    String uniqueParameterName = baseParameterName;
+		String baseParameterName= Character.toLowerCase(className.charAt(0)) + className.substring(1);
+		int duplicateCount= 1;
+		String uniqueParameterName= baseParameterName;
 
-	    while (parameterNameExists(uniqueParameterName, parameters)) {
-	        duplicateCount++;
-	        uniqueParameterName = baseParameterName + duplicateCount;
-	    }
+		while (parameterNameExists(uniqueParameterName, parameters)) {
+			duplicateCount++;
+			uniqueParameterName= baseParameterName + duplicateCount;
+		}
 
-	    return uniqueParameterName;
+		return uniqueParameterName;
 	}
 
 	private boolean parameterNameExists(String parameterName, List<SingleVariableDeclaration> parameters) {
-	    for (SingleVariableDeclaration param : parameters) {
-	        if (param.getName().getIdentifier().equals(parameterName)) {
-	            return true;
-	        }
-	    }
-	    return false;
+		for (SingleVariableDeclaration param : parameters) {
+			if (param.getName().getIdentifier().equals(parameterName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 

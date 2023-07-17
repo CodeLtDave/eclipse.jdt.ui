@@ -184,7 +184,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	@Override
 	public Change createChange(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
-		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_name, fChangeCalculator.getChanges());
+		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_name, fChangeCalculator.getOrComputeChanges());
 		return multiChange;
 	}
 }
