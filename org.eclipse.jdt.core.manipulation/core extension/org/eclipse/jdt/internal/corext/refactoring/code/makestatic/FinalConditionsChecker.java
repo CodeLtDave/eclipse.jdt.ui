@@ -135,7 +135,7 @@ public class FinalConditionsChecker {
 		return status;
 	}
 
-	private static boolean isOverriding(IType type, IMethod iMethod) throws JavaModelException { //TODO duplicate isOverriding()?
+	private static boolean isOverriding(IType type, IMethod iMethod) throws JavaModelException {
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] supertypes= hierarchy.getAllSupertypes(type);
 		for (IType supertype : supertypes) {
