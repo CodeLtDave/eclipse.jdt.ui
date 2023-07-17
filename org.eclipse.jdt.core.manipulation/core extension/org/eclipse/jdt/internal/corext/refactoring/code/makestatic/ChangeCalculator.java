@@ -180,28 +180,30 @@ public class ChangeCalculator {
 	}
 
 	private String generateUniqueParameterName() {
-		String className= ((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().toString();
-		List<SingleVariableDeclaration> parameters= fTargetMethodDeclaration.parameters();
-		String classNameFirstLowerCase= Character.toLowerCase(className.charAt(0)) + className.substring(1); //makes first char lower to match name conventions
-		if (parameters == null || parameters.isEmpty()) {
-			return classNameFirstLowerCase;
-		}
-		boolean duplicateExists= false;
-		String combinedName= classNameFirstLowerCase;
-		int incrementingSuffix= 2;
-		do {
-			for (SingleVariableDeclaration param : parameters) {
-				String paramString= param.getName().getIdentifier();
-				duplicateExists= combinedName.equals(paramString);
-			}
-			if (!duplicateExists) {
-				return combinedName;
-			} else {
-				combinedName= classNameFirstLowerCase + incrementingSuffix++;
-			}
-		} while (duplicateExists);
-		return combinedName;
+	    String className = ((TypeDeclaration) fTargetMethodDeclaration.getParent()).getName().toString();
+	    List<SingleVariableDeclaration> parameters = fTargetMethodDeclaration.parameters();
+
+	    String baseParameterName = Character.toLowerCase(className.charAt(0)) + className.substring(1);
+	    int duplicateCount = 1;
+	    String uniqueParameterName = baseParameterName;
+
+	    while (parameterNameExists(uniqueParameterName, parameters)) {
+	        duplicateCount++;
+	        uniqueParameterName = baseParameterName + duplicateCount;
+	    }
+
+	    return uniqueParameterName;
 	}
+
+	private boolean parameterNameExists(String parameterName, List<SingleVariableDeclaration> parameters) {
+	    for (SingleVariableDeclaration param : parameters) {
+	        if (param.getName().getIdentifier().equals(parameterName)) {
+	            return true;
+	        }
+	    }
+	    return false;
+	}
+
 
 	/**
 	 * Adds an instance parameter to the target method declaration to ensure the access of fields or
