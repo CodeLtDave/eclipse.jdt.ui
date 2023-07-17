@@ -99,19 +99,13 @@ public class InitialConditionsChecker {
 	 * @param iMethod the IMethod to be checked
 	 *
 	 * @return {@code true} if the IMethod is valid, {@code false} otherwise.
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public boolean checkValidIMethod(IMethod iMethod) {
+	public boolean checkValidIMethod(IMethod iMethod) throws JavaModelException {
 		if (iMethod == null) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_this_selection));
-		}
-
-		try {
-			if (iMethod.getDeclaringType().isAnnotation()) {
-				fStatus.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
-			}
-		} catch (JavaModelException e) {
-			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
-			e.printStackTrace();
+		} else if (iMethod.getDeclaringType().isAnnotation()) {
+			fStatus.addFatalError(RefactoringCoreMessages.MakeStaticRefactoring_not_available_on_annotation);
 		}
 		return !fStatus.hasError();
 	}
@@ -122,16 +116,13 @@ public class InitialConditionsChecker {
 	 * @param iMethod the IMethod to be checked
 	 * @return {@code true} if the Method is not in a local or anonymous class, {@code false}
 	 *         otherwise.
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public boolean checkMethodNotInLocalOrAnonymousClass(IMethod iMethod) {
-		try {
-			if (iMethod.getDeclaringType().isLocal() || iMethod.getDeclaringType().isAnonymous()) {
-				fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types));
-			}
-		} catch (JavaModelException e) {
-			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
-			e.printStackTrace();
+	public boolean checkMethodNotInLocalOrAnonymousClass(IMethod iMethod) throws JavaModelException {
+		if (iMethod.getDeclaringType().isLocal() || iMethod.getDeclaringType().isAnonymous()) {
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_local_or_anonymous_types));
 		}
+
 		return !fStatus.hasError();
 	}
 
@@ -140,16 +131,13 @@ public class InitialConditionsChecker {
 	 *
 	 * @param iMethod the IMethod to be checked
 	 * @return {@code true} if the method is not a constructor, {@code false} otherwise.
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public boolean checkMethodIsNotConstructor(IMethod iMethod) {
-		try {
-			if (iMethod.isConstructor()) {
-				fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors));
-			}
-		} catch (JavaModelException e) {
-			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
-			e.printStackTrace();
+	public boolean checkMethodIsNotConstructor(IMethod iMethod) throws JavaModelException {
+		if (iMethod.isConstructor()) {
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_constructors));
 		}
+
 		return !fStatus.hasError();
 	}
 
@@ -158,16 +146,12 @@ public class InitialConditionsChecker {
 	 *
 	 * @param iMethod the IMethod to be checked
 	 * @return {@code true} if the method is not static, {@code false} otherwise.
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public boolean checkMethodNotStatic(IMethod iMethod) {
-		try {
-			int flags= iMethod.getFlags();
-			if (Modifier.isStatic(flags)) {
-				fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static));
-			}
-		} catch (JavaModelException e) {
-			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
-			e.printStackTrace();
+	public boolean checkMethodNotStatic(IMethod iMethod) throws JavaModelException {
+		int flags= iMethod.getFlags();
+		if (Modifier.isStatic(flags)) {
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_already_static));
 		}
 		return !fStatus.hasError();
 	}
@@ -177,16 +161,13 @@ public class InitialConditionsChecker {
 	 *
 	 * @param iMethod the IMethod to be checked
 	 * @return {@code true} if the method is not overridden, {@code false} otherwise.
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public boolean checkMethodNotOverridden(IMethod iMethod) {
-		try {
-			if (isOverridden(iMethod.getDeclaringType(), iMethod)) {
-				fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype));
-			}
-		} catch (JavaModelException e) {
-			System.out.println("iMethod.getDeclaringType(): " + iMethod.getDeclaringType() + " does not exist or an exception occured while accessing its corresponding resource"); //$NON-NLS-1$//$NON-NLS-2$
-			e.printStackTrace();
+	public boolean checkMethodNotOverridden(IMethod iMethod) throws JavaModelException {
+		if (isOverridden(iMethod.getDeclaringType(), iMethod)) {
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_method_is_overridden_in_subtype));
 		}
+
 		return !fStatus.hasError();
 	}
 

@@ -25,6 +25,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 import org.eclipse.jdt.internal.corext.dom.Selection;
@@ -106,9 +107,10 @@ public class MakeStaticRefactoring extends Refactoring {
 	 *
 	 * @param pm The progress monitor to report the progress of the operation.
 	 * @return The refactoring status indicating the result of the initial conditions check.
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
 	@Override
-	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) {
+	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws JavaModelException {
 		fStatus= new RefactoringStatus();
 
 		SelectionInputType selectionInputType= fContextCalculator.getSelectionInputType();
