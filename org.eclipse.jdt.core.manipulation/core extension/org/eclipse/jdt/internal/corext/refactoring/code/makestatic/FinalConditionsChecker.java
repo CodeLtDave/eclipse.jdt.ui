@@ -70,12 +70,12 @@ public class FinalConditionsChecker {
 		paramTypesOfSelectedMethodExtended[0]= extendedClassName;
 		String[] paramTypesOfSelectedMethod= imethod.getParameterTypes();
 
-		for (int i= 0; i < paramTypesOfSelectedMethod.length; i++) {
-			paramTypesOfSelectedMethodExtended[i + 1]= paramTypesOfSelectedMethod[i];
+		for (int parameterNumber= 0; parameterNumber < paramTypesOfSelectedMethod.length; parameterNumber++) {
+			paramTypesOfSelectedMethodExtended[parameterNumber + 1]= paramTypesOfSelectedMethod[parameterNumber];
 		}
 
-		for (int i= 0; i < paramTypesOfFoundMethod.length; i++) {
-			contains= paramTypesOfSelectedMethodExtended[i].equals(paramTypesOfFoundMethod[i]);
+		for (int parameterNumber= 0; parameterNumber < paramTypesOfFoundMethod.length; parameterNumber++) {
+			contains= paramTypesOfSelectedMethodExtended[parameterNumber].equals(paramTypesOfFoundMethod[parameterNumber]);
 			if (!contains) {
 				return status;
 			}
