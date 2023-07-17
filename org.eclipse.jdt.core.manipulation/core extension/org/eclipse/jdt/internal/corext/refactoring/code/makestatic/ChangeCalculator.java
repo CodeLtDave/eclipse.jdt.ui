@@ -156,11 +156,18 @@ public class ChangeCalculator {
 	 * This method uses an InstanceUsageRewriter to rewrite the instance usages in the target method
 	 * declaration. The rewritten AST is updated in the fTargetMethodDeclarationASTRewrite. The
 	 * fTargetMethodhasInstanceUsage flag is also updated based on the instance usage rewriting.
+	 *
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public void rewriteInstanceUsages() {
+	public void rewriteInstanceUsages() throws JavaModelException {
 		InstanceUsageRewriter instanceUsageRewriter= new InstanceUsageRewriter(fParameterName, fTargetMethodDeclarationASTRewrite, fTargetMethodDeclarationAST, fStatus, fTargetMethodDeclaration);
 		fTargetMethodDeclaration.getBody().accept(instanceUsageRewriter);
 		fTargetMethodhasInstanceUsage= instanceUsageRewriter.fTargetMethodhasInstanceUsage;
+
+		//check if method would unintentionally hide method of parent class
+		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(fTargetMethodhasInstanceUsage, fTargetMethod));
+		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
+		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod));
 	}
 
 	/**
