@@ -91,7 +91,7 @@ public class FinalConditionsChecker {
 	 * @param methodhasInstanceUsage indicates if the method has any instance usage
 	 * @param iMethod the IMethod to be checked
 	 * @return the refactoring status indicating the if the method would hide its parent method
-	 * @throws JavaModelException
+	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
 	public static RefactoringStatus checkMethodWouldHideParentMethod(boolean methodhasInstanceUsage, IMethod iMethod) throws JavaModelException {
 		RefactoringStatus status= new RefactoringStatus();
