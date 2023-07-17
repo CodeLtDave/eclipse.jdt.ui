@@ -162,24 +162,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
 		fChangeCalculator= new ChangeCalculator(fContextCalculator.getOrComputeTargetMethodDeclaration(), fContextCalculator.getOrComputeTargetIMethod());
 
-		fChangeCalculator.addStaticModifierToTargetMethod();
-
-		//Change instance Usages ("this" and "super") to paramName and set fTargetMethodhasInstanceUsage flag
-		fChangeCalculator.rewriteInstanceUsages();
-
-		boolean targetMethodhasInstanceUsage= fChangeCalculator.getTargetMethodhasInstanceUsage();
-
-		if (targetMethodhasInstanceUsage) {
-			//Adding an instance parameter to the newly static method to ensure it can still access class-level state and behavior.
-			fChangeCalculator.addInstanceAsParameterIfUsed();
-		}
-
-		//Updates typeParamList of MethodDeclaration and inserts new typeParams to JavaDoc
-		fStatus.merge(fChangeCalculator.updateTargetMethodTypeParamList());
-
-		//A static method can't have override annotations
-		fChangeCalculator.deleteOverrideAnnotation();
-		fChangeCalculator.computeMethodDeclarationEdit();
+		fChangeCalculator.modifyMethodDeclaration();
 
 		//Find and modify MethodInvocations
 		fStatus.merge(fChangeCalculator.handleMethodInvocations(progressMonitor, fContextCalculator.getOrComputeTargetIMethodBinding()));

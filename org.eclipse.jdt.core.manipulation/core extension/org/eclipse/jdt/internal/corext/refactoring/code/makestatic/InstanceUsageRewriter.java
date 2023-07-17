@@ -97,6 +97,10 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 		fTargetMethodDeclaration= methodDeclaration;
 	}
 
+	public boolean getTargetMethodhasInstanceUsage() {
+		return fTargetMethodhasInstanceUsage;
+	}
+
 	@Override
 	public boolean visit(SimpleName node) {
 		IBinding binding= node.resolveBinding();
