@@ -81,7 +81,8 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 	 *            methods.
 	 * @param rewrite The ASTRewrite object used for rewriting the AST.
 	 * @param ast The AST object representing the abstract syntax tree.
-	 * @param finalConditionsChecker
+	 * @param finalConditionsChecker The FinalConditionsChecker instance used for final conditions
+	 *            checking during the refactoring.
 	 * @param methodDeclaration The MethodDeclaration object representing the target method being
 	 *            refactored.
 	 */
@@ -93,10 +94,24 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 		fFinalConditionsChecker= finalConditionsChecker;
 	}
 
+	/**
+	 * Gets the flag indicating whether the target method has instance usages or not.
+	 *
+	 * @return {@code true} if the target method has instance usages ("this" or "super"),
+	 *         {@code false} otherwise.
+	 *
+	 */
 	public boolean getTargetMethodhasInstanceUsage() {
 		return fTargetMethodhasInstanceUsage;
 	}
 
+	/**
+	 * Visits a SimpleName node and modifies its usage depending on the type of binding.
+	 *
+	 * @param node The SimpleName node being visited. It represents a simple name in the abstract
+	 *            syntax tree (AST).
+	 * @return {@code true} to continue visiting the children of this node, {@code false} otherwise.
+	 */
 	@Override
 	public boolean visit(SimpleName node) {
 		IBinding binding= node.resolveBinding();
@@ -108,6 +123,19 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 		return super.visit(node);
 	}
 
+	/**
+	 * Visits a ThisExpression node and replaces it with a new expression based on the context. This
+	 * method is used during the instance usage rewriting process to handle 'this' expressions,
+	 * which represent the current instance reference, and replace them appropriately based on the
+	 * context. If the 'this' expression is inside an anonymous class, it is left unchanged.
+	 * Otherwise, it is replaced with a new expression to access instance variables or methods using
+	 * the specified parameters.
+	 *
+	 * @param node The ThisExpression node being visited. It represents a 'this' expression in the
+	 *            abstract syntax tree (AST).
+	 *
+	 * @return {@code true} to continue visiting the children of this node, {@code false} otherwise.
+	 */
 	@Override
 	public boolean visit(ThisExpression node) {
 		ASTNode parentNode= node.getParent();
@@ -132,6 +160,19 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 		return super.visit(node);
 	}
 
+	/**
+	 * Visits a ClassInstanceCreation node and replaces it if it creates a non-static member
+	 * instance. This method is used during the instance usage rewriting process to handle
+	 * ClassInstanceCreation nodes, which represent the creation of new class instances using
+	 * constructors. If the created instance is a non-static member (i.e., an inner class instance),
+	 * the method sets the 'fTargetMethodhasInstanceUsage' flag to true and replaces the
+	 * ClassInstanceCreation node with a new expression to access instance variables or methods.
+	 *
+	 * @param node The ClassInstanceCreation node being visited. It represents a class instance
+	 *            creation in the abstract syntax tree (AST).
+	 *
+	 * @return {@code true} to continue visiting the children of this node, {@code false} otherwise.
+	 */
 	@Override
 	public boolean visit(ClassInstanceCreation node) {
 		ITypeBinding typeBinding= node.getType().resolveBinding();
@@ -142,6 +183,15 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 		return super.visit(node);
 	}
 
+	/**
+	 * Visits a SuperMethodInvocation node and checks for any super method invocation as part of the
+	 * final conditions check. This method is used during the instance usage rewriting process to
+	 * handle SuperMethodInvocation nodes, which represent method invocations using the 'super'
+	 * keyword. Any super method invocations found will be reported as a fatal error.
+	 *
+	 * @param node The SuperMethodInvocation node being visited.
+	 * @return {@code true} to continue visiting the children of this node, {@code false} otherwise.
+	 */
 	@Override
 	public boolean visit(SuperMethodInvocation node) {
 		fFinalConditionsChecker.checkNodeIsNoSuperMethodInvocation();
