@@ -32,6 +32,7 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ChangeCalculator;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.ContextCalculator.SelectionInputType;
+import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.FinalConditionsChecker;
 import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.InitialConditionsChecker;
 
 /**
@@ -160,12 +161,13 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
-		fChangeCalculator= new ChangeCalculator(fContextCalculator.getOrComputeTargetMethodDeclaration(), fContextCalculator.getOrComputeTargetIMethod());
+		FinalConditionsChecker checker= new FinalConditionsChecker(fStatus);
+		fChangeCalculator= new ChangeCalculator(fContextCalculator.getOrComputeTargetMethodDeclaration(), fContextCalculator.getOrComputeTargetIMethod(), checker);
 
 		fChangeCalculator.modifyMethodDeclaration();
 
 		//Find and modify MethodInvocations
-		fStatus.merge(fChangeCalculator.handleMethodInvocations(progressMonitor, fContextCalculator.getOrComputeTargetIMethodBinding()));
+		fChangeCalculator.handleMethodInvocations(progressMonitor, fContextCalculator.getOrComputeTargetIMethodBinding());
 
 		return fStatus;
 	}

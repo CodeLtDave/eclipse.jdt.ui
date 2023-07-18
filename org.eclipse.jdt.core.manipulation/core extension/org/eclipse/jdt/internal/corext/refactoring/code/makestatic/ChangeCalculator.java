@@ -23,7 +23,6 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
 
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.TextEditBasedChange;
 
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -73,11 +72,6 @@ import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManag
 public class ChangeCalculator {
 
 	/**
-	 * Represents the status for the calculation of changes in a refactoring operation.
-	 */
-	private RefactoringStatus fStatus;
-
-	/**
 	 * The {@code MethodDeclaration} object representing the selected method on which the
 	 * refactoring should be performed. This field is used to analyze and modify the method's
 	 * declaration during the refactoring process.
@@ -114,20 +108,22 @@ public class ChangeCalculator {
 
 	private InstanceUsageRewriter fInstanceUsageRewriter;
 
+	private FinalConditionsChecker fFinalConditionsChecker;
+
 	/**
 	 * Constructs a new ChangeCalculator with the given parameters.
 	 *
 	 * @param targetMethodDeclaration The method declaration of the target method.
 	 * @param targetMethod The target method.
 	 */
-	public ChangeCalculator(MethodDeclaration targetMethodDeclaration, IMethod targetMethod) {
+	public ChangeCalculator(MethodDeclaration targetMethodDeclaration, IMethod targetMethod, FinalConditionsChecker finalConditionsChecker) {
 		fTargetMethodDeclaration= targetMethodDeclaration;
 		fTargetMethod= targetMethod;
 		fTargetMethodDeclarationAST= fTargetMethodDeclaration.getAST();
 		fTargetMethodDeclarationASTRewrite= ASTRewrite.create(fTargetMethodDeclarationAST);
 		fParameterName= generateUniqueParameterName();
 		fChangeManager= new TextEditBasedChangeManager();
-		fStatus= new RefactoringStatus();
+		fFinalConditionsChecker= finalConditionsChecker;
 	}
 
 	/**
@@ -166,13 +162,13 @@ public class ChangeCalculator {
 	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
 	private void rewriteInstanceUsages() throws JavaModelException {
-		fInstanceUsageRewriter= new InstanceUsageRewriter(fParameterName, fTargetMethodDeclarationASTRewrite, fTargetMethodDeclarationAST, fStatus, fTargetMethodDeclaration);
+		fInstanceUsageRewriter= new InstanceUsageRewriter(fParameterName, fTargetMethodDeclarationASTRewrite, fTargetMethodDeclarationAST, fTargetMethodDeclaration, fFinalConditionsChecker);
 		fTargetMethodDeclaration.getBody().accept(fInstanceUsageRewriter);
 
 		//check if method would unintentionally hide method of parent class
-		fStatus.merge(FinalConditionsChecker.checkMethodWouldHideParentMethod(fInstanceUsageRewriter.getTargetMethodhasInstanceUsage(), fTargetMethod));
+		fFinalConditionsChecker.checkMethodWouldHideParentMethod(fInstanceUsageRewriter.getTargetMethodhasInstanceUsage(), fTargetMethod);
 		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
-		fStatus.merge(FinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod));
+		fFinalConditionsChecker.checkMethodIsNotDuplicate(fTargetMethodDeclaration, fTargetMethod);
 	}
 
 	/**
@@ -207,7 +203,7 @@ public class ChangeCalculator {
 		if (fInstanceUsageRewriter.getTargetMethodhasInstanceUsage()) {
 			addInstanceAsParameterIfUsed();
 		}
-		fStatus.merge(updateTargetMethodTypeParamList());
+		updateTargetMethodTypeParamList();
 		deleteOverrideAnnotation();
 		computeMethodDeclarationEdit();
 	}
@@ -303,11 +299,10 @@ public class ChangeCalculator {
 	 * present in the method's type parameter list, it is inserted. Additionally, the JavaDocs
 	 * associated with the target method declaration are updated to reflect the changes.
 	 *
-	 * @return The refactoring status indicating the result of the type parameter list update.
 	 * @throws JavaModelException if the type parameters of the parentType do not exist or if an
 	 *             exception occurs while accessing its corresponding resource.
 	 */
-	private RefactoringStatus updateTargetMethodTypeParamList() throws JavaModelException {
+	private void updateTargetMethodTypeParamList() throws JavaModelException {
 		IType parentType= fTargetMethod.getDeclaringType();
 		ITypeParameter[] classTypeParameters= parentType.getTypeParameters();
 		ListRewrite typeParamsRewrite= fTargetMethodDeclarationASTRewrite.getListRewrite(fTargetMethodDeclaration, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
@@ -319,8 +314,8 @@ public class ChangeCalculator {
 			for (int i= 0; i < classTypeParameters.length; i++) {
 				TypeParameter typeParameter= generateTypeParameter(classTypeParameters, i);
 
-				if (fStatus.hasError()) {
-					return fStatus;
+				if (fFinalConditionsChecker.getStatus().hasError()) {
+					return;
 				}
 				//Check if method needs this TypeParameter (only if one or more methodParams are of this type OR method has instance usage OR an instance of parent class is used as methodParam)
 				String typeParamName= typeParameter.getName().getIdentifier();
@@ -335,7 +330,7 @@ public class ChangeCalculator {
 				}
 			}
 		}
-		return fStatus;
+		return;
 	}
 
 	private TypeParameter generateTypeParameter(ITypeParameter[] classTypeParameters, int i) throws JavaModelException {
@@ -344,8 +339,8 @@ public class ChangeCalculator {
 		typeParameter.setName(fTargetMethodDeclarationAST.newSimpleName(classTypeParameters[i].getElementName()));
 		for (String bound : bounds) {
 			//WildCardTypes are not allowed as bounds
-			fStatus.merge(FinalConditionsChecker.checkBoundNotContainingWildCardType(bound));
-			if (!fStatus.hasError()) {
+			fFinalConditionsChecker.checkBoundNotContainingWildCardType(bound);
+			if (!fFinalConditionsChecker.getStatus().hasError()) {
 				SimpleType boundType= fTargetMethodDeclarationAST.newSimpleType(fTargetMethodDeclarationAST.newSimpleName(bound));
 				typeParameter.typeBounds().add(boundType);
 			}
@@ -433,23 +428,21 @@ public class ChangeCalculator {
 	 *
 	 * @param progressMonitor The progress monitor to report the progress of the operation.
 	 * @param targetMethodBinding The method binding of the target method.
-	 * @return The refactoring status indicating error messages to the user when handling method
-	 *         invocations.
 	 * @throws CoreException if an error occurs during handling method invocations.
 	 */
-	public RefactoringStatus handleMethodInvocations(IProgressMonitor progressMonitor, IMethodBinding targetMethodBinding) throws CoreException {
+	public void handleMethodInvocations(IProgressMonitor progressMonitor, IMethodBinding targetMethodBinding) throws CoreException {
 		//Provides all invocations of the refactored method in the workspace.
 		TargetProvider targetProvider= TargetProvider.create(fTargetMethodDeclaration);
 		targetProvider.initialize();
-		ICompilationUnit[] affectedICompilationUnits= targetProvider.getAffectedCompilationUnits(fStatus, new ReferencesInBinaryContext(""), progressMonitor); //$NON-NLS-1$
+		ICompilationUnit[] affectedICompilationUnits= targetProvider.getAffectedCompilationUnits(fFinalConditionsChecker.getStatus(), new ReferencesInBinaryContext(""), progressMonitor); //$NON-NLS-1$
 		for (ICompilationUnit affectedICompilationUnit : affectedICompilationUnits) {
 
 			//Check if MethodReferences use selected method -> cancel refactoring
 			CompilationUnit affectedCompilationUnit= convertICUtoCU(affectedICompilationUnit);
-			affectedCompilationUnit.accept(new MethodReferenceFinder(fStatus, targetMethodBinding));
+			affectedCompilationUnit.accept(new MethodReferenceFinder(targetMethodBinding, fFinalConditionsChecker));
 
-			if (fStatus.hasFatalError()) {
-				return fStatus;
+			if (fFinalConditionsChecker.getStatus().hasFatalError()) {
+				return;
 			}
 
 			BodyDeclaration[] bodies= targetProvider.getAffectedBodyDeclarations(affectedICompilationUnit, null);
@@ -462,13 +455,13 @@ public class ChangeCalculator {
 				}
 			}
 
-			if (fStatus.hasFatalError()) {
-				return fStatus;
+			if (fFinalConditionsChecker.getStatus().hasFatalError()) {
+				return;
 			}
 
 			addEditToChangeManager(multiTextEdit, affectedICompilationUnit);
 		}
-		return fStatus;
+		return;
 	}
 
 	private CompilationUnit convertICUtoCU(ICompilationUnit compilationUnit) {

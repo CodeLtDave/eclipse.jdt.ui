@@ -12,8 +12,6 @@
 
 package org.eclipse.jdt.internal.corext.refactoring.code.makestatic;
 
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -36,8 +34,6 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-
-import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 
 /**
  *
@@ -63,8 +59,6 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 	 */
 	public boolean fTargetMethodhasInstanceUsage;
 
-	private final RefactoringStatus fstatus;
-
 	/**
 	 * The name of the parameter that is used to access instance variables or instance methods after
 	 * refactoring. For example "this" and "super" will be transformed to the value of fParamName.
@@ -77,6 +71,8 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 
 	private final MethodDeclaration fTargetMethodDeclaration;
 
+	private FinalConditionsChecker fFinalConditionsChecker;
+
 
 	/**
 	 * Constructs a new InstanceUsageRewriter with the specified parameters.
@@ -85,16 +81,16 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 	 *            methods.
 	 * @param rewrite The ASTRewrite object used for rewriting the AST.
 	 * @param ast The AST object representing the abstract syntax tree.
-	 * @param status The RefactoringStatus object to track the status of the refactoring.
+	 * @param finalConditionsChecker
 	 * @param methodDeclaration The MethodDeclaration object representing the target method being
 	 *            refactored.
 	 */
-	public InstanceUsageRewriter(String paramName, ASTRewrite rewrite, AST ast, RefactoringStatus status, MethodDeclaration methodDeclaration) {
+	public InstanceUsageRewriter(String paramName, ASTRewrite rewrite, AST ast, MethodDeclaration methodDeclaration, FinalConditionsChecker finalConditionsChecker) {
 		fParamName= paramName;
 		fRewrite= rewrite;
 		fAst= ast;
-		fstatus= status;
 		fTargetMethodDeclaration= methodDeclaration;
+		fFinalConditionsChecker= finalConditionsChecker;
 	}
 
 	public boolean getTargetMethodhasInstanceUsage() {
@@ -148,7 +144,7 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 
 	@Override
 	public boolean visit(SuperMethodInvocation node) {
-		fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
+		fFinalConditionsChecker.checkNodeIsNoSuperMethodInvocation();
 		return super.visit(node);
 	}
 
@@ -186,11 +182,7 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 		if (!Modifier.isStatic(methodBinding.getModifiers())) {
 			fTargetMethodhasInstanceUsage= true;
 
-			//check if method is recursive
-			if (isRecursive(node)) {
-				fstatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
-				return;
-			}
+			fFinalConditionsChecker.checkIsNotRecursive(node, fTargetMethodDeclaration);
 
 			replaceMethodInvocation(node);
 		}
@@ -230,23 +222,14 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 		replacement.setExpression(fAst.newSimpleName(fParamName));
 		replacement.setName(fAst.newSimpleName(node.getIdentifier()));
 
+		fFinalConditionsChecker.checkMethodNotUsingSuperFieldAccess(parent);
+
 		if (parent instanceof SuperFieldAccess) {
 			//Warning is needed to inform user of possible changes in semantics when SuperFieldAccess is found
-			fstatus.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_uses_super_field_access));
 			fRewrite.replace(parent, replacement, null);
 		} else {
 			fRewrite.replace(node, replacement, null);
 		}
-	}
-
-	private boolean isRecursive(SimpleName node) {
-		IMethodBinding nodeMethodBinding= (IMethodBinding) node.resolveBinding();
-		IMethodBinding outerMethodBinding= fTargetMethodDeclaration.resolveBinding();
-
-		if (nodeMethodBinding.isEqualTo(outerMethodBinding)) {
-			return true;
-		}
-		return false;
 	}
 
 	private void replaceMethodInvocation(SimpleName node) {
