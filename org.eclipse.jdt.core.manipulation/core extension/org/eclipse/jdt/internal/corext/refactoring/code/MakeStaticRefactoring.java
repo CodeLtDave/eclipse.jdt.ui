@@ -42,7 +42,7 @@ import org.eclipse.jdt.internal.corext.refactoring.code.makestatic.InitialCondit
  * method by modifying the method declaration, updating method invocations, and handling related
  * changes.
  *
- * @since 3.29
+ * @since 3.30
  *
  */
 public class MakeStaticRefactoring extends Refactoring {
@@ -204,7 +204,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	public Change createChange(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
 		progressMonitor.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, 1);
 
-		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_name, fChangeCalculator.getOrComputeChanges());
+		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, fChangeCalculator.getOrComputeChanges());
 		progressMonitor.worked(1);
 		progressMonitor.done();
 
