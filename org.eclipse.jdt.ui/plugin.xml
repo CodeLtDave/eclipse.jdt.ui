@@ -563,6 +563,12 @@
             class="org.eclipse.jdt.internal.ui.text.java.hover.JavaSourceHover"
             id="org.eclipse.jdt.ui.JavaSourceHover">
       </hover>
+       <hover
+            label="%constantHover"
+            description="%constantHoverDescription"
+            class="org.eclipse.jdt.internal.ui.text.java.hover.JavaConstantHover"
+            id="org.eclipse.jdt.ui.JavaConstantHover">
+      </hover>
    </extension>
    <extension
          point="org.eclipse.ui.perspectives">
@@ -1596,6 +1602,12 @@
             targetId="org.eclipse.jdt.ui.javaCode">
       </hyperlinkDetector>
       <hyperlinkDetector
+	        class="org.eclipse.jdt.internal.ui.javaeditor.OpenCallHierarchyHyperlinkDetector"
+            id="org.eclipse.jdt.internal.ui.javaeditor.OpenCallHierarchyHyperlinkDetector"
+            name="%OpenCallHierarchyHyperlinkDetector"
+            targetId="org.eclipse.jdt.ui.javaCode">
+      </hyperlinkDetector>
+      <hyperlinkDetector
             class="org.eclipse.jdt.internal.ui.propertiesfileeditor.PropertyKeyHyperlinkDetector"
             id="org.eclipse.jdt.internal.ui.propertiesfileeditor.PropertyKeyHyperlinkDetector"
             name="%PropertyKeyHyperlinkDetector"
@@ -1687,6 +1699,13 @@
             class="org.eclipse.jdt.internal.ui.preferences.PropertiesFileEditorPreferencePage"
             id="org.eclipse.jdt.ui.preferences.PropertiesFileEditorPreferencePage">
             <keywordReference id="org.eclipse.jdt.ui.propertieseditor"/>
+      </page>
+      <page
+            name="%launchingPrefName"
+            category="org.eclipse.jdt.ui.preferences.JavaBasePreferencePage"
+            class="org.eclipse.jdt.internal.ui.preferences.LaunchingPreferencePage"
+            id="org.eclipse.jdt.ui.preferences.LaunchingPreferencePage">
+            <keywordReference id="org.eclipse.jdt.ui.launching"/>
       </page>
 
       <page
@@ -1892,6 +1911,9 @@
       <keyword
             label="%preferenceKeywords.propertieseditor"
             id="org.eclipse.jdt.ui.propertieseditor"/>
+      <keyword
+            label="%preferenceKeywords.launching"
+            id="org.eclipse.jdt.ui.launching"/>
       <keyword
             label="%preferenceKeywords.folding"
             id="org.eclipse.jdt.ui.folding"/>
@@ -7237,14 +7259,9 @@
             runAfter="org.eclipse.jdt.ui.cleanup.reduce_indentation">
       </cleanUp>
       <cleanUp
-            class="org.eclipse.jdt.internal.ui.fix.LambdaExpressionAndMethodRefCleanUp"
-            id="org.eclipse.jdt.ui.cleanup.lambda_and_method_ref"
-            runAfter="org.eclipse.jdt.ui.cleanup.expressions">
-      </cleanUp>
-      <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.ExtractIncrementCleanUp"
             id="org.eclipse.jdt.ui.cleanup.extract_increment"
-            runAfter="org.eclipse.jdt.ui.cleanup.lambda_and_method_ref">
+            runAfter="org.eclipse.jdt.ui.cleanup.expressions">
       </cleanUp>
       <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.PullUpAssignmentCleanUp"
@@ -7587,9 +7604,14 @@
             runAfter="org.eclipse.jdt.ui.cleanup.var">
       </cleanUp>
       <cleanUp
+            class="org.eclipse.jdt.internal.ui.fix.LambdaExpressionAndMethodRefCleanUp"
+            id="org.eclipse.jdt.ui.cleanup.lambda_and_method_ref"
+            runAfter="org.eclipse.jdt.ui.cleanup.lambda">
+      </cleanUp>
+      <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.ComparingOnCriteriaCleanUp"
             id="org.eclipse.jdt.ui.cleanup.comparing_on_criteria"
-            runAfter="org.eclipse.jdt.ui.cleanup.lambda">
+            runAfter="org.eclipse.jdt.ui.cleanup.lambda_and_method_ref">
       </cleanUp>
       <cleanUp
             class="org.eclipse.jdt.internal.ui.fix.JoinCleanUp"

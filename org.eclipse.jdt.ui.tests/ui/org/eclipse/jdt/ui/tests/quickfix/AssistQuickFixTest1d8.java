@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2021 IBM Corporation and others.
+ * Copyright (c) 2013, 2023 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -1633,7 +1633,7 @@ public class AssistQuickFixTest1d8 extends QuickFixTest {
 		buf.append("\n");
 		buf.append("public class Test {\n");
 		buf.append("    void foo(ArrayList<String> list) {\n");
-		buf.append("        list.removeIf(t -> t.isEmpty());\n");
+		buf.append("        list.removeIf(String::isEmpty);\n");
 		buf.append("    }\n");
 		buf.append("}\n");
 		String expected1= buf.toString();
@@ -4900,6 +4900,48 @@ public class AssistQuickFixTest1d8 extends QuickFixTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		expected1= buf.toString();
+		assertExpectedExistInProposals(proposals, new String[] { expected1 });
+	}
+
+	@Test
+	public void testConvertLambdaToMethodReference6() throws Exception {
+		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
+		StringBuilder buf= new StringBuilder();
+		buf.append("package test1;\n");
+		buf.append("public class E6 {\n");
+		buf.append("\n");
+		buf.append("    private interface I6 {\n");
+		buf.append("        public boolean isCorrect(Object z);\n");
+		buf.append("    }\n");
+		buf.append("\n");
+		buf.append("    public boolean foo() {\n");
+		buf.append("        I6 x = z -> z instanceof String;\n");
+		buf.append("        return x.isCorrect(this);\n");
+		buf.append("    }\n");
+		buf.append("\n");
+		buf.append("}\n");
+		ICompilationUnit cu= pack1.createCompilationUnit("E6.java", buf.toString(), false, null);
+
+		int offset= buf.toString().indexOf("z ->");
+		AssistContext context= getCorrectionContext(cu, offset, 4);
+		assertNoErrors(context);
+		List<IJavaCompletionProposal> proposals= collectAssists(context, false);
+		assertCorrectLabels(proposals);
+		buf= new StringBuilder();
+		buf.append("package test1;\n");
+		buf.append("public class E6 {\n");
+		buf.append("\n");
+		buf.append("    private interface I6 {\n");
+		buf.append("        public boolean isCorrect(Object z);\n");
+		buf.append("    }\n");
+		buf.append("\n");
+		buf.append("    public boolean foo() {\n");
+		buf.append("        I6 x = String.class::isInstance;\n");
+		buf.append("        return x.isCorrect(this);\n");
+		buf.append("    }\n");
+		buf.append("\n");
+		buf.append("}\n");
+		String expected1= buf.toString();
 		assertExpectedExistInProposals(proposals, new String[] { expected1 });
 	}
 

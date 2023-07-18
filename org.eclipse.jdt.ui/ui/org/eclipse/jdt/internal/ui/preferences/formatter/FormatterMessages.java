@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2022 IBM Corporation and others.
+ * Copyright (c) 2000, 2023 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -93,6 +93,7 @@ final class FormatterMessages extends NLS {
 	public static String FormatterModifyDialog_comments_pref_javadoc_align_names_and_descriptions;
 	public static String FormatterModifyDialog_comments_pref_javadoc_align_descriptions_grouped;
 	public static String FormatterModifyDialog_comments_pref_javadoc_align_descriptions_to_tag;
+	public static String FormatterModifyDialog_comments_pref_javadoc_do_not_put_block_tags_on_separate_lines;
 	public static String FormatterModifyDialog_comments_pref_line_width;
 	public static String FormatterModifyDialog_comments_pref_line_width_count_from_starting_position;
 	public static String FormatterModifyDialog_comments_pref_never_indent_block_comments_on_first_column;
@@ -515,10 +516,8 @@ final class FormatterMessages extends NLS {
 	public static String ModifyDialog_modifyAll_summary;
 	public static String ModifyDialog_modifyAll_tooltip;
 	public static String ModifyDialog_previewMissing_comment;
-	public static String ModifyDialogTabPage_defaults_text;
 	public static String ModifyDialogTabPage_deselectAll_text;
 	public static String ModifyDialogTabPage_preview_label_text;
-	public static String ModifyDialogTabPage_reset_text;
 	public static String ModifyDialogTabPage_selectAll_text;
 
 	public static String ProfileManager_unmanaged_profile;
