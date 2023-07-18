@@ -143,6 +143,7 @@ public class ContextCalculator {
 	 * This method calculates the selected ASTNode {@link #fSelectionASTNode}. It finds the Node
 	 * that is inside the {@link #fSelectionICompilationUnit} CompilationUnit at the
 	 * {@link #fSelectionEditorText} Selection.
+	 *
 	 */
 	private void calculateSelectionASTNode() {
 		if (fSelectionICompilationUnit == null || fSelectionEditorText==null) {
@@ -198,7 +199,9 @@ public class ContextCalculator {
 	 * assigns it to {@link #fTargetICompilationUnit}.
 	 */
 	private void calculateTargetICompilationUnit() {
-		if(getOrComputeTargetIMethod()==null)
+		if(getOrComputeTargetIMethod()==null) {
+			return;
+		}
 		fTargetICompilationUnit= fTargetIMethod.getDeclaringType().getCompilationUnit();
 	}
 
@@ -207,7 +210,9 @@ public class ContextCalculator {
 	 * {@link #fTargetCompilationUnit}.
 	 */
 	private void calculateTargetCompilationUnit() {
-		if(getOrComputeTargetICompilationUnit()==null)
+		if(getOrComputeTargetICompilationUnit()==null) {
+			return;
+		}
 		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetICompilationUnit);
 	}
 
