@@ -115,6 +115,9 @@ public class ChangeCalculator {
 	 *
 	 * @param targetMethodDeclaration The method declaration of the target method.
 	 * @param targetMethod The target method.
+	 * @param finalConditionsChecker The FinalConditionsChecker instance used for final conditions
+	 *            checking during the refactoring. It must not be null and provides necessary checks
+	 *            during the refactoring process.
 	 */
 	public ChangeCalculator(MethodDeclaration targetMethodDeclaration, IMethod targetMethod, FinalConditionsChecker finalConditionsChecker) {
 		fTargetMethodDeclaration= targetMethodDeclaration;
