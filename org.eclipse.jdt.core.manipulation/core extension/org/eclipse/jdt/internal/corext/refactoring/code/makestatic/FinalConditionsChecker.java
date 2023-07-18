@@ -42,10 +42,26 @@ public class FinalConditionsChecker {
 	 */
 	private RefactoringStatus fStatus;
 
+	/**
+	 * Creates a new FinalConditionsChecker with the provided RefactoringStatus. This class is
+	 * responsible for performing final checks and conditions during the refactoring process, using
+	 * the specified RefactoringStatus instance to report any issues or errors that may occur.
+	 *
+	 * @param status The RefactoringStatus object used to track and report the status of the
+	 *            refactoring process.
+	 */
 	public FinalConditionsChecker(RefactoringStatus status) {
 		fStatus= status;
 	}
 
+	/**
+	 * Gets the current RefactoringStatus. The RefactoringStatus is used to track and report the
+	 * status of the refactoring process, including any issues or errors that occurred during
+	 * various stages of the refactoring.
+	 *
+	 * @return The RefactoringStatus object used to track and report the status of the refactoring
+	 *         process.
+	 */
 	public RefactoringStatus getStatus() {
 		return fStatus;
 	}
@@ -138,16 +154,35 @@ public class FinalConditionsChecker {
 		}
 	}
 
+	/**
+	 * Checks if the current node represents a super method invocation and reports it as a fatal
+	 * error. This method is used during the static method refactoring process to ensure that there
+	 * are no explicit super method invocations in the code, as a static method cannot reference the
+	 * 'super' keyword. If a super method invocation is found, it will be reported as a fatal error
+	 * using the provided status.
+	 */
 	public void checkNodeIsNoSuperMethodInvocation() {
 		fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
 	}
 
+	/**
+	 * Checks if the selected method uses a 'super' field access and reports it as a warning.
+	 *
+	 * @param parent The ASTNode representing the parent of the current node being checked.
+	 */
 	public void checkMethodNotUsingSuperFieldAccess(ASTNode parent) {
 		if (parent instanceof SuperFieldAccess) {
 			fStatus.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_uses_super_field_access));
 		}
 	}
 
+	/**
+	 * Checks if the selected method is not recursive and reports it as a fatal error if it is.
+	 *
+	 * @param node The SimpleName node representing the method name being checked.
+	 * @param methodDeclaration The MethodDeclaration node representing the selected method being
+	 *            checked.
+	 */
 	public void checkIsNotRecursive(SimpleName node, MethodDeclaration methodDeclaration) {
 		IMethodBinding nodeMethodBinding= (IMethodBinding) node.resolveBinding();
 		IMethodBinding outerMethodBinding= methodDeclaration.resolveBinding();
