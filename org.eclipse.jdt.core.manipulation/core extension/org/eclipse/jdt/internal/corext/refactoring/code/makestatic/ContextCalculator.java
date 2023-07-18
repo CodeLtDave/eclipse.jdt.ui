@@ -143,8 +143,12 @@ public class ContextCalculator {
 	 * This method calculates the selected ASTNode {@link #fSelectionASTNode}. It finds the Node
 	 * that is inside the {@link #fSelectionICompilationUnit} CompilationUnit at the
 	 * {@link #fSelectionEditorText} Selection.
+	 *
 	 */
 	private void calculateSelectionASTNode() {
+		if (fSelectionICompilationUnit == null || fSelectionEditorText==null) {
+			return;
+		}
 		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
 		fSelectionASTNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
 
@@ -165,9 +169,13 @@ public class ContextCalculator {
 	 * corresponding {@link IMethodBinding} from that instance.
 	 */
 	private void calculateTargetIMethodBinding() {
-		if (getOrComputeSelectionASTNode() instanceof MethodInvocation selectionMethodInvocation) {
+		if (getOrComputeSelectionASTNode()==null) {
+			return;
+		}
+
+		if (fSelectionASTNode instanceof MethodInvocation selectionMethodInvocation) {
 			fTargetIMethodBinding= selectionMethodInvocation.resolveMethodBinding();
-		} else if (getOrComputeSelectionASTNode() instanceof MethodDeclaration selectionMethodDeclaration) {
+		} else if (fSelectionASTNode instanceof MethodDeclaration selectionMethodDeclaration) {
 			fTargetIMethodBinding= selectionMethodDeclaration.resolveBinding();
 		}
 	}
@@ -178,7 +186,11 @@ public class ContextCalculator {
 	 * {@link #fTargetIMethod}
 	 */
 	private void calculateTargetIMethod() {
-		fTargetIMethod= (IMethod) getOrComputeTargetIMethodBinding().getJavaElement();
+		if ( getOrComputeTargetIMethodBinding()==null) {
+			return;
+		}
+
+		fTargetIMethod= (IMethod)fTargetIMethodBinding.getJavaElement();
 	}
 
 	/**
@@ -187,7 +199,10 @@ public class ContextCalculator {
 	 * assigns it to {@link #fTargetICompilationUnit}.
 	 */
 	private void calculateTargetICompilationUnit() {
-		fTargetICompilationUnit= getOrComputeTargetIMethod().getDeclaringType().getCompilationUnit();
+		if(getOrComputeTargetIMethod()==null) {
+			return;
+		}
+		fTargetICompilationUnit= fTargetIMethod.getDeclaringType().getCompilationUnit();
 	}
 
 	/**
@@ -195,7 +210,10 @@ public class ContextCalculator {
 	 * {@link #fTargetCompilationUnit}.
 	 */
 	private void calculateTargetCompilationUnit() {
-		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(getOrComputeTargetICompilationUnit());
+		if(getOrComputeTargetICompilationUnit()==null) {
+			return;
+		}
+		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetICompilationUnit);
 	}
 
 	/**
@@ -205,6 +223,9 @@ public class ContextCalculator {
 	 */
 	private void calculateMethodDeclaration() throws JavaModelException {
 		calculateTargetCompilationUnit();
+		if(fTargetCompilationUnit==null) {
+			return;
+		}
 		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
 		fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
 	}
