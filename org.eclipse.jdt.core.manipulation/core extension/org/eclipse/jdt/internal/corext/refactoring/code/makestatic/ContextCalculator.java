@@ -173,9 +173,9 @@ public class ContextCalculator {
 			return;
 		}
 
-		if (fTargetIMethodBinding instanceof MethodInvocation selectionMethodInvocation) {
+		if (fSelectionASTNode instanceof MethodInvocation selectionMethodInvocation) {
 			fTargetIMethodBinding= selectionMethodInvocation.resolveMethodBinding();
-		} else if (getOrComputeSelectionASTNode() instanceof MethodDeclaration selectionMethodDeclaration) {
+		} else if (fSelectionASTNode instanceof MethodDeclaration selectionMethodDeclaration) {
 			fTargetIMethodBinding= selectionMethodDeclaration.resolveBinding();
 		}
 	}
