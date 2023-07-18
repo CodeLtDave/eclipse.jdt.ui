@@ -1034,6 +1034,12 @@ public final class RefactoringCoreMessages extends NLS {
 
 	public static String MakeStaticRefactoring_checking_activation;
 
+	public static String MakeStaticRefactoring_checking_preconditions;
+
+	public static String MakeStaticRefactoring_checking_conditions;
+
+	public static String MakeStaticRefactoring_creating_changes;
+
 	public static String MakeStaticRefactoring_not_available_on_this_selection;
 
 	public static String MakeStaticRefactoring_not_available_on_annotation;

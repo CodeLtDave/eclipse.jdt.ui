@@ -441,7 +441,8 @@ public class ChangeCalculator {
 		//Provides all invocations of the refactored method in the workspace.
 		TargetProvider targetProvider= TargetProvider.create(fTargetMethodDeclaration);
 		targetProvider.initialize();
-		ICompilationUnit[] affectedICompilationUnits= targetProvider.getAffectedCompilationUnits(fStatus, new ReferencesInBinaryContext(""), progressMonitor); //$NON-NLS-1$
+		IProgressMonitor sliceProgessMonitor= progressMonitor.slice(1);
+		ICompilationUnit[] affectedICompilationUnits= targetProvider.getAffectedCompilationUnits(fStatus, new ReferencesInBinaryContext(""), sliceProgessMonitor); //$NON-NLS-1$
 		for (ICompilationUnit affectedICompilationUnit : affectedICompilationUnits) {
 
 			//Check if MethodReferences use selected method -> cancel refactoring

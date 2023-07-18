@@ -97,13 +97,14 @@ public class MakeStaticRefactoring extends Refactoring {
 	/**
 	 * Checks the initial conditions required for the refactoring process.
 	 *
-	 * @param pm The progress monitor to report the progress of the operation.
+	 * @param progressMonitor The progress monitor to report the progress of the operation.
 	 * @return The refactoring status indicating the result of the initial conditions check.
 	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
 	@Override
-	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws JavaModelException {
+	public RefactoringStatus checkInitialConditions(IProgressMonitor progressMonitor) throws JavaModelException {
 		fStatus= new RefactoringStatus();
+		progressMonitor.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_preconditions, 10);
 
 		SelectionInputType selectionInputType= fContextCalculator.getSelectionInputType();
 		InitialConditionsChecker checker= new InitialConditionsChecker(fStatus);
@@ -119,34 +120,43 @@ public class MakeStaticRefactoring extends Refactoring {
 				return fStatus;
 			}
 		}
+		progressMonitor.worked(3);
 
 		if (!checker.checkSourceAvailable(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progressMonitor.worked(1);
 
 		if (!checker.checkValidIMethod(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progressMonitor.worked(1);
 
 		if (!checker.checkValidICompilationUnit(fContextCalculator.getOrComputeTargetICompilationUnit())) {
 			return fStatus;
 		}
+		progressMonitor.worked(1);
 
 		if (!checker.checkMethodIsNotConstructor(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progressMonitor.worked(1);
 
 		if (!checker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progressMonitor.worked(1);
 
 		if (!checker.checkMethodNotStatic(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progressMonitor.worked(1);
 
 		if (!checker.checkMethodNotOverridden(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progressMonitor.worked(1);
+		progressMonitor.done();
 
 		return fStatus;
 	}
@@ -160,12 +170,18 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
+		progressMonitor.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_conditions, 9);
+
 		fChangeCalculator= new ChangeCalculator(fContextCalculator.getOrComputeTargetMethodDeclaration(), fContextCalculator.getOrComputeTargetIMethod());
+		progressMonitor.worked(1);
 
 		fChangeCalculator.modifyMethodDeclaration();
+		progressMonitor.worked(6);
 
 		//Find and modify MethodInvocations
 		fStatus.merge(fChangeCalculator.handleMethodInvocations(progressMonitor, fContextCalculator.getOrComputeTargetIMethodBinding()));
+		progressMonitor.worked(1);
+		progressMonitor.done();
 
 		return fStatus;
 	}
@@ -184,7 +200,12 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	@Override
 	public Change createChange(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
+		progressMonitor.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, 1);
+
 		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_name, fChangeCalculator.getOrComputeChanges());
+		progressMonitor.worked(1);
+		progressMonitor.done();
+
 		return multiChange;
 	}
 }
