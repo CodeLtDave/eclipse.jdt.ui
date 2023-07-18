@@ -18,10 +18,13 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodReference;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
@@ -33,6 +36,20 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
  * refactoring.
  */
 public class FinalConditionsChecker {
+
+	/**
+	 * Represents the status for the calculation of changes in a refactoring operation.
+	 */
+	private RefactoringStatus fStatus;
+
+	public FinalConditionsChecker(RefactoringStatus status) {
+		fStatus= status;
+	}
+
+	public RefactoringStatus getStatus() {
+		return fStatus;
+	}
+
 	/**
 	 * Checks if a duplicate method with the same signature as the refactored method exists. The
 	 * MakeStaticRefactoring introduces a new parameter if fields or instance methods are used in
@@ -43,12 +60,9 @@ public class FinalConditionsChecker {
 	 *
 	 * @param imethod the IMethod representing the method declaration
 	 *
-	 * @return the refactoring status indicating if a duplicate method was found.
-	 *
 	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public static RefactoringStatus checkMethodIsNotDuplicate(MethodDeclaration methodDeclaration, IMethod imethod) throws JavaModelException {
-		RefactoringStatus status= new RefactoringStatus();
+	public void checkMethodIsNotDuplicate(MethodDeclaration methodDeclaration, IMethod imethod) throws JavaModelException {
 		int parameterAmount= methodDeclaration.parameters().size() + 1;
 		String methodName= methodDeclaration.getName().getIdentifier();
 		IMethodBinding methodBinding= methodDeclaration.resolveBinding();
@@ -58,7 +72,7 @@ public class FinalConditionsChecker {
 		IMethod method= Checks.findMethod(methodName, parameterAmount, false, type);
 
 		if (method == null) {
-			return new RefactoringStatus();
+			return;
 		}
 
 		//check if parameter types match (also compare new parameter that is added by refactoring)
@@ -77,11 +91,10 @@ public class FinalConditionsChecker {
 		for (int parameterNumber= 0; parameterNumber < paramTypesOfFoundMethod.length; parameterNumber++) {
 			contains= paramTypesOfSelectedMethodExtended[parameterNumber].equals(paramTypesOfFoundMethod[parameterNumber]);
 			if (!contains) {
-				return status;
+				return;
 			}
 		}
-		status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
-		return status;
+		fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_duplicate_method_signature));
 	}
 
 	/**
@@ -90,15 +103,12 @@ public class FinalConditionsChecker {
 	 *
 	 * @param methodhasInstanceUsage indicates if the method has any instance usage
 	 * @param iMethod the IMethod to be checked
-	 * @return the refactoring status indicating the if the method would hide its parent method
 	 * @throws JavaModelException if an exception occurs while accessing the Java model
 	 */
-	public static RefactoringStatus checkMethodWouldHideParentMethod(boolean methodhasInstanceUsage, IMethod iMethod) throws JavaModelException {
-		RefactoringStatus status= new RefactoringStatus();
+	public void checkMethodWouldHideParentMethod(boolean methodhasInstanceUsage, IMethod iMethod) throws JavaModelException {
 		if (!methodhasInstanceUsage && isOverriding(iMethod.getDeclaringType(), iMethod)) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_hiding_method_of_parent_type));
 		}
-		return status;
 	}
 
 
@@ -106,14 +116,11 @@ public class FinalConditionsChecker {
 	 * Checks if the bound does not contains a wildcard type.
 	 *
 	 * @param bound the bound to be checked
-	 * @return the refactoring status indicating if the bound contains a wildcard type
 	 */
-	public static RefactoringStatus checkBoundNotContainingWildCardType(String bound) {
-		RefactoringStatus status= new RefactoringStatus();
+	public void checkBoundNotContainingWildCardType(String bound) {
 		if (bound.contains("?")) { //$NON-NLS-1$
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound));
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_wildCardTypes_as_bound));
 		}
-		return status;
 	}
 
 	/**
@@ -121,21 +128,36 @@ public class FinalConditionsChecker {
 	 *
 	 * @param methodReference the MethodReference to be checked
 	 * @param targetMethodBinding the IMethodBinding representing the target method
-	 * @return the refactoring status indicating if the method references refers to the target
-	 *         method
 	 */
-	public static RefactoringStatus checkMethodReferenceNotReferingToMethod(MethodReference methodReference, IMethodBinding targetMethodBinding) {
-		RefactoringStatus status= new RefactoringStatus();
+	public void checkMethodReferenceNotReferingToMethod(MethodReference methodReference, IMethodBinding targetMethodBinding) {
 		IMethodBinding methodReferenceBinding= methodReference.resolveMethodBinding();
 		ITypeBinding typeBindingOfMethodReference= methodReferenceBinding.getDeclaringClass();
 		ITypeBinding typeBindingOfTargetMethod= targetMethodBinding.getDeclaringClass();
 		if (targetMethodBinding.isEqualTo(methodReferenceBinding) && typeBindingOfMethodReference.isEqualTo(typeBindingOfTargetMethod)) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_method_references));
 		}
-		return status;
 	}
 
-	private static boolean isOverriding(IType type, IMethod iMethod) throws JavaModelException {
+	public void checkNodeIsNoSuperMethodInvocation() {
+		fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_explicit_super_method_invocation));
+	}
+
+	public void checkMethodNotUsingSuperFieldAccess(ASTNode parent) {
+		if (parent instanceof SuperFieldAccess) {
+			fStatus.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.MakeStaticRefactoring_selected_method_uses_super_field_access));
+		}
+	}
+
+	public void checkIsNotRecursive(SimpleName node, MethodDeclaration methodDeclaration) {
+		IMethodBinding nodeMethodBinding= (IMethodBinding) node.resolveBinding();
+		IMethodBinding outerMethodBinding= methodDeclaration.resolveBinding();
+
+		if (nodeMethodBinding.isEqualTo(outerMethodBinding)) {
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
+		}
+	}
+
+	private boolean isOverriding(IType type, IMethod iMethod) throws JavaModelException {
 		ITypeHierarchy hierarchy= type.newTypeHierarchy(null);
 		IType[] supertypes= hierarchy.getAllSupertypes(type);
 		for (IType supertype : supertypes) {
