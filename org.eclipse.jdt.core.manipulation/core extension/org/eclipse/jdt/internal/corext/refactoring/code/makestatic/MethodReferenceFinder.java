@@ -23,11 +23,34 @@ final class MethodReferenceFinder extends ASTVisitor {
 
 	private FinalConditionsChecker fFinalConditionsChecker;
 
+	/**
+	 * Creates a new MethodReferenceFinder with the specified target method binding and final
+	 * conditions checker. This class is used to find method references in a given context, using
+	 * the provided target method binding and conditions checker.
+	 *
+	 * @param targetMethodBinding The IMethodBinding representing the target method to find
+	 *            references for. It must not be null and should correspond to the method whose
+	 *            references are being searched.
+	 * @param finalConditionsChecker The FinalConditionsChecker instance used to check final
+	 *            conditions during the reference search. It must not be null and provides necessary
+	 *            checks to determine valid references to the target method.
+	 */
 	public MethodReferenceFinder(IMethodBinding targetMethodBinding, FinalConditionsChecker finalConditionsChecker) {
 		fFinalConditionsChecker= finalConditionsChecker;
 		fTargetMethodBinding= targetMethodBinding;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Visits an ExpressionMethodReference node and checks if it refers to the selected method. The
+	 * final conditions checker is used to perform this check, ensuring that the method reference
+	 * does not refer to the same method as the target method being searched for.
+	 *
+	 * @param node The ExpressionMethodReference node being visited. It represents a method
+	 *            reference expression in the abstract syntax tree (AST). It must not be null.
+	 * @return {@code true} to continue visiting the children of this node, {@code false} otherwise.
+	 */
 	@Override
 	public boolean visit(ExpressionMethodReference node) {
 		// Check if the method reference refers to the selected method
@@ -35,6 +58,18 @@ final class MethodReferenceFinder extends ASTVisitor {
 		return super.visit(node);
 	}
 
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Visits an SuperMethodReference node and checks if it refers to the selected method. The final
+	 * conditions checker is used to perform this check, ensuring that the method reference does not
+	 * refer to the same method as the target method being searched for.
+	 *
+	 * @param node The SuperMethodReference node being visited. It represents a method reference
+	 *            expression in the abstract syntax tree (AST). It must not be null.
+	 * @return {@code true} to continue visiting the children of this node, {@code false} otherwise.
+	 */
 	@Override
 	public boolean visit(SuperMethodReference node) {
 		// Check if the method reference refers to the selected method
