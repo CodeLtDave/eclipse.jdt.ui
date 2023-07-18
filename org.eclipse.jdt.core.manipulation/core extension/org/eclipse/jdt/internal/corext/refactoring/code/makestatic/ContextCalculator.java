@@ -146,7 +146,7 @@ public class ContextCalculator {
 	 *
 	 */
 	private void calculateSelectionASTNode() {
-		if (fSelectionICompilationUnit == null || fSelectionEditorText==null) {
+		if (fSelectionICompilationUnit == null || fSelectionEditorText == null) {
 			return;
 		}
 		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
@@ -169,7 +169,7 @@ public class ContextCalculator {
 	 * corresponding {@link IMethodBinding} from that instance.
 	 */
 	private void calculateTargetIMethodBinding() {
-		if (getOrComputeSelectionASTNode()==null) {
+		if (getOrComputeSelectionASTNode() == null) {
 			return;
 		}
 
@@ -186,11 +186,11 @@ public class ContextCalculator {
 	 * {@link #fTargetIMethod}
 	 */
 	private void calculateTargetIMethod() {
-		if ( getOrComputeTargetIMethodBinding()==null) {
+		if (getOrComputeTargetIMethodBinding() == null) {
 			return;
 		}
 
-		fTargetIMethod= (IMethod)fTargetIMethodBinding.getJavaElement();
+		fTargetIMethod= (IMethod) fTargetIMethodBinding.getJavaElement();
 	}
 
 	/**
@@ -199,7 +199,7 @@ public class ContextCalculator {
 	 * assigns it to {@link #fTargetICompilationUnit}.
 	 */
 	private void calculateTargetICompilationUnit() {
-		if(getOrComputeTargetIMethod()==null) {
+		if (getOrComputeTargetIMethod() == null) {
 			return;
 		}
 		fTargetICompilationUnit= fTargetIMethod.getDeclaringType().getCompilationUnit();
@@ -210,7 +210,7 @@ public class ContextCalculator {
 	 * {@link #fTargetCompilationUnit}.
 	 */
 	private void calculateTargetCompilationUnit() {
-		if(getOrComputeTargetICompilationUnit()==null) {
+		if (getOrComputeTargetICompilationUnit() == null) {
 			return;
 		}
 		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetICompilationUnit);
@@ -223,7 +223,7 @@ public class ContextCalculator {
 	 */
 	private void calculateMethodDeclaration() throws JavaModelException {
 		calculateTargetCompilationUnit();
-		if(fTargetCompilationUnit==null) {
+		if (fTargetCompilationUnit == null) {
 			return;
 		}
 		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
