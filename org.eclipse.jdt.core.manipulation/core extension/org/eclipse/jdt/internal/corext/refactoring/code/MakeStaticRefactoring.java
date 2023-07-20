@@ -122,41 +122,51 @@ public class MakeStaticRefactoring extends Refactoring {
 				return fStatus;
 			}
 		}
+		progress.checkCanceled();
 		progress.split(3);
 
 		if (!checker.checkSourceAvailable(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+
+		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkValidIMethod(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+
+		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkValidICompilationUnit(fContextCalculator.getOrComputeTargetICompilationUnit())) {
 			return fStatus;
 		}
+		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkMethodIsNotConstructor(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkMethodNotStatic(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkMethodNotOverridden(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
+		progress.checkCanceled();
 		progress.split(1);
 
 		return fStatus;
@@ -206,6 +216,7 @@ public class MakeStaticRefactoring extends Refactoring {
 		SubMonitor progress= SubMonitor.convert(progressMonitor, RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, 1);
 
 		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, fChangeCalculator.getOrComputeChanges());
+		progress.checkCanceled();
 		progress.split(1);
 
 		return multiChange;
