@@ -215,7 +215,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	public Change createChange(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
 		SubMonitor progress= SubMonitor.convert(progressMonitor, RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, 1);
 
-		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, fChangeCalculator.getOrComputeChanges());
+		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_name, fChangeCalculator.getOrComputeChanges());
 		progress.checkCanceled();
 		progress.split(1);
 
