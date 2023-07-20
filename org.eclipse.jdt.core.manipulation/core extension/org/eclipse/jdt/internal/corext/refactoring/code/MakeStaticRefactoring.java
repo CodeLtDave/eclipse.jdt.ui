@@ -17,6 +17,7 @@ package org.eclipse.jdt.internal.corext.refactoring.code;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.SubMonitor;
 
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.CompositeChange;
@@ -105,7 +106,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor progressMonitor) throws JavaModelException {
 		fStatus= new RefactoringStatus();
-		progressMonitor.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_preconditions, 10);
+		SubMonitor progress= SubMonitor.convert(progressMonitor, RefactoringCoreMessages.MakeStaticRefactoring_checking_preconditions, 10);
 
 		SelectionInputType selectionInputType= fContextCalculator.getSelectionInputType();
 		InitialConditionsChecker checker= new InitialConditionsChecker(fStatus);
@@ -121,43 +122,52 @@ public class MakeStaticRefactoring extends Refactoring {
 				return fStatus;
 			}
 		}
-		progressMonitor.worked(3);
+		progress.checkCanceled();
+		progress.split(3);
 
 		if (!checker.checkSourceAvailable(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progressMonitor.worked(1);
+
+		progress.checkCanceled();
+		progress.split(1);
 
 		if (!checker.checkValidIMethod(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progressMonitor.worked(1);
+
+		progress.checkCanceled();
+		progress.split(1);
 
 		if (!checker.checkValidICompilationUnit(fContextCalculator.getOrComputeTargetICompilationUnit())) {
 			return fStatus;
 		}
-		progressMonitor.worked(1);
+		progress.checkCanceled();
+		progress.split(1);
 
 		if (!checker.checkMethodIsNotConstructor(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progressMonitor.worked(1);
+		progress.checkCanceled();
+		progress.split(1);
 
 		if (!checker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progressMonitor.worked(1);
+		progress.checkCanceled();
+		progress.split(1);
 
 		if (!checker.checkMethodNotStatic(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progressMonitor.worked(1);
+		progress.checkCanceled();
+		progress.split(1);
 
 		if (!checker.checkMethodNotOverridden(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progressMonitor.worked(1);
-		progressMonitor.done();
+		progress.checkCanceled();
+		progress.split(1);
 
 		return fStatus;
 	}
@@ -171,20 +181,21 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
-		progressMonitor.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_checking_conditions, 9);
+		SubMonitor progress= SubMonitor.convert(progressMonitor, RefactoringCoreMessages.MakeStaticRefactoring_checking_conditions, 8);
 
 		FinalConditionsChecker checker= new FinalConditionsChecker(fStatus);
 		fChangeCalculator= new ChangeCalculator(fContextCalculator.getOrComputeTargetMethodDeclaration(), fContextCalculator.getOrComputeTargetIMethod(), checker);
-		progressMonitor.worked(1);
+		progress.checkCanceled();
+		progress.split(1);
 
 		fChangeCalculator.modifyMethodDeclaration();
-		progressMonitor.worked(6);
+		progress.checkCanceled();
+		progress.split(5);
 
 		//Find and modify MethodInvocations
-		fChangeCalculator.handleMethodInvocations(progressMonitor, fContextCalculator.getOrComputeTargetIMethodBinding());
-		progressMonitor.worked(1);
-		progressMonitor.done();
-
+		fChangeCalculator.handleMethodInvocations(progress.slice(1), fContextCalculator.getOrComputeTargetIMethodBinding());
+		progress.checkCanceled();
+		progress.split(1);
 		return fStatus;
 	}
 
@@ -202,11 +213,11 @@ public class MakeStaticRefactoring extends Refactoring {
 	 */
 	@Override
 	public Change createChange(IProgressMonitor progressMonitor) throws CoreException, OperationCanceledException {
-		progressMonitor.beginTask(RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, 1);
+		SubMonitor progress= SubMonitor.convert(progressMonitor, RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, 1);
 
 		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, fChangeCalculator.getOrComputeChanges());
-		progressMonitor.worked(1);
-		progressMonitor.done();
+		progress.checkCanceled();
+		progress.split(1);
 
 		return multiChange;
 	}
