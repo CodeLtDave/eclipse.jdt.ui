@@ -182,7 +182,7 @@ public class MakeStaticRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor progressMonitor) throws CoreException {
 		SubMonitor progress= SubMonitor.convert(progressMonitor, RefactoringCoreMessages.MakeStaticRefactoring_checking_conditions, 8);
-
+		fStatus = new RefactoringStatus();
 		FinalConditionsChecker checker= new FinalConditionsChecker(fStatus);
 		fChangeCalculator= new ChangeCalculator(fContextCalculator.getOrComputeTargetMethodDeclaration(), fContextCalculator.getOrComputeTargetIMethod(), checker);
 		progress.checkCanceled();
