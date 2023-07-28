@@ -43,7 +43,7 @@ public class InitialConditionsChecker {
 
 	/**
 	 * Checks if the start position of a text selection is valid. A Selection is valid if the offset
-	 * and lengt are greater zero.
+	 * and length are greater zero.
 	 *
 	 * @param selection the text selection to be checked
 	 *
