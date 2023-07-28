@@ -285,8 +285,8 @@ public class ChangeCalculator {
 		if (classTypeParameters.length != 0) {
 			SimpleType simpleType= fTargetMethodDeclarationAST.newSimpleType(fTargetMethodDeclarationAST.newName(className));
 			ParameterizedType parameterizedType= fTargetMethodDeclarationAST.newParameterizedType(simpleType);
-			for (int i= 0; i < classTypeParameters.length; i++) {
-				SimpleType typeParameter= fTargetMethodDeclarationAST.newSimpleType(fTargetMethodDeclarationAST.newSimpleName(classTypeParameters[i].getElementName()));
+			for (int parameterNumber= 0; parameterNumber < classTypeParameters.length; parameterNumber++) {
+				SimpleType typeParameter= fTargetMethodDeclarationAST.newSimpleType(fTargetMethodDeclarationAST.newSimpleName(classTypeParameters[parameterNumber].getElementName()));
 				parameterizedType.typeArguments().add(typeParameter);
 			}
 			newParam.setType(parameterizedType);
