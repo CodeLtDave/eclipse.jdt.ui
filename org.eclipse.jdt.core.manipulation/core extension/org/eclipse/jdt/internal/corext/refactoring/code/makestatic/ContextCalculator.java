@@ -260,11 +260,12 @@ public class ContextCalculator {
 	 * @throws JavaModelException if the target method or the target compilationUnit is invalid.
 	 */
 	private void calculateMethodDeclaration() throws JavaModelException {
-		calculateTargetCompilationUnit();
-		if (fTargetCompilationUnit == null) {
+		IMethod targetIMethod = getOrComputeTargetIMethod();
+		CompilationUnit targetCompilationUnit = getOrComputeTargetCompilationUnit();
+		if (targetIMethod == null || targetCompilationUnit == null) {
 			return;
 		}
-		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(fTargetIMethod, fTargetCompilationUnit);
+		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(targetIMethod, targetCompilationUnit);
 		fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
 	}
 
