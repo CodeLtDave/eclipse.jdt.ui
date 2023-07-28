@@ -170,6 +170,13 @@ public class ContextCalculator {
 		return fTargetICompilationUnit;
 	}
 
+	public CompilationUnit getOrComputeTargetCompilationUnit() {
+		if( fTargetCompilationUnit==null) {
+			calculateTargetCompilationUnit();
+		}
+		return fTargetCompilationUnit;
+	}
+
 	public MethodDeclaration getOrComputeTargetMethodDeclaration() throws JavaModelException {
 		if (fTargetMethodDeclaration == null) {
 			calculateMethodDeclaration();
@@ -184,20 +191,26 @@ public class ContextCalculator {
 	 *
 	 */
 	private void calculateSelectionASTNode() {
-		if (fSelectionICompilationUnit == null || fSelectionEditorText == null) {
+		ICompilationUnit selectionICompilationUnit = getSelectionICompilationUnit();
+		Selection selectionEditorText= getSelectionEditorText();
+
+		if (selectionICompilationUnit == null || selectionEditorText == null) {
 			return;
 		}
-		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(fSelectionICompilationUnit);
-		fSelectionASTNode= NodeFinder.perform(fSelectionCompilationUnit, fSelectionEditorText.getOffset(), fSelectionEditorText.getLength());
+		fSelectionCompilationUnit= convertICompilationUnitToCompilationUnit(selectionICompilationUnit);
+		ASTNode selectionASTNode= NodeFinder.perform(fSelectionCompilationUnit, selectionEditorText.getOffset(), selectionEditorText.getLength());
 
-		if (fSelectionASTNode == null) {
+		if (selectionASTNode == null) {
 			return;
 		}
 
-		if (fSelectionASTNode.getNodeType() == ASTNode.SIMPLE_NAME) {
-			fSelectionASTNode= fSelectionASTNode.getParent();
-		} else if (fSelectionASTNode.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
-			fSelectionASTNode= ((ExpressionStatement) fSelectionASTNode).getExpression();
+		if (selectionASTNode.getNodeType() == ASTNode.SIMPLE_NAME) {
+			fSelectionASTNode= selectionASTNode.getParent();
+		} else if (selectionASTNode.getNodeType() == ASTNode.EXPRESSION_STATEMENT) {
+			fSelectionASTNode= ((ExpressionStatement) selectionASTNode).getExpression();
+		}
+		else {
+			fSelectionASTNode= selectionASTNode;
 		}
 	}
 
@@ -207,13 +220,14 @@ public class ContextCalculator {
 	 * corresponding {@link IMethodBinding} from that instance.
 	 */
 	private void calculateTargetIMethodBinding() {
-		if (getOrComputeSelectionASTNode() == null) {
+		ASTNode selectionASTNode = getOrComputeSelectionASTNode();
+		if (selectionASTNode == null) {
 			return;
 		}
 
-		if (fSelectionASTNode instanceof MethodInvocation selectionMethodInvocation) {
+		if (selectionASTNode instanceof MethodInvocation selectionMethodInvocation) {
 			fTargetIMethodBinding= selectionMethodInvocation.resolveMethodBinding();
-		} else if (fSelectionASTNode instanceof MethodDeclaration selectionMethodDeclaration) {
+		} else if (selectionASTNode instanceof MethodDeclaration selectionMethodDeclaration) {
 			fTargetIMethodBinding= selectionMethodDeclaration.resolveBinding();
 		}
 	}
@@ -224,11 +238,11 @@ public class ContextCalculator {
 	 * {@link #fTargetIMethod}
 	 */
 	private void calculateTargetIMethod() {
-		if (getOrComputeTargetIMethodBinding() == null) {
+		IMethodBinding targetIMethodBinding = getOrComputeTargetIMethodBinding();
+		if (targetIMethodBinding == null) {
 			return;
 		}
-
-		fTargetIMethod= (IMethod) fTargetIMethodBinding.getJavaElement();
+		fTargetIMethod= (IMethod) targetIMethodBinding.getJavaElement();
 	}
 
 	/**
@@ -237,10 +251,11 @@ public class ContextCalculator {
 	 * assigns it to {@link #fTargetICompilationUnit}.
 	 */
 	private void calculateTargetICompilationUnit() {
-		if (getOrComputeTargetIMethod() == null) {
+		IMethod targetIMethod = getOrComputeTargetIMethod();
+		if (targetIMethod == null) {
 			return;
 		}
-		fTargetICompilationUnit= fTargetIMethod.getDeclaringType().getCompilationUnit();
+		fTargetICompilationUnit= targetIMethod.getDeclaringType().getCompilationUnit();
 	}
 
 	/**
@@ -248,10 +263,11 @@ public class ContextCalculator {
 	 * {@link #fTargetCompilationUnit}.
 	 */
 	private void calculateTargetCompilationUnit() {
-		if (getOrComputeTargetICompilationUnit() == null) {
+		ICompilationUnit targetICompilationUnit = getOrComputeTargetICompilationUnit();
+		if (targetICompilationUnit == null) {
 			return;
 		}
-		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(fTargetICompilationUnit);
+		fTargetCompilationUnit= convertICompilationUnitToCompilationUnit(targetICompilationUnit);
 	}
 
 	/**
