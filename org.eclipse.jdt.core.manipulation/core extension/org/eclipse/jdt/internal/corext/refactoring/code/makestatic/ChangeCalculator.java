@@ -59,9 +59,11 @@ import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.ModifierRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.ReferencesInBinaryContext;
 import org.eclipse.jdt.internal.corext.refactoring.code.TargetProvider;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
+import org.eclipse.jdt.internal.corext.util.Messages;
 
 /**
  * The ChangeCalculator class is responsible for calculating and managing the changes to be made
@@ -417,7 +419,7 @@ public class ChangeCalculator {
 			allTextEdits= new MultiTextEdit();
 		}
 		allTextEdits.addChild(editToAdd);
-		String changeName= "Change in " + iCompilationUnit.getElementName(); //$NON-NLS-1$
+		String changeName= Messages.format(RefactoringCoreMessages.MakeStaticRefactoring_change_name, iCompilationUnit.getElementName());
 		CompilationUnitChange newCompilationUnitChange= new CompilationUnitChange(changeName, iCompilationUnit);
 		newCompilationUnitChange.setEdit(allTextEdits);
 		fChangeManager.manage(iCompilationUnit, newCompilationUnitChange);

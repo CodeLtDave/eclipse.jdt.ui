@@ -1072,6 +1072,8 @@ public final class RefactoringCoreMessages extends NLS {
 
 	public static String MakeStaticRefactoring_source_not_available_for_selected_method;
 
+	public static String MakeStaticRefactoring_change_name;
+
 	public static String IntroduceParameterObjectRefactoring_cannotalanyzemethod_mappingerror;
 
 	public static String IntroduceParameterObjectRefactoring_cannotanalysemethod_compilererror;
