@@ -35,14 +35,30 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
  */
 public class ContextCalculator {
 
+	/**
+	 * Represents the type of selection input. This can be either SelectionInputType.IMETHOD or
+	 * SelectionInputType.TEXT_SELECTION.
+	 */
 	private SelectionInputType fSelectionInputType;
 
+	/**
+	 * Represents the text-based selection made by the user in the editor.
+	 */
 	private Selection fSelectionEditorText;
 
+	/**
+	 * Represents the {@code ICompilationUnit} of the original selected element.
+	 */
 	private ICompilationUnit fSelectionICompilationUnit;
 
+	/**
+	 * Represents the parsed {@code CompilationUnit} of the original selected element.
+	 */
 	private CompilationUnit fSelectionCompilationUnit;
 
+	/**
+	 * Represents the AST (Abstract Syntax Tree) node of the original selected element.
+	 */
 	private ASTNode fSelectionASTNode;
 
 	/**
@@ -56,12 +72,34 @@ public class ContextCalculator {
 	 */
 	private IMethod fTargetIMethod;
 
+	/**
+	 * The {@code ICompilationUnit} object representing the {@code ICompilationUnit} of the selected
+	 * method where the refactoring should be performed.
+	 */
 	private ICompilationUnit fTargetICompilationUnit;
 
+	/**
+	 * Represents the parsed {@code CompilationUnit} of the selected method where the refactoring
+	 * should be performed.
+	 */
 	private CompilationUnit fTargetCompilationUnit;
 
+	/**
+	 * Represents the {@code MethodDeclaration} of the selected method on which the refactoring
+	 * should be performed.
+	 */
 	private MethodDeclaration fTargetMethodDeclaration;
 
+	/**
+	 * Enum representing the type of selection input for the refactoring process. It can have one of
+	 * the following values:
+	 * <ul>
+	 * <li>{@code IMETHOD}: Indicates that the selection input is an {@code IMethod} object,
+	 * representing a method being selected for refactoring e.g. from the outline menu.</li>
+	 * <li>{@code TEXT_SELECTION}: Indicates that the selection input is a textual selection made by
+	 * the user in the editor.</li>
+	 * </ul>
+	 */
 	public enum SelectionInputType {
 		IMETHOD, TEXT_SELECTION
 	}
