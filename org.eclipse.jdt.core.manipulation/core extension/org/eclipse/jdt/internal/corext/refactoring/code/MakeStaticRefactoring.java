@@ -122,51 +122,41 @@ public class MakeStaticRefactoring extends Refactoring {
 				return fStatus;
 			}
 		}
-		progress.checkCanceled();
 		progress.split(3);
 
 		if (!checker.checkSourceAvailable(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-
-		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkValidIMethod(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-
-		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkValidICompilationUnit(fContextCalculator.getOrComputeTargetICompilationUnit())) {
 			return fStatus;
 		}
-		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkMethodIsNotConstructor(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkMethodNotInLocalOrAnonymousClass(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkMethodNotStatic(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progress.checkCanceled();
 		progress.split(1);
 
 		if (!checker.checkMethodNotOverridden(fContextCalculator.getOrComputeTargetIMethod())) {
 			return fStatus;
 		}
-		progress.checkCanceled();
 		progress.split(1);
 
 		return fStatus;
@@ -185,16 +175,13 @@ public class MakeStaticRefactoring extends Refactoring {
 		fStatus = new RefactoringStatus();
 		FinalConditionsChecker checker= new FinalConditionsChecker(fStatus);
 		fChangeCalculator= new ChangeCalculator(fContextCalculator.getOrComputeTargetMethodDeclaration(), fContextCalculator.getOrComputeTargetIMethod(), checker);
-		progress.checkCanceled();
 		progress.split(1);
 
 		fChangeCalculator.modifyMethodDeclaration();
-		progress.checkCanceled();
-		progress.split(5);
+		progress.split(6);
 
 		//Find and modify MethodInvocations
 		fChangeCalculator.handleMethodInvocations(progress.slice(1), fContextCalculator.getOrComputeTargetIMethodBinding());
-		progress.checkCanceled();
 		progress.split(1);
 		return fStatus;
 	}
@@ -216,7 +203,6 @@ public class MakeStaticRefactoring extends Refactoring {
 		SubMonitor progress= SubMonitor.convert(progressMonitor, RefactoringCoreMessages.MakeStaticRefactoring_creating_changes, 1);
 
 		CompositeChange multiChange= new CompositeChange(RefactoringCoreMessages.MakeStaticRefactoring_name, fChangeCalculator.getOrComputeChanges());
-		progress.checkCanceled();
 		progress.split(1);
 
 		return multiChange;
