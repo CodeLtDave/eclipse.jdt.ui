@@ -79,6 +79,7 @@ public final class SearchMessages extends NLS {
 	public static String SearchPage_searchFor_package;
 	public static String SearchPage_searchFor_constructor;
 	public static String SearchPage_searchFor_module;
+	public static String SearchPage_searchFor_string;
 	public static String SearchPage_limitTo_label;
 	public static String SearchPage_limitTo_declarations;
 	public static String SearchPage_limitTo_implementors;

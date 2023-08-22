@@ -244,6 +244,7 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 	private final static int CONSTRUCTOR= IJavaSearchConstants.CONSTRUCTOR;
 	private final static int MODULE= IJavaSearchConstants.MODULE;
 	private final static int FIELD= IJavaSearchConstants.FIELD;
+	private final static int STRING= IJavaSearchConstants.STRING;
 
 	// limit to
 	private final static int DECLARATIONS= IJavaSearchConstants.DECLARATIONS;
@@ -711,7 +712,8 @@ public class JavaSearchPage extends DialogPage implements ISearchPage {
 			createButton(result, SWT.RADIO, SearchMessages.SearchPage_searchFor_package, PACKAGE, false),
 			createButton(result, SWT.RADIO, SearchMessages.SearchPage_searchFor_constructor, CONSTRUCTOR, false),
 			createButton(result, SWT.RADIO, SearchMessages.SearchPage_searchFor_module, MODULE, false),
-			createButton(result, SWT.RADIO, SearchMessages.SearchPage_searchFor_field, FIELD, false)
+			createButton(result, SWT.RADIO, SearchMessages.SearchPage_searchFor_field, FIELD, false),
+			createButton(result, SWT.RADIO, SearchMessages.SearchPage_searchFor_string, STRING, false)
 		};
 
 		return result;
