@@ -169,7 +169,9 @@ public class ChangeCalculator {
 	private void rewriteInstanceUsages() throws JavaModelException {
 		fInstanceUsageRewriter= new InstanceUsageRewriter(fParameterName, fTargetMethodDeclarationASTRewrite, fTargetMethodDeclarationAST, fTargetMethodDeclaration, fFinalConditionsChecker);
 		fTargetMethodDeclaration.getBody().accept(fInstanceUsageRewriter);
-
+		if(fFinalConditionsChecker.getStatus().hasWarning()) {
+			return;
+		}
 		//check if method would unintentionally hide method of parent class
 		fFinalConditionsChecker.checkMethodWouldHideParentMethod(fInstanceUsageRewriter.getTargetMethodhasInstanceUsage(), fTargetMethod);
 		//While refactoring the method signature might change; ensure the revised method doesn't unintentionally override an existing one.
@@ -363,7 +365,10 @@ public class ChangeCalculator {
 				ParameterizedType parameterizedType= (ParameterizedType) type;
 				List<Type> typeParamsOfMethodParam= parameterizedType.typeArguments();
 				for (Type typeParamOfMethodParam : typeParamsOfMethodParam) {
-					methodParameterTypes.add(typeParamOfMethodParam.resolveBinding().getName());
+					ITypeBinding typeParamOfMethodParamResolvedBinding= typeParamOfMethodParam.resolveBinding();
+					if (typeParamOfMethodParamResolvedBinding!=null) {
+						methodParameterTypes.add(typeParamOfMethodParamResolvedBinding.getName());
+					}
 				}
 			}
 			String typeName= type.toString();
@@ -495,6 +500,9 @@ public class ChangeCalculator {
 				// If the current class is a member of another class, we need to qualify this
 				if (isMember) {
 					newArg= qualifyThisExpression(invocation, ast);
+					if (newArg==null) {
+						return;
+					}
 				} else {
 					newArg= ast.newThisExpression();
 				}
@@ -516,6 +524,9 @@ public class ChangeCalculator {
 
 		// Find the outer class
 		IMethodBinding invocationBinding= invocation.resolveMethodBinding();
+		if (invocationBinding == null) {
+			return null;
+		}
 		ITypeBinding outerClassBinding= invocationBinding.getDeclaringClass();
 		String outerClassName= outerClassBinding.getName();
 

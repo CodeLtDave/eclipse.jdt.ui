@@ -19,6 +19,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -82,8 +83,9 @@ public class FinalConditionsChecker {
 		int parameterAmount= methodDeclaration.parameters().size() + 1;
 		String methodName= methodDeclaration.getName().getIdentifier();
 		IMethodBinding methodBinding= methodDeclaration.resolveBinding();
-		if (methodBinding == null) {
+		if (methodBinding==null) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_unexpected_binding_error));
+			return;
 		}
 		ITypeBinding typeBinding= methodBinding.getDeclaringClass();
 		IType type= (IType) typeBinding.getJavaElement();
@@ -150,6 +152,10 @@ public class FinalConditionsChecker {
 	 */
 	public void checkMethodReferenceNotReferingToMethod(MethodReference methodReference, IMethodBinding targetMethodBinding) {
 		IMethodBinding methodReferenceBinding= methodReference.resolveMethodBinding();
+		if (methodReferenceBinding==null) {
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_unexpected_binding_error));
+			return;
+		}
 		ITypeBinding typeBindingOfMethodReference= methodReferenceBinding.getDeclaringClass();
 		ITypeBinding typeBindingOfTargetMethod= targetMethodBinding.getDeclaringClass();
 		if (targetMethodBinding.isEqualTo(methodReferenceBinding) && typeBindingOfMethodReference.isEqualTo(typeBindingOfTargetMethod)) {
@@ -188,11 +194,15 @@ public class FinalConditionsChecker {
 	 */
 	public void checkIsNotRecursive(SimpleName node, MethodDeclaration methodDeclaration) {
 		IMethodBinding nodeMethodBinding= (IMethodBinding) node.resolveBinding();
-		IMethodBinding outerMethodBinding= methodDeclaration.resolveBinding();
-		if (nodeMethodBinding == null || outerMethodBinding == null) {
+		if (nodeMethodBinding==null) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_unexpected_binding_error));
+			return;
 		}
-
+		IMethodBinding outerMethodBinding= methodDeclaration.resolveBinding();
+		if (outerMethodBinding==null) {
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_unexpected_binding_error));
+			return;
+		}
 		if (nodeMethodBinding.isEqualTo(outerMethodBinding)) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_not_available_for_recursive_methods));
 		}
@@ -210,5 +220,12 @@ public class FinalConditionsChecker {
 			}
 		}
 		return false;
+	}
+
+
+	public void checkInstanceUsageHasBinding(IBinding binding) {
+		if (binding==null) {
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_unexpected_binding_error));
+		}
 	}
 }

@@ -115,6 +115,9 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 	@Override
 	public boolean visit(SimpleName node) {
 		IBinding binding= node.resolveBinding();
+		if (binding==null) {
+			return super.visit(node);
+		}
 		if (binding instanceof IVariableBinding) {
 			modifyFieldUsage(node, binding);
 		} else if (binding instanceof IMethodBinding) {
@@ -144,6 +147,9 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 
 		if (qualifier != null) {
 			IBinding qualifierBinding= qualifier.resolveBinding();
+			if (qualifierBinding==null) {
+				return super.visit(node);
+			}
 			ITypeBinding typeBinding= (ITypeBinding) qualifierBinding;
 			if (isInsideAnonymousClass(typeBinding)) {
 				return super.visit(node);
@@ -176,7 +182,10 @@ public final class InstanceUsageRewriter extends ASTVisitor {
 	@Override
 	public boolean visit(ClassInstanceCreation node) {
 		ITypeBinding typeBinding= node.getType().resolveBinding();
-		if (typeBinding != null && typeBinding.isMember() && !Modifier.isStatic(typeBinding.getModifiers())) {
+		if (typeBinding==null) {
+			return super.visit(node);
+		}
+		if (typeBinding.isMember() && !Modifier.isStatic(typeBinding.getModifiers())) {
 			fTargetMethodhasInstanceUsage= true;
 			replaceClassInstanceCreation(node);
 		}

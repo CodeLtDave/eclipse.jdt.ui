@@ -178,6 +178,10 @@ public class InitialConditionsChecker {
 	 * @return {@code true} if the source is available, {@code false} otherwise.
 	 */
 	public boolean checkSourceAvailable(IMethod iMethod) {
+		if (iMethod == null) {
+			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_unexpected_binding_error));
+			return false;
+		}
 		if (iMethod.getCompilationUnit() == null) {
 			fStatus.merge(RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.MakeStaticRefactoring_source_not_available_for_selected_method));
 		}

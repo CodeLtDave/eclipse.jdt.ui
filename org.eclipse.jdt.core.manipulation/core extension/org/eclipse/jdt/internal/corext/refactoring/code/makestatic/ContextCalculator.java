@@ -218,6 +218,8 @@ public class ContextCalculator {
 	 * This method calculates the {@link #fTargetIMethodBinding}. If the {@link #fSelectionASTNode}
 	 * is an instance of {@link MethodInvocation} or {@link MethodDeclaration}, it resolves the
 	 * corresponding {@link IMethodBinding} from that instance.
+	 *
+	 * {@link #fTargetIMethodBinding} can be null, checked at {@link InitialConditionsChecker#checkSourceAvailable(IMethod)}
 	 */
 	private void calculateTargetIMethodBinding() {
 		ASTNode selectionASTNode = getOrComputeSelectionASTNode();
@@ -282,7 +284,6 @@ public class ContextCalculator {
 			return;
 		}
 		fTargetMethodDeclaration= getMethodDeclarationFromIMethod(targetIMethod, targetCompilationUnit);
-		fTargetIMethodBinding= fTargetMethodDeclaration.resolveBinding();
 	}
 
 
